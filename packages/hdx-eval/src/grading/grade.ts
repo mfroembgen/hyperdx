@@ -1,12 +1,13 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 
-import type { RunRecord } from '../harness/types';
-import { runsRoot } from '../runs/path';
-import { readRun } from '../runs/store';
-import { getScenario, SCENARIO_NAMES } from '../scenarios';
-import type { PostRunInspectionResult } from '../scenarios/types';
+import type { RunRecord } from '@/harness/types';
+import { isModelSubdir, isRunJson, runsRoot, safeReaddir } from '@/runs/path';
+import { readRun } from '@/runs/store';
+import { getScenario, SCENARIO_NAMES } from '@/scenarios';
+import type { PostRunInspectionResult } from '@/scenarios/types';
+
 import type { BlindingEntry } from './blind';
 import { judgeTrajectory } from './judge';
 import { runProgrammaticChecks } from './programmatic';
@@ -268,6 +269,11 @@ async function gradeOne(args: {
   };
 }
 
+/**
+ * List run JSON files. Supports both the new
+ * `<scenario>/<mcp>/<model>/<index>.json` layout and the legacy
+ * `<scenario>/<mcp>/<index>.json` layout.
+ */
 function listRunFiles(batchDir: string): string[] {
   const out: string[] = [];
   for (const scenario of safeReaddir(batchDir)) {
@@ -275,22 +281,21 @@ function listRunFiles(batchDir: string): string[] {
     const sceneDir = join(batchDir, scenario);
     for (const mcp of safeReaddir(sceneDir)) {
       const mcpDir = join(sceneDir, mcp);
-      for (const file of safeReaddir(mcpDir)) {
-        if (file.endsWith('.grade.json')) continue;
-        if (file.endsWith('.timing.json')) continue;
-        if (file.endsWith('.json')) out.push(join(mcpDir, file));
+      for (const entry of safeReaddir(mcpDir)) {
+        if (isRunJson(entry)) {
+          // Legacy layout: <scenario>/<mcp>/<index>.json
+          out.push(join(mcpDir, entry));
+        } else if (isModelSubdir(mcpDir, entry)) {
+          // New layout: <scenario>/<mcp>/<model>/<index>.json
+          const modelDir = join(mcpDir, entry);
+          for (const file of safeReaddir(modelDir)) {
+            if (isRunJson(file)) out.push(join(modelDir, file));
+          }
+        }
       }
     }
   }
   return out.sort();
-}
-
-function safeReaddir(path: string): string[] {
-  try {
-    return readdirSync(path);
-  } catch {
-    return [];
-  }
 }
 
 function readExistingGrade(path: string): GradeRecord | null {

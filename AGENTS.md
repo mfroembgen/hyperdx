@@ -61,6 +61,8 @@ directory:
 - `agent_docs/development.md` - Development workflows, testing, and common tasks
 - `agent_docs/code_style.md` - Code patterns and best practices (read only when
   actively coding)
+- `agent_docs/observability.md` - Instrumentation standards (tracing, metrics,
+  context) and the shared helpers (read when adding or changing a feature)
 
 **Package-specific guides** (read when working on that package):
 
@@ -86,6 +88,12 @@ before stopping.
    `secondary`, `danger`) - see `agent_docs/code_style.md` for required patterns
 6. **Testing**: Tests live in `__tests__/` directories; use Jest for
    unit/integration tests
+7. **Observability**: This is an observability product - instrument new code as
+   you write it. Every team-scoped operation must carry team/user context
+   (`setBusinessContext`), countable log events should also emit a metric, and
+   spans/metric attributes must stay low-cardinality. Use the shared helpers in
+   `packages/api/src/utils/instrumentation.ts`. See
+   [`agent_docs/observability.md`](agent_docs/observability.md).
 
 ## Running Tests
 
@@ -184,6 +192,14 @@ efficient and accurate:
 4. **Write or update tests alongside the implementation**, not after. Configure
    your agent to produce tests before writing implementation code. See the
    Testing section below for the commands to use.
+
+5. **Ensure a changeset exists before pushing a PR.** Any change to a published
+   package (`@hyperdx/app`, `@hyperdx/api`, `@hyperdx/otel-collector`, etc.) that
+   is user-facing or affects behavior must include a changeset in `.changeset/`.
+   Add one with `yarn changeset` (or create the markdown file by hand following
+   the format of existing entries), choosing the appropriate semver bump, before
+   pushing the branch. Skip only for changes that don't warrant a release (docs,
+   internal tooling, tests, CI).
 
 ## GitHub Action Workflow (when invoked via @claude)
 

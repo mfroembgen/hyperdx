@@ -1,5 +1,6 @@
-import { type EvalConfig, getMcpDefinition } from '../hyperdx/config';
-import type { Scenario } from '../scenarios/types';
+import { type EvalConfig, getMcpDefinition } from '@/hyperdx/config';
+import type { Scenario } from '@/scenarios/types';
+
 import { runClaude } from './claudeSpawn';
 import type { ParsedEvent } from './streamParser';
 import { buildSystemPrompt } from './systemPrompt';

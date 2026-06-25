@@ -29,23 +29,18 @@
  *   - Error rate from tool failures (wrong schemas, missing fields) directly
  *     penalizes the score via the tool-error penalty mechanism
  */
-import { makeLog } from '../../generators/logs';
+import { makeLog } from '@/generators/logs';
 import {
   buildResourcePool,
   pickResource,
   uuidv4,
-} from '../../generators/templates';
-import {
-  makeSpan,
-  msToNs,
-  newSpanId,
-  newTraceId,
-} from '../../generators/traces';
-import type { LogRow, TraceRow } from '../../generators/types';
+} from '@/generators/templates';
+import { makeSpan, msToNs, newSpanId, newTraceId } from '@/generators/traces';
+import type { LogRow, TraceRow } from '@/generators/types';
 import {
   formatDashboardEvidence,
   inspectDashboards,
-} from '../../grading/dashboardInspection';
+} from '@/grading/dashboardInspection';
 import type {
   GenerateContext,
   PostRunInspectionContext,
@@ -53,7 +48,8 @@ import type {
   Scenario,
   ScenarioBatch,
   SystemPromptContext,
-} from '../types';
+} from '@/scenarios/types';
+
 import groundTruth from './ground-truth.json';
 
 // ─── Volumes ─────────────────────────────────────────────────────────────────

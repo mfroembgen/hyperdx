@@ -12,8 +12,8 @@
  * so the judge can evaluate whether tiles are correctly configured and
  * return relevant data — not just "some data."
  */
-import type { ToolCallRecord } from '../harness/types';
-import { HyperdxApiClient } from '../hyperdx/api';
+import type { ToolCallRecord } from '@/harness/types';
+import { HyperdxApiClient } from '@/hyperdx/api';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

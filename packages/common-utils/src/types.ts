@@ -275,6 +275,10 @@ export const SelectSQLStatementSchema = z.object({
   havingLanguage: SearchConditionLanguageSchema.optional(),
   orderBy: SortSpecificationListSchema.optional(),
   limit: LimitSchema.optional(),
+  // Nullish (not just optional): the chart editor clears the value to `null`
+  // so the cleared state survives JSON round-tripping (e.g. through the URL
+  // query state). `null` and `undefined` both mean "disabled" downstream.
+  seriesLimit: z.number().int().positive().nullish(),
 });
 
 export type SQLInterval = z.infer<typeof SQLIntervalSchema>;
@@ -800,7 +804,7 @@ export function isOnClickDashboardById(
  *
  * `chart-info` is a render-time CSS variable (defined in the shared
  * `chart-semantic-tokens` SCSS mixin) but is intentionally *not* in the
- * picker enum — it's consumed only by code paths that always want
+ * picker enum; it's consumed only by code paths that always want
  * brand-primary (e.g. info-level log series, `getChartColorInfo()`).
  *
  * Storing tokens (not hex) lets user choices reflow correctly across
@@ -998,7 +1002,7 @@ export function walkRawDashboardTileColors(
 /**
  * Strict Zod schema for the curated palette tokens. Intentionally
  * does NOT accept legacy numeric tokens (`chart-1` .. `chart-10`)
- * from #2265 — wrapping the enum in `z.preprocess` would force the
+ * from #2265. Wrapping the enum in `z.preprocess` would force the
  * schema's input type to `unknown`, which breaks downstream `z.infer`
  * consumers (e.g. `validateRequest` in the API handlers infers
  * `req.body` as `unknown` for any field reached through this schema).
@@ -1028,60 +1032,114 @@ export const ChartPaletteTokenSchema = z.enum(CHART_PALETTE_TOKENS);
  * Lives in common-utils so both the app and a future external-API parity
  * PR can import it.
  */
+// Numeric ordered operators (gt | gte | lt | lte).
+const numericOrderedColorCondition = z.object({
+  operator: z.enum(['gt', 'gte', 'lt', 'lte']),
+  value: z.number().finite(),
+  color: ChartPaletteTokenSchema,
+  label: z.string().max(40).optional(),
+});
+
+const betweenColorCondition = z.object({
+  operator: z.literal('between'),
+  value: z.tuple([z.number().finite(), z.number().finite()]),
+  color: ChartPaletteTokenSchema,
+  label: z.string().max(40).optional(),
+});
+
+// Equality against a number or a string value.
+const equalityColorCondition = z.object({
+  operator: z.enum(['eq', 'neq']),
+  value: z.union([z.number().finite(), z.string().max(200)]),
+  color: ChartPaletteTokenSchema,
+  label: z.string().max(40).optional(),
+});
+
+// String-match operators, kept at the schema level only for a future
+// table-tile slice (see the doc comment above). The number-tile editor
+// never emits these.
+const stringMatchColorCondition = z.object({
+  operator: z.enum(['contains', 'startsWith', 'endsWith']),
+  value: z.string().min(1).max(200),
+  color: ChartPaletteTokenSchema,
+  label: z.string().max(40).optional(),
+});
+
+const regexColorCondition = z.object({
+  operator: z.literal('regex'),
+  value: z
+    .string()
+    .min(1)
+    .max(500)
+    .refine(
+      v => {
+        try {
+          new RegExp(v);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      { message: 'Invalid regex pattern' },
+    ),
+  color: ChartPaletteTokenSchema,
+  label: z.string().max(40).optional(),
+});
+
 export const ColorConditionSchema = z.discriminatedUnion('operator', [
-  // Numeric ordered operators
-  z.object({
-    operator: z.enum(['gt', 'gte', 'lt', 'lte']),
-    value: z.number().finite(),
-    color: ChartPaletteTokenSchema,
-    label: z.string().max(40).optional(),
-  }),
-  z.object({
-    operator: z.literal('between'),
-    value: z.tuple([z.number().finite(), z.number().finite()]),
-    color: ChartPaletteTokenSchema,
-    label: z.string().max(40).optional(),
-  }),
-  // Equality (number OR string)
-  z.object({
-    operator: z.enum(['eq', 'neq']),
-    value: z.union([z.number().finite(), z.string().max(200)]),
-    color: ChartPaletteTokenSchema,
-    label: z.string().max(40).optional(),
-  }),
-  // String operators (allowed at schema level for future table-tile reuse)
-  z.object({
-    operator: z.enum(['contains', 'startsWith', 'endsWith']),
-    value: z.string().min(1).max(200),
-    color: ChartPaletteTokenSchema,
-    label: z.string().max(40).optional(),
-  }),
-  z.object({
-    operator: z.literal('regex'),
-    value: z
-      .string()
-      .min(1)
-      .max(500)
-      .refine(
-        v => {
-          try {
-            new RegExp(v);
-            return true;
-          } catch {
-            return false;
-          }
-        },
-        { message: 'Invalid regex pattern' },
-      ),
-    color: ChartPaletteTokenSchema,
-    label: z.string().max(40).optional(),
-  }),
+  numericOrderedColorCondition,
+  betweenColorCondition,
+  equalityColorCondition,
+  stringMatchColorCondition,
+  regexColorCondition,
 ]);
 
 export type ColorCondition = z.infer<typeof ColorConditionSchema>;
 
+/**
+ * The subset of color-rule operators the number-tile editor actually
+ * emits (`ColorRulesEditor.tsx` OPERATOR_OPTIONS: gt, gte, lt, lte,
+ * between, eq, neq). The external dashboards API and the MCP dashboard
+ * tool validate number-tile `colorRules` against this schema rather than
+ * the full `ColorConditionSchema`, so the authoring surface cannot accept
+ * the string-match or regex rules the UI can never produce (a stored
+ * regex would be compiled and evaluated at render time). Keep the operator
+ * set in sync with the editor's options.
+ */
+export const NumberTileColorConditionSchema = z.discriminatedUnion('operator', [
+  numericOrderedColorCondition,
+  betweenColorCondition,
+  equalityColorCondition,
+]);
+
+export type NumberTileColorCondition = z.infer<
+  typeof NumberTileColorConditionSchema
+>;
+
+/**
+ * Optional background trend ("sparkline") drawn behind a number tile's
+ * value. Derived from a time-bucketed version of the same query, so the
+ * value's trend over the selected range is visible at a glance (useful for
+ * SLO / error-budget tiles, where burn is temporal).
+ *
+ * `type` picks the shape (`line` or `area`). `color` is an optional
+ * palette-token override; when unset the sparkline inherits the tile's
+ * static `color`. Number tiles only; the UI gates the control on a builder
+ * config (raw SQL number tiles return a single value with no time
+ * dimension to bucket). Lives in common-utils so both the app and a future
+ * external-API parity PR can import it.
+ */
+export const BackgroundChartSchema = z.object({
+  type: z.enum(['line', 'area']),
+  color: ChartPaletteTokenSchema.optional(),
+});
+
+export type BackgroundChart = z.infer<typeof BackgroundChartSchema>;
+
 // When making changes here, consider if they need to be made to the external API
-// schema as well (packages/api/src/utils/zod.ts).
+// as well: the Zod schema (packages/api/src/utils/zod.ts) and the hand-written
+// OpenAPI JSDoc (packages/api/src/routers/external-api/v2/dashboards.ts), which
+// duplicates this shape for the generated spec.
 /**
  * Schema describing settings which are shared between Raw SQL
  * chart configs and Structured ChartBuilder chart configs
@@ -1108,6 +1166,12 @@ const SharedChartSettingsSchema = z.object({
   // table-tile slice can attach per-column rules without a schema change.
   // The UI gates the section on `displayType === DisplayType.Number`.
   colorRules: z.array(ColorConditionSchema).max(10).optional(),
+  // Optional background trend (line / area sparkline) drawn behind a number
+  // tile's value, derived from a time-bucketed version of the same query.
+  // Number tiles only; the UI gates the control on a builder config (raw SQL
+  // number tiles have no time dimension to bucket). Other display types
+  // ignore the field. Kept at shared level mirroring `color` / `colorRules`.
+  backgroundChart: BackgroundChartSchema.optional(),
 });
 
 export const _ChartConfigSchema = SharedChartSettingsSchema.extend({
@@ -1228,6 +1292,11 @@ export type DateRange = {
   dateRange: [Date, Date];
   dateRangeStartInclusive?: boolean; // default true
   dateRangeEndInclusive?: boolean; // default true
+  // Runtime-only, set by query chunking when dateRange is narrowed to a
+  // window: a fixed ranking range (the newest chunk window) used by the
+  // `__hdx_series_limit` CTE so every chunk ranks (and keeps) the same
+  // top-N series. Never persisted.
+  seriesLimitDateRange?: [Date, Date];
 };
 
 export type ChartConfigWithDateRange = ChartConfig & DateRange;
@@ -1582,6 +1651,7 @@ const RequiredTimestampColumnSchema = z
 export const BaseSourceSchema = z.object({
   id: z.string(),
   name: z.string().min(1, 'Name is required'),
+  section: z.string().max(256).optional(),
   kind: z.nativeEnum(SourceKind),
   connection: z.string().min(1, 'Server Connection is required'),
   from: z.object({
@@ -1664,7 +1734,7 @@ export const LogSourceSchema = BaseSourceSchema.extend({
   implicitColumnExpression: z.string().optional(),
   /**
    * @deprecated Application-side SQL predicate AND'd into every query against
-   * the source. Not a security boundary — bypassable by direct table SELECT.
+   * the source. Not a security boundary; bypassable by direct table SELECT.
    * For hard tenant isolation, use a ClickHouse ROW POLICY at the DB level:
    * https://clickhouse.com/docs/sql-reference/statements/create/row-policy
    *

@@ -2,15 +2,8 @@ import isPlainObject from 'lodash/isPlainObject';
 import * as SQLParser from 'node-sql-parser';
 import SqlString from 'sqlstring';
 
-import {
-  ChSql,
-  chSql,
-  concatChSql,
-  convertCHDataTypeToJSType,
-  JSDataType,
-  wrapChSqlIfNotEmpty,
-} from '@/clickhouse';
-import { attrHashExpr, translateHistogram } from '@/core/histogram';
+import { ChSql, chSql, concatChSql, wrapChSqlIfNotEmpty } from '@/clickhouse';
+import { translateHistogram } from '@/core/histogram';
 import { Metadata } from '@/core/metadata';
 import {
   convertDateRangeToGranularityString,
@@ -691,18 +684,20 @@ async function renderSelectList(
 
   const selectsSQL = await Promise.all(
     selectList.map(async select => {
-      const whereClause = await renderWhereExpression({
-        condition: select.aggCondition ?? '',
-        from: chartConfig.from,
-        language: select.aggConditionLanguage ?? 'lucene',
-        implicitColumnExpression: chartConfig.implicitColumnExpression,
-        bodyExpression: chartConfig.bodyExpression,
-        useTextIndexForImplicitColumn:
-          chartConfig.useTextIndexForImplicitColumn,
-        metadata,
-        connectionId: chartConfig.connection,
-        with: chartConfig.with,
-      });
+      const whereClause = isNonEmptyWhereExpr(select.aggCondition)
+        ? await renderWhereExpression({
+            condition: select.aggCondition ?? '',
+            from: chartConfig.from,
+            language: select.aggConditionLanguage ?? 'lucene',
+            implicitColumnExpression: chartConfig.implicitColumnExpression,
+            bodyExpression: chartConfig.bodyExpression,
+            useTextIndexForImplicitColumn:
+              chartConfig.useTextIndexForImplicitColumn,
+            metadata,
+            connectionId: chartConfig.connection,
+            with: chartConfig.with,
+          })
+        : chSql``;
 
       let expr: ChSql;
       if (select.aggFn == null) {
@@ -1210,6 +1205,116 @@ async function renderGroupBy(
   );
 }
 
+async function renderSeriesLimitCte(
+  chartConfig: BuilderChartConfigWithOptDateRangeEx,
+  metadata: Metadata,
+  {
+    from,
+    where,
+    groupBy,
+  }: { from: ChSql; where: ChSql; groupBy: ChSql | undefined },
+): Promise<{ cte: ChSql; predicate: ChSql } | undefined> {
+  const { seriesLimit } = chartConfig;
+  if (
+    seriesLimit == null ||
+    !isUsingGroupBy(chartConfig) ||
+    !isUsingGranularity(chartConfig) ||
+    chartConfig.selectGroupBy === false ||
+    // Skip CTE/metric sources (no real table to re-scan) and string selects.
+    !chartConfig.from?.databaseName ||
+    !chartConfig.from?.tableName ||
+    !Array.isArray(chartConfig.select) ||
+    chartConfig.select.length === 0 ||
+    groupBy == null
+  ) {
+    return undefined;
+  }
+
+  // When the query was chunked into time windows, rank over the shared
+  // range the caller pinned (the newest window) instead of each chunk's own
+  // window — otherwise each chunk keeps its own top-N and the union across
+  // chunks exceeds N. Inclusivity is normalized so all chunks emit an
+  // identical CTE (non-first windows set dateRangeEndInclusive=false).
+  const cteConfig = chartConfig.seriesLimitDateRange
+    ? {
+        ...chartConfig,
+        dateRange: chartConfig.seriesLimitDateRange,
+        dateRangeStartInclusive: true,
+        dateRangeEndInclusive: true,
+      }
+    : undefined;
+  // groupBy is re-rendered (not reused) because timeBucketExpr derives the
+  // bucket size from dateRange when granularity is 'auto'.
+  const [cteWhere = where, cteGroupBy = groupBy] = cteConfig
+    ? await Promise.all([
+        renderWhere(cteConfig, metadata),
+        renderGroupBy(cteConfig, metadata),
+      ])
+    : [];
+
+  // One ChSql per group-by column (groupBy may be an array or a comma-separated
+  // string). splitAndTrimWithBracket respects []/()/quotes so it won't split
+  // inside Map['a,b']; the per-column null filter below needs them separated.
+  let groupByCols: ChSql[];
+  if (typeof chartConfig.groupBy === 'string') {
+    groupByCols = splitAndTrimWithBracket(chartConfig.groupBy).map(
+      col => chSql`${{ UNSAFE_RAW_SQL: col }}`,
+    );
+  } else {
+    // Strip aliases: these go inside tuple(...)/`IS NOT NULL`, where an
+    // `AS "alias"` suffix is a syntax error (unlike the outer GROUP BY).
+    const rendered = await renderSelectList(
+      chartConfig.groupBy.map(col => ({ ...col, alias: undefined })),
+      chartConfig,
+      metadata,
+    );
+    groupByCols = Array.isArray(rendered) ? rendered : [rendered];
+  }
+  const groupByTuple = concatChSql(',', groupByCols);
+
+  // Rank by the chart's first aggregate (alias stripped — we add our own).
+  const firstSelect = chartConfig.select[0];
+  const rankSelectList =
+    typeof firstSelect === 'string'
+      ? firstSelect
+      : [{ ...firstSelect, alias: undefined }];
+  const rankRendered = await renderSelectList(
+    rankSelectList,
+    chartConfig,
+    metadata,
+  );
+  const rankValue = Array.isArray(rankRendered)
+    ? rankRendered[0]
+    : rankRendered;
+
+  // Drop NULL components only (no-op on non-nullable columns).
+  const groupByNotNullFilter = concatChSql(
+    ' AND ',
+    groupByCols.map(g => chSql`${g} IS NOT NULL`),
+  );
+  const innerWhere = cteWhere.sql
+    ? concatChSql(' AND ', cteWhere, groupByNotNullFilter)
+    : groupByNotNullFilter;
+
+  // Per-(group, bucket) aggregate, then max per group, keeping the top N.
+  const cte = chSql`\`__hdx_series_limit\` AS (
+    SELECT \`group\`
+    FROM (
+      SELECT tuple(${groupByTuple}) AS \`group\`, ${rankValue} AS \`__hdx_series_rank\`
+      FROM ${from}
+      WHERE ${innerWhere}
+      GROUP BY ${cteGroupBy}
+    )
+    GROUP BY \`group\`
+    ORDER BY max(\`__hdx_series_rank\`) DESC, \`group\`
+    LIMIT ${{ Int32: seriesLimit }}
+  )`;
+
+  const predicate = chSql`tuple(${groupByTuple}) IN (SELECT \`group\` FROM \`__hdx_series_limit\`)`;
+
+  return { cte, predicate };
+}
+
 async function renderHaving(
   chartConfig: BuilderChartConfigWithOptDateRangeEx,
   metadata: Metadata,
@@ -1479,41 +1584,9 @@ async function translateMetricChartConfig(
     );
   }
 
-  // Detect whether the metric tables use the JSON schema
-  // (BETA_CH_OTEL_JSON_SCHEMA_ENABLED). When enabled, attribute columns
-  // (Attributes, ScopeAttributes, ResourceAttributes) are JSON type instead of
-  // Map(String, String), which means mapConcat() cannot be used. We detect this
-  // by inspecting the actual column type in ClickHouse.
-  let isJsonSchema = false;
-  const detectionTableName =
-    (metricType != null ? metricTables[metricType] : undefined) ??
-    metricTables[MetricsDataType.Gauge] ??
-    metricTables[MetricsDataType.Sum] ??
-    metricTables[MetricsDataType.Histogram];
-  if (detectionTableName && from.databaseName && chartConfig.connection) {
-    try {
-      const columns = await metadata.getColumns({
-        databaseName: from.databaseName,
-        tableName: detectionTableName,
-        connectionId: chartConfig.connection,
-      });
-      // We only check `Attributes` as a representative column — the OTel
-      // exporter sets all three attribute columns (Attributes, ScopeAttributes,
-      // ResourceAttributes) to the same type, so checking one is sufficient.
-      isJsonSchema = columns.some(
-        c =>
-          c.name === 'Attributes' &&
-          convertCHDataTypeToJSType(c.type) === JSDataType.JSON,
-      );
-    } catch (e) {
-      // If column detection fails (e.g. table doesn't exist yet), fall back to
-      // the Map schema behaviour which was the original default.
-      console.warn(
-        'Failed to detect metric table column types, falling back to Map schema',
-        e,
-      );
-    }
-  }
+  // AttributesHash is computed inline with a variadic cityHash64 call
+  // (HDX-4466). This works for both Map(LowCardinality(String), String) and
+  // JSON attribute columns, so no schema detection round-trip is needed.
 
   if (
     metricType === MetricsDataType.Gauge &&
@@ -1563,7 +1636,7 @@ async function translateMetricChartConfig(
           sql: chSql`
             SELECT
               *,
-              ${attrHashExpr(isJsonSchema)} AS AttributesHash
+              cityHash64(ScopeAttributes, ResourceAttributes, Attributes) AS AttributesHash
             FROM ${renderFrom({ from: { ...from, tableName: metricTables[MetricsDataType.Gauge] } })}
             WHERE ${where}
           `,
@@ -1677,7 +1750,7 @@ async function translateMetricChartConfig(
         sql: chSql`
                 SELECT
                   *,
-                  ${attrHashExpr(isJsonSchema)} AS AttributesHash,
+                  cityHash64(ScopeAttributes, ResourceAttributes, Attributes) AS AttributesHash,
                   IF(
                     AggregationTemporality = 1,
                     Value, -- DELTA: Value is already the per-interval increase
@@ -1932,7 +2005,6 @@ async function translateMetricChartConfig(
         }),
         where,
         valueAlias,
-        isJsonSchema,
       }),
       select: `\`__hdx_time_bucket\`${groupBy ? ', group' : ''}, "${valueAlias}"`,
       from: {
@@ -2065,16 +2137,30 @@ export async function renderChartConfig(
         : undefined),
   };
 
-  const withClauses = await renderWith(chartConfig, metadata, querySettings);
+  let withClauses = await renderWith(chartConfig, metadata, querySettings);
   const select = await renderSelect(chartConfig, metadata);
   const from = renderFrom(chartConfig);
-  const where = await renderWhere(chartConfig, metadata);
+  let where = await renderWhere(chartConfig, metadata);
   const groupBy = await renderGroupBy(chartConfig, metadata);
   const having = await renderHaving(chartConfig, metadata);
   const orderBy = renderOrderBy(chartConfig);
   //const fill = renderFill(chartConfig); //TODO: Fill breaks heatmaps and some charts
   const limit = renderLimit(chartConfig);
   const settings = renderSettings(chartConfig, querySettings);
+
+  const seriesCap = await renderSeriesLimitCte(chartConfig, metadata, {
+    from,
+    where,
+    groupBy,
+  });
+  if (seriesCap) {
+    withClauses = withClauses
+      ? concatChSql(',', withClauses, seriesCap.cte)
+      : seriesCap.cte;
+    where = where.sql
+      ? concatChSql(' AND ', where, seriesCap.predicate)
+      : seriesCap.predicate;
+  }
 
   return concatChSql(' ', [
     chSql`${withClauses?.sql ? chSql`WITH ${withClauses}` : ''}`,

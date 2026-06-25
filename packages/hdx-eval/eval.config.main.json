@@ -1,0 +1,90 @@
+{
+  "mcps": {
+    "hyperdx": {
+      "type": "http",
+      "url": "http://localhost:30199/mcp",
+      "headers": {
+        "Authorization": "Bearer 5c1e5e4e-9977-4bfe-89f5-b309de75fc41"
+      },
+      "toolPattern": "mcp__hyperdx__*",
+      "label": "HyperDX",
+      "brandTerms": ["HyperDX", "hyperdx"],
+      "deniedTools": [
+        "mcp__hyperdx__clickstack_delete_dashboard",
+        "mcp__hyperdx__clickstack_get_dashboard",
+        "mcp__hyperdx__clickstack_get_dashboard_tile",
+        "mcp__hyperdx__clickstack_save_dashboard",
+        "mcp__hyperdx__clickstack_patch_dashboard",
+        "mcp__hyperdx__clickstack_search_dashboards",
+        "mcp__hyperdx__clickstack_query_tile",
+        "mcp__hyperdx__clickstack_get_saved_search",
+        "mcp__hyperdx__clickstack_save_saved_search",
+        "mcp__hyperdx__clickstack_get_alert",
+        "mcp__hyperdx__clickstack_get_webhook",
+        "mcp__hyperdx__clickstack_save_alert"
+      ]
+    },
+    "clickhouse": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "mcp-clickhouse==0.3.0",
+        "--python",
+        "3.10",
+        "mcp-clickhouse"
+      ],
+      "env": {
+        "CLICKHOUSE_HOST": "localhost",
+        "CLICKHOUSE_PORT": "30599",
+        "CLICKHOUSE_USER": "default",
+        "CLICKHOUSE_PASSWORD": "",
+        "CLICKHOUSE_SECURE": "false",
+        "CLICKHOUSE_VERIFY": "false",
+        "CLICKHOUSE_SEND_RECEIVE_TIMEOUT": "10"
+      },
+      "toolPattern": "mcp__clickhouse__*",
+      "label": "ClickHouse MCP",
+      "brandTerms": ["ClickHouse MCP", "clickhouse"]
+    }
+  },
+  "scenarios": {
+    "dashboard-build": {
+      "tracesSourceId": "6a29712105bcbb7434c0d8f8",
+      "logsSourceId": "6a29712105bcbb7434c0d8fc"
+    },
+    "error-root-cause": {
+      "tracesSourceId": "6a29712105bcbb7434c0d900",
+      "logsSourceId": "6a29712105bcbb7434c0d904"
+    },
+    "latency-spike": {
+      "tracesSourceId": "6a29712105bcbb7434c0d908",
+      "logsSourceId": "6a29712105bcbb7434c0d90c"
+    },
+    "noisy-signals": {
+      "tracesSourceId": "6a29712105bcbb7434c0d910",
+      "logsSourceId": "6a29712105bcbb7434c0d914"
+    },
+    "segmented-regression": {
+      "tracesSourceId": "6a29712105bcbb7434c0d918",
+      "logsSourceId": "6a29712105bcbb7434c0d91c"
+    },
+    "service-health-check": {
+      "tracesSourceId": "6a29712105bcbb7434c0d920",
+      "logsSourceId": "6a29712105bcbb7434c0d924"
+    }
+  },
+  "hyperdxApi": {
+    "apiUrl": "http://localhost:30199",
+    "accessKey": "5c1e5e4e-9977-4bfe-89f5-b309de75fc41",
+    "connectionId": "6a287faae4347d855cbee2b8"
+  },
+  "clickhouse": {
+    "host": "localhost",
+    "port": "30599",
+    "user": "default",
+    "password": ""
+  },
+  "anchorTime": "2026-06-10T11:52:15.391Z"
+}

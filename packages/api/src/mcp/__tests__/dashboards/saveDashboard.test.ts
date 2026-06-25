@@ -2,11 +2,11 @@ import { MetricsDataType, SourceKind } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
 
 import { DEFAULT_DATABASE } from '@/fixtures';
+import { callTool, getFirstText } from '@/mcp/__tests__/mcpTestUtils';
 import Dashboard from '@/models/dashboard';
 import { Source } from '@/models/source';
 import type { ExternalDashboardTileWithId } from '@/utils/zod';
 
-import { callTool, getFirstText } from '../mcpTestUtils';
 import { setupDashboardTests } from './setup';
 
 describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
@@ -371,6 +371,114 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
       expect(output.tiles).toHaveLength(1);
     });
 
+    it('should preserve display fields on raw SQL tiles through save, get, update, and re-get', async () => {
+      const connectionId = ctx.connection._id.toString();
+      const sqlConfig = {
+        configType: 'sql' as const,
+        displayType: 'line' as const,
+        connectionId,
+        sqlTemplate:
+          'SELECT $__timeInterval(Timestamp) AS ts, avg(Duration) AS v FROM otel_traces WHERE $__timeFilter(Timestamp) GROUP BY ts ORDER BY ts LIMIT 1000',
+        numberFormat: {
+          output: 'percent' as const,
+          mantissa: 2,
+          thousandSeparated: true,
+        },
+        compareToPreviousPeriod: true,
+        fitYAxisToData: true,
+      };
+      const sqlNumberConfig = {
+        configType: 'sql' as const,
+        displayType: 'number' as const,
+        connectionId,
+        sqlTemplate: 'SELECT 0.99 AS value LIMIT 1',
+        numberFormat: { output: 'percent' as const, mantissa: 2 },
+        color: 'chart-success' as const,
+      };
+
+      const saveResult = await callTool(
+        ctx.client!,
+        'clickstack_save_dashboard',
+        {
+          name: 'SQL NumberFormat Round-Trip',
+          tiles: [
+            { name: 'CPU %', config: sqlConfig },
+            { name: 'SLO', config: sqlNumberConfig },
+            {
+              name: 'Other Tile',
+              config: {
+                configType: 'sql' as const,
+                displayType: 'table' as const,
+                connectionId,
+                sqlTemplate: 'SELECT 1 AS value LIMIT 1',
+              },
+            },
+          ],
+        },
+      );
+      expect(saveResult.isError).toBeFalsy();
+      const saved = JSON.parse(getFirstText(saveResult));
+      const savedSqlTile = saved.tiles.find(
+        (t: { name: string }) => t.name === 'CPU %',
+      );
+      expect(savedSqlTile.config).toMatchObject(sqlConfig);
+      const savedSqlNumberTile = saved.tiles.find(
+        (t: { name: string }) => t.name === 'SLO',
+      );
+      expect(savedSqlNumberTile.config).toMatchObject(sqlNumberConfig);
+
+      const getResult = await callTool(
+        ctx.client!,
+        'clickstack_get_dashboard',
+        { id: saved.id },
+      );
+      expect(getResult.isError).toBeFalsy();
+      const fetched = JSON.parse(getFirstText(getResult));
+      const fetchedSqlTile = fetched.tiles.find(
+        (t: { name: string }) => t.name === 'CPU %',
+      );
+      expect(fetchedSqlTile.config).toMatchObject(sqlConfig);
+
+      // Update a DIFFERENT tile, passing all fetched tiles back; the
+      // formatted SQL tile must survive the round-trip untouched.
+      const updateResult = await callTool(
+        ctx.client!,
+        'clickstack_save_dashboard',
+        {
+          id: saved.id,
+          name: 'SQL NumberFormat Round-Trip',
+          tiles: fetched.tiles.map((t: { name: string; config: object }) =>
+            t.name === 'Other Tile'
+              ? {
+                  ...t,
+                  config: {
+                    ...t.config,
+                    sqlTemplate: 'SELECT 2 AS value LIMIT 1',
+                  },
+                }
+              : t,
+          ),
+        },
+      );
+      expect(updateResult.isError).toBeFalsy();
+
+      const getAfterUpdate = await callTool(
+        ctx.client!,
+        'clickstack_get_dashboard',
+        { id: saved.id },
+      );
+      expect(getAfterUpdate.isError).toBeFalsy();
+      const refetched = JSON.parse(getFirstText(getAfterUpdate));
+      const refetchedSqlTile = refetched.tiles.find(
+        (t: { name: string }) => t.name === 'CPU %',
+      );
+      expect(refetchedSqlTile.config).toMatchObject(sqlConfig);
+      const refetchedSqlNumberTile = refetched.tiles.find(
+        (t: { name: string }) => t.name === 'SLO',
+      );
+      expect(refetchedSqlNumberTile.config).toMatchObject(sqlNumberConfig);
+    });
+
     it('should create a dashboard with a heatmap tile on a Trace source', async () => {
       const sourceId = ctx.traceSource._id.toString();
       const result = await callTool(ctx.client!, 'clickstack_save_dashboard', {
@@ -606,6 +714,240 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
       expect(result.isError).toBe(true);
     });
 
+    it('should round-trip number-tile color and colorRules through save and get', async () => {
+      const sourceId = ctx.traceSource._id.toString();
+      // One rule per operator family the number-tile editor emits:
+      // gt/gte/lt/lte (number), between ([min, max]), eq/neq (number).
+      const numberConfig = {
+        displayType: 'number',
+        sourceId,
+        select: [{ aggFn: 'count' }],
+        color: 'chart-blue',
+        colorRules: [
+          { operator: 'lt', value: 10, color: 'chart-gray' },
+          { operator: 'lte', value: 0, color: 'chart-success' },
+          { operator: 'between', value: [50, 99], color: 'chart-cyan' },
+          { operator: 'eq', value: 42, color: 'chart-pink', label: 'Answer' },
+          { operator: 'neq', value: 0, color: 'chart-purple' },
+          { operator: 'gt', value: 100, color: 'chart-warning' },
+          { operator: 'gte', value: 500, color: 'chart-error' },
+        ],
+      };
+
+      const saveResult = await callTool(
+        ctx.client!,
+        'clickstack_save_dashboard',
+        {
+          name: 'Number Color',
+          tiles: [{ name: 'Number', config: numberConfig }],
+        },
+      );
+      expect(saveResult.isError).toBeFalsy();
+      const saved = JSON.parse(getFirstText(saveResult));
+      expect(saved.tiles[0].config).toMatchObject(numberConfig);
+
+      const getResult = await callTool(
+        ctx.client!,
+        'clickstack_get_dashboard',
+        {
+          id: saved.id,
+        },
+      );
+      expect(getResult.isError).toBeFalsy();
+      const fetched = JSON.parse(getFirstText(getResult));
+      expect(fetched.tiles[0].config).toMatchObject(numberConfig);
+    });
+
+    it('should reject a number-tile color that is not a palette token', async () => {
+      const sourceId = ctx.traceSource._id.toString();
+      const result = await callTool(ctx.client!, 'clickstack_save_dashboard', {
+        name: 'Bad Color',
+        tiles: [
+          {
+            name: 'Number',
+            config: {
+              displayType: 'number',
+              sourceId,
+              select: [{ aggFn: 'count' }],
+              color: 'not-a-token',
+            },
+          },
+        ],
+      });
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should reject a number-tile colorRule with an unsupported operator', async () => {
+      const sourceId = ctx.traceSource._id.toString();
+      // `regex` is a ColorConditionSchema operator but not part of the
+      // narrower NumberTileColorConditionSchema the editor (and this tool)
+      // accept, so it must be rejected.
+      const result = await callTool(ctx.client!, 'clickstack_save_dashboard', {
+        name: 'Bad ColorRule',
+        tiles: [
+          {
+            name: 'Number',
+            config: {
+              displayType: 'number',
+              sourceId,
+              select: [{ aggFn: 'count' }],
+              colorRules: [
+                { operator: 'regex', value: '.*', color: 'chart-blue' },
+              ],
+            },
+          },
+        ],
+      });
+
+      expect(result.isError).toBe(true);
+    });
+
+    it('should keep color but drop colorRules on a raw SQL number tile', async () => {
+      const connectionId = ctx.connection._id.toString();
+      const saveResult = await callTool(
+        ctx.client!,
+        'clickstack_save_dashboard',
+        {
+          name: 'SQL Number Color',
+          tiles: [
+            {
+              name: 'SLO',
+              config: {
+                configType: 'sql',
+                displayType: 'number',
+                connectionId,
+                sqlTemplate: 'SELECT 0.99 AS value LIMIT 1',
+                color: 'chart-success',
+                colorRules: [
+                  { operator: 'gte', value: 1, color: 'chart-error' },
+                ],
+              },
+            },
+          ],
+        },
+      );
+      expect(saveResult.isError).toBeFalsy();
+      const saved = JSON.parse(getFirstText(saveResult));
+      expect(saved.tiles[0].config.color).toBe('chart-success');
+      expect(saved.tiles[0].config.colorRules).toBeUndefined();
+    });
+
+    it('should preserve display fields on builder tiles through save, get, update, and re-get', async () => {
+      const sourceId = ctx.traceSource._id.toString();
+      const numberFormat = {
+        output: 'percent' as const,
+        mantissa: 2,
+        thousandSeparated: true,
+      };
+      const lineConfig = {
+        displayType: 'line' as const,
+        sourceId,
+        select: [{ aggFn: 'count' as const, alias: 'Requests' }],
+        numberFormat,
+        compareToPreviousPeriod: true,
+        fitYAxisToData: true,
+      };
+      const barConfig = {
+        displayType: 'stacked_bar' as const,
+        sourceId,
+        select: [{ aggFn: 'count' as const, alias: 'Requests' }],
+        numberFormat,
+      };
+      const tableConfig = {
+        displayType: 'table' as const,
+        sourceId,
+        select: [{ aggFn: 'count' as const, alias: 'Requests' }],
+        groupBy: 'SpanName',
+        numberFormat,
+      };
+      const pieConfig = {
+        displayType: 'pie' as const,
+        sourceId,
+        select: [{ aggFn: 'count' as const, alias: 'Requests' }],
+        groupBy: 'SpanName',
+        numberFormat,
+      };
+      const numberConfig = {
+        displayType: 'number' as const,
+        sourceId,
+        select: [{ aggFn: 'count' as const, alias: 'Requests' }],
+        numberFormat,
+        color: 'chart-green' as const,
+        colorRules: [
+          {
+            operator: 'gte' as const,
+            value: 100,
+            color: 'chart-warning' as const,
+          },
+          {
+            operator: 'gte' as const,
+            value: 500,
+            color: 'chart-error' as const,
+          },
+        ],
+      };
+      const tiles = [
+        { name: 'Line', config: lineConfig },
+        { name: 'Bar', config: barConfig },
+        { name: 'Table', config: tableConfig },
+        { name: 'Pie', config: pieConfig },
+        { name: 'Number', config: numberConfig },
+      ];
+      const configByName: Record<string, object> = {
+        Line: lineConfig,
+        Bar: barConfig,
+        Table: tableConfig,
+        Pie: pieConfig,
+        Number: numberConfig,
+      };
+      const assertTiles = (output: { tiles: { name: string }[] }) => {
+        for (const [name, config] of Object.entries(configByName)) {
+          const tile = output.tiles.find(t => t.name === name);
+          expect(tile).toMatchObject({ config });
+        }
+      };
+
+      const saveResult = await callTool(
+        ctx.client!,
+        'clickstack_save_dashboard',
+        { name: 'Builder Display Fields', tiles },
+      );
+      expect(saveResult.isError).toBeFalsy();
+      const saved = JSON.parse(getFirstText(saveResult));
+      assertTiles(saved);
+
+      const getResult = await callTool(
+        ctx.client!,
+        'clickstack_get_dashboard',
+        { id: saved.id },
+      );
+      expect(getResult.isError).toBeFalsy();
+      const fetched = JSON.parse(getFirstText(getResult));
+      assertTiles(fetched);
+
+      // Update passing all fetched tiles back verbatim; every display
+      // field must survive a second pass through the MCP input schema.
+      const updateResult = await callTool(
+        ctx.client!,
+        'clickstack_save_dashboard',
+        {
+          id: saved.id,
+          name: 'Builder Display Fields (updated)',
+          tiles: fetched.tiles,
+        },
+      );
+      expect(updateResult.isError).toBeFalsy();
+
+      const getAfterUpdate = await callTool(
+        ctx.client!,
+        'clickstack_get_dashboard',
+        { id: saved.id },
+      );
+      expect(getAfterUpdate.isError).toBeFalsy();
+      assertTiles(JSON.parse(getFirstText(getAfterUpdate)));
+    });
+
     it('should reject heatmap tile on a non-Trace source', async () => {
       // Create a Log source so the heatmap source-kind gate has
       // something to reject. The schema accepts the tile shape (the
@@ -797,6 +1139,157 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
       expect(fetchedByName['Heatmap Tile'].config).toMatchObject(heatmapConfig);
       expect(fetchedByName['Line Tile'].config).toMatchObject(lineConfig);
       expect(fetchedByName['Number Tile'].config).toMatchObject(numberConfig);
+    });
+  });
+
+  describe('raw SQL macro warnings', () => {
+    // These warnings are advisory: a raw SQL tile that omits the dashboard
+    // time-range / filter / source macros still saves successfully, but the
+    // response carries a `warnings` array so the agent can spot a tile that
+    // won't react to dashboard controls.
+    it('returns a non-blocking warning when a raw SQL tile omits macros on create', async () => {
+      const connectionId = ctx.connection._id.toString();
+      const result = await callTool(ctx.client!, 'clickstack_save_dashboard', {
+        name: 'SQL Dashboard without macros',
+        tiles: [
+          {
+            name: 'Static SQL',
+            config: {
+              configType: 'sql',
+              displayType: 'table',
+              connectionId,
+              sqlTemplate: 'SELECT 1 AS value LIMIT 1',
+            },
+          },
+        ],
+      });
+
+      // Non-blocking: the save succeeds and the dashboard is persisted.
+      expect(result.isError).toBeFalsy();
+      const output = JSON.parse(getFirstText(result));
+      expect(output.id).toBeDefined();
+      expect(output.tiles).toHaveLength(1);
+      const dashboard = await Dashboard.findById(output.id);
+      expect(dashboard).not.toBeNull();
+
+      // The advisory names the tile and recommends the missing macros.
+      expect(Array.isArray(output.warnings)).toBe(true);
+      expect(output.warnings).toHaveLength(1);
+      expect(output.warnings[0]).toContain('Static SQL');
+      expect(output.warnings[0]).toContain('$__timeFilter');
+      expect(output.warnings[0]).toContain('$__filters');
+      expect(output.warnings[0]).toContain('$__sourceTable');
+      expect(output.warnings[0]).toContain('strongly recommended');
+    });
+
+    it('omits warnings when a raw SQL tile uses all recommended macros', async () => {
+      const connectionId = ctx.connection._id.toString();
+      const sourceId = ctx.traceSource._id.toString();
+      const result = await callTool(ctx.client!, 'clickstack_save_dashboard', {
+        name: 'SQL Dashboard with macros',
+        tiles: [
+          {
+            name: 'Macro SQL',
+            config: {
+              configType: 'sql',
+              displayType: 'table',
+              connectionId,
+              sourceId,
+              sqlTemplate:
+                'SELECT ServiceName, count() AS c FROM $__sourceTable ' +
+                'WHERE $__timeFilter(Timestamp) AND $__filters GROUP BY ServiceName LIMIT 10',
+            },
+          },
+        ],
+      });
+
+      expect(result.isError).toBeFalsy();
+      const output = JSON.parse(getFirstText(result));
+      expect(output.warnings).toBeUndefined();
+    });
+
+    it('flags a missing interval macro on a time-series raw SQL tile', async () => {
+      const connectionId = ctx.connection._id.toString();
+      const sourceId = ctx.traceSource._id.toString();
+      const result = await callTool(ctx.client!, 'clickstack_save_dashboard', {
+        name: 'SQL line tile without interval',
+        tiles: [
+          {
+            name: 'Line SQL',
+            config: {
+              configType: 'sql',
+              displayType: 'line',
+              connectionId,
+              sourceId,
+              // Has time-range + filters + source table, but buckets by a
+              // fixed minute instead of $__timeInterval, so granularity is
+              // ignored.
+              sqlTemplate:
+                'SELECT toStartOfMinute(Timestamp) AS ts, count() AS c FROM $__sourceTable ' +
+                'WHERE $__timeFilter(Timestamp) AND $__filters GROUP BY ts ORDER BY ts',
+            },
+          },
+        ],
+      });
+
+      expect(result.isError).toBeFalsy();
+      const output = JSON.parse(getFirstText(result));
+      expect(Array.isArray(output.warnings)).toBe(true);
+      expect(output.warnings).toHaveLength(1);
+      expect(output.warnings[0]).toContain('$__timeInterval');
+    });
+
+    it('returns a non-blocking warning when a raw SQL tile omits macros on update', async () => {
+      const connectionId = ctx.connection._id.toString();
+      const sourceId = ctx.traceSource._id.toString();
+
+      // Create with a well-formed builder tile (no warnings expected).
+      const createResult = await callTool(
+        ctx.client!,
+        'clickstack_save_dashboard',
+        {
+          name: 'Update to static SQL',
+          tiles: [
+            {
+              name: 'Builder Tile',
+              config: {
+                displayType: 'number',
+                sourceId,
+                select: [{ aggFn: 'count' }],
+              },
+            },
+          ],
+        },
+      );
+      const created = JSON.parse(getFirstText(createResult));
+      expect(created.warnings).toBeUndefined();
+
+      // Update, replacing the tile with a macro-less raw SQL tile.
+      const updateResult = await callTool(
+        ctx.client!,
+        'clickstack_save_dashboard',
+        {
+          id: created.id,
+          name: 'Update to static SQL',
+          tiles: [
+            {
+              name: 'Static SQL',
+              config: {
+                configType: 'sql',
+                displayType: 'table',
+                connectionId,
+                sqlTemplate: 'SELECT 1 AS value LIMIT 1',
+              },
+            },
+          ],
+        },
+      );
+
+      expect(updateResult.isError).toBeFalsy();
+      const updated = JSON.parse(getFirstText(updateResult));
+      expect(updated.id).toBe(created.id);
+      expect(Array.isArray(updated.warnings)).toBe(true);
+      expect(updated.warnings[0]).toContain('Static SQL');
     });
   });
 
