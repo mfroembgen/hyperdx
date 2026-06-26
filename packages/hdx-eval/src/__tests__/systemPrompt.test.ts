@@ -48,10 +48,12 @@ describe('buildSystemPrompt', () => {
 
   it('uses custom system prompt for dashboard scenarios', () => {
     const p = buildSystemPrompt(getScenario('dashboard-build'));
-    expect(p).toContain('building observability dashboards');
-    expect(p).toContain('CRITICAL WORKFLOW');
-    expect(p).toContain('clickstack_save_dashboard');
+    expect(p).toContain('building');
+    expect(p).toContain('dashboards');
+    expect(p).toContain('TURN BUDGET');
     // Should NOT contain investigation-specific content
     expect(p).not.toContain("What's not the cause");
+    // Should be minimal — no workflow coaching or tool-specific instructions
+    expect(p.length).toBeLessThan(500);
   });
 });
