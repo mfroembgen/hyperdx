@@ -1,0 +1,126 @@
+name: Publish fork production image
+
+on:
+  push:
+    branches: [fork/ghcr-image]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fork-production-image
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/mfroembgen/hyperdx
+  SOURCE_SHA: 738cb2a1b090866e8b757719659b0427351bd4ce
+  VERSION: 2.42.0
+
+jobs:
+  build:
+    if: github.repository == 'mfroembgen/hyperdx'
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - name: Verify source and version
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test "$(node -p "require('./packages/api/package.json').version")" = "$VERSION"
+          test "$(node -p "require('./packages/app/package.json').version")" = "$VERSION"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push native image by digest
+        id: image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/hyperdx/Dockerfile
+          target: prod
+          platforms: linux/${{ matrix.arch }}
+          build-contexts: |
+            hyperdx=./docker/hyperdx
+            api=./packages/api
+            app=./packages/app
+          build-args: CODE_VERSION=${{ env.SOURCE_SHA }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/mfroembgen/hyperdx
+            org.opencontainers.image.revision=${{ env.SOURCE_SHA }}
+            org.opencontainers.image.version=${{ env.VERSION }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          sbom: true
+          provenance: true
+          cache-from: type=gha,scope=fork-prod-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=fork-prod-${{ matrix.arch }}
+      - name: Export digest
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: digest-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    if: github.repository == 'mfroembgen/hyperdx'
+    needs: build
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digest-*
+          merge-multiple: true
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish version manifest
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          if docker buildx imagetools inspect "$IMAGE:$VERSION" >"$RUNNER_TEMP/tag-check.log" 2>&1; then
+            echo "Refusing to overwrite existing $IMAGE:$VERSION" >&2
+            exit 1
+          fi
+          error=$(cat "$RUNNER_TEMP/tag-check.log")
+          case "$error" in
+            *'manifest unknown'*|*'not found'*|*'404 Not Found'*) ;;
+            *) printf '%s\n' "$error" >&2; exit 1 ;;
+          esac
+          refs=()
+          for digest in *; do
+            [[ "$digest" =~ ^[a-f0-9]{64}$ ]]
+            refs+=("$IMAGE@sha256:$digest")
+          done
+          test "${#refs[@]}" -eq 2
+          docker buildx imagetools create --tag "$IMAGE:$VERSION" "${refs[@]}"
+          docker buildx imagetools inspect "$IMAGE:$VERSION"
