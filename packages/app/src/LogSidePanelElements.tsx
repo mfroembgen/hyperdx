@@ -4,6 +4,8 @@ import { Group, Kbd, Modal, Stack, Text } from '@mantine/core';
 import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import { ColumnDef } from '@tanstack/react-table';
 
+import type { AppTableFeatures } from '@/tableFeatures';
+
 import HyperJson from './components/HyperJson';
 import type { HttpHeader } from './utils/httpHeaders';
 import { UNDEFINED_WIDTH } from './tableUtils';
@@ -52,7 +54,7 @@ export const SectionWrapper: React.FC<
 /**
  * Request / Response Headers elements
  */
-export const headerColumns: ColumnDef<HttpHeader>[] = [
+export const headerColumns: ColumnDef<AppTableFeatures, HttpHeader>[] = [
   {
     accessorKey: 'name',
     header: 'Header',

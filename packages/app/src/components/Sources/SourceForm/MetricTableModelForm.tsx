@@ -1,6 +1,11 @@
 import { useEffect, useRef } from 'react';
+import type { FieldPath } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
-import { MetricsDataType, SourceKind } from '@hyperdx/common-utils/dist/types';
+import {
+  MetricsDataType,
+  SourceKind,
+  type TSource,
+} from '@hyperdx/common-utils/dist/types';
 import { Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 
@@ -197,6 +202,7 @@ export function MetricTableModelForm({
     lastAutofillKeyRef.current = key;
 
     let cancelled = false;
+    let completed = false;
 
     (async () => {
       // Validate each candidate before setting it, so we never show a
@@ -240,6 +246,7 @@ export function MetricTableModelForm({
         setValue(path as any, tableName, { shouldDirty: true });
       }
 
+      completed = true;
       notifications.show({
         color: 'green',
         message: 'Auto-detected metric tables from database.',
@@ -248,6 +255,9 @@ export function MetricTableModelForm({
 
     return () => {
       cancelled = true;
+      if (!completed && lastAutofillKeyRef.current === key) {
+        lastAutofillKeyRef.current = '';
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -280,7 +290,9 @@ export function MetricTableModelForm({
               connectionId={connectionId}
               database={databaseName}
               control={control}
-              name={`metricTables.${metricType.toLowerCase()}`}
+              name={
+                `metricTables.${metricType.toLowerCase()}` as FieldPath<TSource>
+              }
             />
           </FormRow>
         ))}

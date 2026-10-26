@@ -1,14 +1,15 @@
 import { buildLogComment } from '@hyperdx/common-utils/dist/clickhouse';
 import http from 'http';
+import { vi } from 'vitest';
 import { gzipSync } from 'zlib';
 
 import { getLoggedInAgent, getServer } from '@/fixtures';
 import Connection from '@/models/connection';
 import logger from '@/utils/logger';
 
-// Use the real proxy instead of the blanket mock in jest.setup.ts; the int
-// jest config transpiles it (see jest.int.config.js).
-jest.unmock('http-proxy-middleware');
+// Use the real proxy instead of the blanket mock in vi.setup.ts; the int
+// vi config transpiles it (see vi.int.config.js).
+vi.unmock('http-proxy-middleware');
 
 type CapturedRequest = {
   method: string | undefined;
@@ -343,7 +344,7 @@ describe('clickhouse-proxy forwarding', () => {
     ]);
     expect(Buffer.byteLength(body)).toBeGreaterThan(4096);
 
-    const loggerError = jest.spyOn(logger, 'error');
+    const loggerError = vi.spyOn(logger, 'error');
     try {
       await agent
         .post('/clickhouse-proxy/?query_id=test-multipart')

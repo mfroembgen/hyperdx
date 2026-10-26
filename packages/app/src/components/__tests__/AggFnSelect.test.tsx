@@ -1,5 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { vi } from 'vitest';
 import { MetricsDataType } from '@hyperdx/common-utils/dist/types';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -11,7 +12,7 @@ import {
 } from '@/components/AggFnSelect';
 
 // Mantine's Combobox calls scrollIntoView when its dropdown opens; jsdom lacks it.
-window.HTMLElement.prototype.scrollIntoView = jest.fn();
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 function Harness({
   metricType,

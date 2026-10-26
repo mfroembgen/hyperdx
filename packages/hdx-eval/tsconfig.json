@@ -9,7 +9,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["jest", "node"],
+    "types": ["vitest/globals", "node"],
     "outDir": "dist",
     "rootDir": "src",
     "declaration": true,

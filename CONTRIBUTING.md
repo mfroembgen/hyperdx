@@ -105,7 +105,7 @@ and time range in the URL — and that's most of the repro.
 quickest way is the frontend in local mode, which needs no Docker and no
 account:
 
-1. Run `yarn app:dev:local` and open the app URL it prints.
+1. Run `bun run app:dev:local` and open the app URL it prints.
 2. On the onboarding screen, click **Connect to Demo Server**. This adds a
    `Demo` connection and the Demo Logs, Traces, Metrics and Sessions sources,
    the same data play.hyperdx.io uses. Connections and sources live in browser
@@ -118,7 +118,7 @@ follow the same steps there.
 
 Local mode has no API behind it (dashboards and saved searches are kept in local
 storage), so it can't reproduce anything involving alerts, webhooks, auth,
-teams, or the API itself. For those, use the full stack (`yarn dev`, see
+teams, or the API itself. For those, use the full stack (`bun run dev`, see
 [Development](#development)). It sets up a `Local ClickHouse` connection and
 sources for every new team, so onboarding skips the demo server button. To
 point it at the demo data instead, add a connection in **Team Settings** with
@@ -134,8 +134,8 @@ sensitive.
 
 **What good steps look like:**
 
-- Start from a known place: play.hyperdx.io, `yarn app:dev:local` connected to
-  the demo server, or a fresh `yarn dev` (say which).
+- Start from a known place: play.hyperdx.io, `bun run app:dev:local` connected to
+  the demo server, or a fresh `bun run dev` (say which).
 - Number each step and name the UI element you interact with by its visible
   text: "Open **Search**, pick the **Demo Logs** source, set the time range to
   **Last 15 minutes**, type `SeverityText:error` and press Enter."
@@ -179,37 +179,36 @@ Service Descriptions:
   OpAMP supervisor that dynamically pulls configuration from HyperDX API.
 - ClickHouse (ch-server): ClickHouse database, stores all telemetry.
 - MongoDB (db): Stores user/saved search/alert/dashboard data.
-- HyperDX API (api): Node.js API, executes ClickHouse queries on behalf of the
+- HyperDX API (api): Bun API, executes ClickHouse queries on behalf of the
   frontend and serves the frontend. serves the frontend. Can also run alert
   checker.
-- HyperDX UI (app): Next.js frontend, serves the UI.
+- HyperDX UI (app): Vinext/Vite frontend, serves the UI.
 
 ## Development
 
 Pre-requisites:
 
-- Docker
-- Node.js (`>=22`)
-- Yarn (v4)
+- Mise (run `mise install` for the pinned Bun runtime)
+- Apple container on macOS, or Docker Compose on Linux
 
 You can get started by deploying a complete development stack in dev mode.
 
 ```bash
-yarn dev
+bun run dev
 ```
 
-This will start the Node.js API, Next.js frontend locally and the OpenTelemetry
-collector and ClickHouse server in Docker.
+This starts the Bun API and Vinext/Vite frontend locally, with MongoDB,
+ClickHouse and the OpenTelemetry Collector in containers.
 
 Each worktree automatically gets unique ports so multiple developers (or agents)
-can run `yarn dev` simultaneously without conflicts. A dev portal at
+can run `bun run dev` simultaneously without conflicts. A dev portal at
 http://localhost:9900 auto-starts and shows all running stacks with their
 assigned ports. Check the portal to find the URL for your instance.
 
 To stop the stack:
 
 ```bash
-yarn dev:down
+bun run dev:down
 ```
 
 To enable self-instrumentation and demo logs, you can set the `HYPERDX_API_KEY`
@@ -222,7 +221,7 @@ following:
 HYPERDX_API_KEY=<YOUR_INGESTION_API_KEY_HERE>
 ```
 
-Then restart the stack using `yarn dev`.
+Then restart the stack using `bun run dev`.
 
 The core services are all hot-reloaded, so you can make changes to the code and
 see them reflected in real-time.
@@ -288,7 +287,7 @@ To run unit tests or update snapshots, you can go to the package you want (ex.
 common-utils) to test and run:
 
 ```bash
-yarn dev:unit
+bun run dev:unit
 ```
 
 ### Mutation Tests
@@ -302,13 +301,13 @@ Set up in `common-utils` only for now. From `packages/common-utils`:
 
 ```bash
 # The file you're working on — seconds to a couple of minutes
-yarn dev:mutation --mutate src/filters.ts
+bun run dev:mutation --mutate src/filters.ts
 
 # Everything you've changed off main
-yarn dev:mutation --mutate "$(git diff --name-only --diff-filter=d --relative origin/main... -- 'src/**/*.ts' | grep -v __tests__ | paste -sd, -)"
+bun run dev:mutation --mutate "$(git diff --name-only --diff-filter=d --relative origin/main... -- 'src/**/*.ts' | grep -v __tests__ | paste -sd, -)"
 
 # The whole package (slow — tens of minutes)
-yarn dev:mutation
+bun run dev:mutation
 ```
 
 Scope it to what you're working on. Runs are roughly linear in mutants, and the

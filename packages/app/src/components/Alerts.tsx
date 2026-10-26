@@ -54,8 +54,7 @@ export const AlertChannelForm = <T extends FieldValues>({
   // `fields` holds the values from the last render, so watch for the live ones
   // the duplicate check (and the per-row type discriminant below) need.
   const channels = useWatch({ control, name: channelsName }) as
-    | { type?: string | null; webhookId?: string }[]
-    | undefined;
+    { type?: string | null; webhookId?: string }[] | undefined;
   const { refetch: refetchWebhooks } = useAlertWebhooks();
   const [opened, { open, close }] = useDisclosure(false);
 

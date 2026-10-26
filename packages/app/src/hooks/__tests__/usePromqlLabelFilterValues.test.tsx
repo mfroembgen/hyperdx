@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import {
   ChartVariable,
   PromqlLabelDashboardFilter,
@@ -10,15 +11,15 @@ import { renderHook, waitFor } from '@testing-library/react';
 
 import { usePromqlLabelFilterValues } from '@/hooks/usePromqlLabelFilterValues';
 
-const mockLabelValues = jest.fn();
+const mockLabelValues = vi.fn();
 let mockSourcesData: Partial<TSource>[];
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   prometheusApi: {
     labelValues: (...args: unknown[]) => mockLabelValues(...args),
   },
 }));
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   useSources: () => ({ data: mockSourcesData, isLoading: false }),
 }));
 

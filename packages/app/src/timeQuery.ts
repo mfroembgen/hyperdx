@@ -395,7 +395,7 @@ export type UseTimeQueryReturnType = {
   displayedTimeInputValue: string;
   setDisplayedTimeInputValue: Dispatch<SetStateAction<string>>;
   searchedTimeRange: DateRange['dateRange'];
-  onSearch: (timeQuery: string) => void;
+  onSearch: (timeQuery: string, history?: 'push' | 'replace') => void;
   onTimeRangeSelect: (
     start: Date,
     end: Date,
@@ -432,13 +432,13 @@ export function useNewTimeQuery({
 
   const [
     deprecatedDisplayedTimeInputValue,
-    deprecatedSetDisplayedTimeInputValue,
+    setDeprecatedDisplayedTimeInputValue,
   ] = useState<string>(() => {
     return initialDisplayValue ?? dateRangeToString(initialTimeRange, timeZone);
   });
 
   const _setDisplayedTimeInputValue =
-    setDisplayedTimeInputValue ?? deprecatedSetDisplayedTimeInputValue;
+    setDisplayedTimeInputValue ?? setDeprecatedDisplayedTimeInputValue;
 
   const [{ from, to }, setTimeRangeQuery] = useQueryStates(
     timeRangeQueryStateMap,
@@ -454,11 +454,14 @@ export function useNewTimeQuery({
   );
 
   const onSearch = useCallback(
-    (timeQuery: string) => {
+    (timeQuery: string, history?: 'push' | 'replace') => {
       const [start, end] = parseTimeQuery(timeQuery, timeZone);
       // TODO: Add validation UI
       if (start != null && end != null) {
-        setTimeRangeQuery({ from: start.getTime(), to: end.getTime() });
+        setTimeRangeQuery(
+          { from: start.getTime(), to: end.getTime() },
+          { history },
+        );
       }
     },
     [timeZone, setTimeRangeQuery],

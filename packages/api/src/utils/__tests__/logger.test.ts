@@ -63,10 +63,10 @@ describe('logger redaction', () => {
 
   it('leaves non-credential headers intact', () => {
     const out = logAndCapture({
-      req: { headers: { 'user-agent': 'jest', authorization: 'Bearer x' } },
+      req: { headers: { 'user-agent': 'vi', authorization: 'Bearer x' } },
     });
 
-    expect(out).toContain('jest');
+    expect(out).toContain('vi');
   });
 });
 
@@ -178,7 +178,7 @@ describe('production log line', () => {
     req.headers = {
       authorization: 'Bearer super-secret-key',
       cookie: 'connect.sid=secret-session',
-      'user-agent': 'jest',
+      'user-agent': 'vi',
     };
 
     const out = captureRequestLog(req);
@@ -189,7 +189,7 @@ describe('production log line', () => {
     expect(out).not.toContain('super-secret-token');
     expect(out).toContain('[REDACTED]');
     // Still a useful log line: the non-credential parts survive.
-    expect(out).toContain('jest');
+    expect(out).toContain('vi');
     expect(out).toContain('203.0.113.7');
   });
 });

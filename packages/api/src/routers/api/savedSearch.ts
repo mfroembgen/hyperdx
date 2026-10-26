@@ -15,6 +15,7 @@ import {
   updateSavedSearch,
 } from '@/controllers/savedSearch';
 import { getNonNullUserWithTeam } from '@/middleware/auth';
+import { sendJson } from '@/utils/serialization';
 import { objectIdSchema } from '@/utils/zod';
 
 const router = express.Router();
@@ -27,7 +28,7 @@ router.get('/', async (req, res: SavedSearchListExpRes, next) => {
 
     const savedSearches = await getSavedSearches(teamId.toString());
 
-    return res.json(savedSearches);
+    return sendJson(res, savedSearches);
   } catch (e) {
     next(e);
   }

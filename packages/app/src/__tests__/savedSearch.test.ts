@@ -1,10 +1,11 @@
-jest.mock('../api', () => ({
+import { vi } from 'vitest';
+vi.mock('../api', () => ({
   __esModule: true,
   default: {},
-  hdxServer: jest.fn(),
-  useInvalidateTags: () => jest.fn(),
+  hdxServer: vi.fn(),
+  useInvalidateTags: () => vi.fn(),
 }));
-jest.mock('../config', () => ({
+vi.mock('../config', () => ({
   IS_LOCAL_MODE: true,
   HDX_LOCAL_DEFAULT_SOURCES: null,
 }));

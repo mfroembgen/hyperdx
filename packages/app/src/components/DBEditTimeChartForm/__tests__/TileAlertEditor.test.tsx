@@ -1,4 +1,5 @@
 import { useForm } from 'react-hook-form';
+import { vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -7,7 +8,7 @@ import { ChartEditorFormState } from '@/components/ChartEditor/types';
 import { TileAlertEditor } from '@/components/DBEditTimeChartForm/TileAlertEditor';
 import { DEFAULT_TILE_ALERT } from '@/utils/alerts';
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useAlert: () => ({ data: undefined }),
@@ -16,34 +17,34 @@ jest.mock('@/api', () => ({
       data: undefined,
       isLoading: false,
       isError: false,
-      refetch: jest.fn(),
+      refetch: vi.fn(),
     }),
   },
 }));
 
 // Only used to look up the dashboard name, which these tests don't assert.
-jest.mock('@/dashboard', () => ({
+vi.mock('@/dashboard', () => ({
   __esModule: true,
   useDashboards: () => ({ data: undefined }),
 }));
 
 // Heavy children that don't participate in the panel behavior.
-jest.mock('@/components/Alerts', () => ({
+vi.mock('@/components/Alerts', () => ({
   __esModule: true,
   AlertChannelForm: () => <div data-testid="alert-channel-form" />,
 }));
-jest.mock('@/components/alerts/AlertHistoryCards', () => ({
+vi.mock('@/components/alerts/AlertHistoryCards', () => ({
   __esModule: true,
   AlertHistoryCardList: () => null,
 }));
-jest.mock('@/components/alerts/AckAlert', () => ({
+vi.mock('@/components/alerts/AckAlert', () => ({
   __esModule: true,
   AckAlert: () => null,
 }));
 
-// The `mock` prefix is required for a jest.mock factory to close over it.
-const mockConfirm = jest.fn();
-jest.mock('@/useConfirm', () => ({ useConfirm: () => mockConfirm }));
+// The `mock` prefix is required for a vi.mock factory to close over it.
+const mockConfirm = vi.fn();
+vi.mock('@/useConfirm', () => ({ useConfirm: () => mockConfirm }));
 
 const noop = () => {};
 
@@ -96,7 +97,7 @@ describe('TileAlertEditor in the alert panel', () => {
   // Reverting is the layout owner's job (EditTimeChartForm restores its
   // snapshot), so closing only has to hand over to it.
   it('cancels the panel changes through the layout when closed', () => {
-    const onCancel = jest.fn();
+    const onCancel = vi.fn();
     renderWithMantine(
       <AlertPanelLayout defaultOpened onCancel={onCancel}>
         <Harness />
@@ -119,11 +120,13 @@ describe('TileAlertEditor in the alert panel', () => {
 });
 
 describe('TileAlertEditor remove control', () => {
-  beforeEach(() => mockConfirm.mockReset());
+  beforeEach(() => {
+    mockConfirm.mockReset();
+  });
 
   it('removes the alert once the removal is confirmed', async () => {
     mockConfirm.mockResolvedValue(true);
-    const onRemove = jest.fn();
+    const onRemove = vi.fn();
     renderWithMantine(<Harness onRemove={onRemove} />);
 
     await userEvent.click(screen.getByTestId('remove-alert-button'));
@@ -136,7 +139,7 @@ describe('TileAlertEditor remove control', () => {
 
   it('keeps the alert when the removal is cancelled', async () => {
     mockConfirm.mockResolvedValue(false);
-    const onRemove = jest.fn();
+    const onRemove = vi.fn();
     renderWithMantine(<Harness onRemove={onRemove} />);
 
     await userEvent.click(screen.getByTestId('remove-alert-button'));

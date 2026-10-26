@@ -132,7 +132,7 @@ export function WebhookForm({
             ? JSON.stringify(webhook.headers, null, 2)
             : '',
         },
-        {},
+        { keepFieldsRef: true },
       );
     }
   }, [webhook, form]);

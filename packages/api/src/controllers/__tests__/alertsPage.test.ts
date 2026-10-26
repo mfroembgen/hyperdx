@@ -68,7 +68,7 @@ describe('alertsPageQuerySchema', () => {
       limit: '2',
       tag: ['prod', 'web'],
       source: 'tile',
-      state: 'OK',
+      state: AlertState.OK,
       search: ' errors ',
       createdBy: ALERT_ID,
     });

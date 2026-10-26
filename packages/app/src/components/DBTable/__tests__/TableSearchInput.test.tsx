@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -161,15 +162,15 @@ describe('highlightText', () => {
 describe('TableSearchInput', () => {
   const defaultProps = {
     searchQuery: '',
-    onSearchChange: jest.fn(),
+    onSearchChange: vi.fn(),
     matchIndices: [],
     currentMatchIndex: 0,
-    onPreviousMatch: jest.fn(),
-    onNextMatch: jest.fn(),
+    onPreviousMatch: vi.fn(),
+    onNextMatch: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('visibility', () => {
@@ -200,7 +201,7 @@ describe('TableSearchInput', () => {
     });
 
     it('should call onVisibilityChange when close button is clicked', async () => {
-      const onVisibilityChange = jest.fn();
+      const onVisibilityChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -232,7 +233,7 @@ describe('TableSearchInput', () => {
     });
 
     it('should call onSearchChange when typing', async () => {
-      const onSearchChange = jest.fn();
+      const onSearchChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -270,7 +271,7 @@ describe('TableSearchInput', () => {
     });
 
     it('should clear search when clear button is clicked', async () => {
-      const onSearchChange = jest.fn();
+      const onSearchChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -391,7 +392,7 @@ describe('TableSearchInput', () => {
     });
 
     it('should call onPreviousMatch when previous button clicked', async () => {
-      const onPreviousMatch = jest.fn();
+      const onPreviousMatch = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -412,7 +413,7 @@ describe('TableSearchInput', () => {
     });
 
     it('should call onNextMatch when next button clicked', async () => {
-      const onNextMatch = jest.fn();
+      const onNextMatch = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -435,7 +436,7 @@ describe('TableSearchInput', () => {
 
   describe('keyboard shortcuts', () => {
     it('should call onNextMatch when Enter is pressed', async () => {
-      const onNextMatch = jest.fn();
+      const onNextMatch = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -456,7 +457,7 @@ describe('TableSearchInput', () => {
     });
 
     it('should call onPreviousMatch when Shift+Enter is pressed', async () => {
-      const onPreviousMatch = jest.fn();
+      const onPreviousMatch = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -477,7 +478,7 @@ describe('TableSearchInput', () => {
     });
 
     it('should not navigate when Enter is pressed with no matches', async () => {
-      const onNextMatch = jest.fn();
+      const onNextMatch = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -498,7 +499,7 @@ describe('TableSearchInput', () => {
     });
 
     it('should open search on Cmd+F', async () => {
-      const onVisibilityChange = jest.fn();
+      const onVisibilityChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -518,7 +519,7 @@ describe('TableSearchInput', () => {
     });
 
     it('should open search on Ctrl+F', async () => {
-      const onVisibilityChange = jest.fn();
+      const onVisibilityChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -538,8 +539,8 @@ describe('TableSearchInput', () => {
     });
 
     it('should close search on Escape when visible', async () => {
-      const onVisibilityChange = jest.fn();
-      const onSearchChange = jest.fn();
+      const onVisibilityChange = vi.fn();
+      const onSearchChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -705,9 +706,9 @@ describe('TableSearchInput', () => {
 
   describe('integration scenarios', () => {
     it('should support full search workflow', async () => {
-      const onSearchChange = jest.fn();
-      const onNextMatch = jest.fn();
-      const onPreviousMatch = jest.fn();
+      const onSearchChange = vi.fn();
+      const onNextMatch = vi.fn();
+      const onPreviousMatch = vi.fn();
       const user = userEvent.setup();
 
       // Render with search results
@@ -802,13 +803,13 @@ describe('TableSearchMatchIndicator', () => {
     matchIndices: [],
     currentMatchIndex: 0,
     dedupedRows: mockDedupedRows,
-    tableRows: mockTableRows as any[],
+    tableRows: mockTableRows,
     getRowId,
-    onMatchClick: jest.fn(),
+    onMatchClick: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('visibility conditions', () => {
@@ -1061,7 +1062,7 @@ describe('TableSearchMatchIndicator', () => {
 
   describe('click interactions', () => {
     it('should call onMatchClick when indicator is clicked', async () => {
-      const onMatchClick = jest.fn();
+      const onMatchClick = vi.fn();
       const user = userEvent.setup();
 
       const { container } = renderWithMantine(
@@ -1074,13 +1075,13 @@ describe('TableSearchMatchIndicator', () => {
       );
 
       const indicators = container.querySelectorAll('[title*="Match"]');
-      await user.click(indicators[0] as HTMLElement);
+      await user.click(indicators[0]);
 
       expect(onMatchClick).toHaveBeenCalledWith(0);
     });
 
     it('should call onMatchClick with correct index for different matches', async () => {
-      const onMatchClick = jest.fn();
+      const onMatchClick = vi.fn();
       const user = userEvent.setup();
 
       const { container } = renderWithMantine(
@@ -1095,11 +1096,11 @@ describe('TableSearchMatchIndicator', () => {
       const indicators = container.querySelectorAll('[title*="Match"]');
 
       // Click second indicator
-      await user.click(indicators[1] as HTMLElement);
+      await user.click(indicators[1]);
       expect(onMatchClick).toHaveBeenCalledWith(1);
 
       // Click third indicator
-      await user.click(indicators[2] as HTMLElement);
+      await user.click(indicators[2]);
       expect(onMatchClick).toHaveBeenCalledWith(2);
     });
 
@@ -1174,7 +1175,7 @@ describe('TableSearchMatchIndicator', () => {
           searchQuery="test"
           matchIndices={largeMatchIndices}
           dedupedRows={largeDedupedRows}
-          tableRows={largeTableRows as any[]}
+          tableRows={largeTableRows}
         />,
       );
 
@@ -1282,7 +1283,7 @@ describe('TableSearchMatchIndicator', () => {
           searchQuery="middleware"
           matchIndices={[5, 6]}
           dedupedRows={extendedRows}
-          tableRows={extendedTableRows as any[]}
+          tableRows={extendedTableRows}
           currentMatchIndex={0}
         />,
       );

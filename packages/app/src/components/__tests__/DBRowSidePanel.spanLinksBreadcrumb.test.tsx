@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { TSource } from '@hyperdx/common-utils/dist/types';
 import { MantineProvider } from '@mantine/core';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -8,9 +9,12 @@ import { fireEvent, render, screen } from '@testing-library/react';
 // the new source frame (the shared drawer stack behaves as it does in the app).
 // This is what lets us observe the breadcrumb label resolve after the hop
 // loads, which the sibling push-wiring test cannot do (it mocks the setters).
-jest.mock('nuqs', () => {
-  const actualReact = jest.requireActual('react');
-  const actual = jest.requireActual('nuqs');
+vi.mock('nuqs', async () => {
+  const actualModule0 = await vi.importActual<typeof import('react')>('react');
+  const actualModule1 = await vi.importActual<typeof import('nuqs')>('nuqs');
+
+  const actualReact = actualModule0;
+  const actual = actualModule1;
   return {
     ...actual,
     useQueryState: (_key: string, parser?: { defaultValue?: unknown }) => {
@@ -35,8 +39,8 @@ const LINK = {
 const ROOT_SPAN_NAME = 'POST /api/checkout';
 const LINKED_SPAN_NAME = 'consume order.created';
 
-const mockUseRowData = jest.fn();
-jest.mock('../DBRowDataPanel', () => ({
+const mockUseRowData = vi.fn();
+vi.mock('../DBRowDataPanel', () => ({
   __esModule: true,
 
   useRowData: (args: unknown) => mockUseRowData(args),
@@ -59,7 +63,7 @@ const TRACE_SOURCE = {
   spanIdExpression: 'SpanId',
 };
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   __esModule: true,
   getEventBody: () => undefined,
 
@@ -67,14 +71,14 @@ jest.mock('@/source', () => ({
     id === 'trace-src' ? { data: TRACE_SOURCE } : { data: undefined },
 }));
 
-jest.mock('../DBSessionPanel', () => ({
+vi.mock('../DBSessionPanel', () => ({
   __esModule: true,
 
   useSessionId: () => ({ rumSessionId: undefined, rumServiceName: undefined }),
   DBSessionPanel: () => null,
 }));
 
-jest.mock('@/utils/highlightedAttributes', () => ({
+vi.mock('@/utils/highlightedAttributes', () => ({
   __esModule: true,
   getHighlightedAttributesFromData: () => [],
 }));
@@ -82,32 +86,32 @@ jest.mock('@/utils/highlightedAttributes', () => ({
 // Trace tab content is irrelevant here; only the breadcrumb bar is asserted.
 // SidePanelBreadcrumbs is intentionally NOT mocked so its rendered labels can
 // be read.
-jest.mock('../DBTracePanel', () => ({ __esModule: true, default: () => null }));
-jest.mock('../ContextSidePanel', () => ({
+vi.mock('../DBTracePanel', () => ({ __esModule: true, default: () => null }));
+vi.mock('../ContextSidePanel', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../DBInfraPanel', () => ({ __esModule: true, default: () => null }));
-jest.mock('../DBRowSidePanelErrorState', () => ({
+vi.mock('../DBInfraPanel', () => ({ __esModule: true, default: () => null }));
+vi.mock('../DBRowSidePanelErrorState', () => ({
   __esModule: true,
   DBRowSidePanelErrorState: () => null,
 }));
-jest.mock('../DBRowSidePanelHeader', () => ({
+vi.mock('../DBRowSidePanelHeader', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../LogLevel', () => ({ __esModule: true, default: () => null }));
-jest.mock('../ServiceMap/ServiceMapSidePanel', () => ({
+vi.mock('../LogLevel', () => ({ __esModule: true, default: () => null }));
+vi.mock('../ServiceMap/ServiceMapSidePanel', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../TimelineChart/utils', () => ({
+vi.mock('../TimelineChart/utils', () => ({
   __esModule: true,
   renderMs: () => '',
 }));
 // The linked-span lookups issue real queries through useQueriedChartConfig,
 // whose providers this harness doesn't set up.
-jest.mock('../linkedSpans', () => ({
+vi.mock('../linkedSpans', () => ({
   __esModule: true,
   useReverseSpanLinks: () => ({ links: [], isLoading: false, error: null }),
   useLinkedSpanDetails: () => ({
@@ -118,21 +122,21 @@ jest.mock('../linkedSpans', () => ({
   linkedSpanKey: (traceId: string, spanId: string) => `${traceId}:${spanId}`,
   LinkedSpanMetaLine: () => null,
 }));
-jest.mock('../SpanLinkedFromSubpanel', () => ({
+vi.mock('../SpanLinkedFromSubpanel', () => ({
   __esModule: true,
   SpanLinkedFromSubpanel: () => null,
 }));
-jest.mock('../DrawerUtils', () => ({
+vi.mock('../DrawerUtils', () => ({
   __esModule: true,
   DrawerFullWidthToggle: () => null,
   INITIAL_DRAWER_WIDTH_PERCENT: 50,
 }));
-jest.mock('@/LogSidePanelElements', () => ({
+vi.mock('@/LogSidePanelElements', () => ({
   __esModule: true,
   KeyboardShortcutsModal: () => null,
 }));
-jest.mock('@/TabBar', () => ({ __esModule: true, default: () => null }));
-jest.mock('@/useFormatTime', () => ({
+vi.mock('@/TabBar', () => ({ __esModule: true, default: () => null }));
+vi.mock('@/useFormatTime', () => ({
   __esModule: true,
   FormatTime: () => null,
 }));
@@ -156,7 +160,7 @@ function InnerHarness({ rowId }: { rowId: string }) {
       source={ROOT_SOURCE}
       rowId={rowId}
       aliasWith={[]}
-      onClose={jest.fn()}
+      onClose={vi.fn()}
       sidePanelStack={sidePanelStack}
     />
   );

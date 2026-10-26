@@ -25,6 +25,7 @@ import {
   mcpQuantileLevelSchema,
 } from '@/mcp/tools/query/schemas';
 import { QUERYABLE_METRIC_KINDS } from '@/mcp/tools/sources/metricKinds';
+import { mcpUnionErrorMap } from '@/mcp/utils/errors';
 import { objectIdSchema, tagsSchema } from '@/utils/zod';
 
 /**
@@ -1272,21 +1273,24 @@ GROUP BY ServiceName, ts
     .describe('Raw SQL tile query and display settings.'),
 });
 
-const mcpTileSchema = z.union([
-  mcpLineTileSchema,
-  mcpBarTileSchema,
-  mcpStackedLineTileSchema,
-  mcpTableTileSchema,
-  mcpNumberTileSchema,
-  mcpPieTileSchema,
-  mcpCategoricalBarTileSchema,
-  mcpHeatmapSeriesTileSchema,
-  mcpHeatmapTileSchema,
-  mcpSearchTileSchema,
-  mcpEventPatternsTileSchema,
-  mcpMarkdownTileSchema,
-  mcpSqlTileSchema,
-]);
+const mcpTileSchema = z.union(
+  [
+    mcpLineTileSchema,
+    mcpBarTileSchema,
+    mcpStackedLineTileSchema,
+    mcpTableTileSchema,
+    mcpNumberTileSchema,
+    mcpPieTileSchema,
+    mcpCategoricalBarTileSchema,
+    mcpHeatmapSeriesTileSchema,
+    mcpHeatmapTileSchema,
+    mcpSearchTileSchema,
+    mcpEventPatternsTileSchema,
+    mcpMarkdownTileSchema,
+    mcpSqlTileSchema,
+  ],
+  { errorMap: mcpUnionErrorMap },
+);
 
 // Layout schema without defaults for the patch tool: layout fields stay
 // truly `undefined` when omitted so the merge logic can fall back to the
@@ -1348,37 +1352,42 @@ const mcpPatchTileLayoutSchema = z.object({
 // Build the patch tile union by extending the default-free layout with
 // each tile type's config shape. We only need the `config` field from
 // each tile schema; the layout wrapper is replaced.
-const mcpPatchTileSchema = z.union([
-  mcpPatchTileLayoutSchema.extend({ config: mcpLineTileSchema.shape.config }),
-  mcpPatchTileLayoutSchema.extend({ config: mcpBarTileSchema.shape.config }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpStackedLineTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({ config: mcpTableTileSchema.shape.config }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpNumberTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({ config: mcpPieTileSchema.shape.config }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpCategoricalBarTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpHeatmapSeriesTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpHeatmapTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpSearchTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpEventPatternsTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpMarkdownTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({ config: mcpSqlTileSchema.shape.config }),
-]);
+const mcpPatchTileSchema = z.union(
+  [
+    mcpPatchTileLayoutSchema.extend({ config: mcpLineTileSchema.shape.config }),
+    mcpPatchTileLayoutSchema.extend({ config: mcpBarTileSchema.shape.config }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpStackedLineTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpTableTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpNumberTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({ config: mcpPieTileSchema.shape.config }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpCategoricalBarTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpHeatmapSeriesTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpHeatmapTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpSearchTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpEventPatternsTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpMarkdownTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({ config: mcpSqlTileSchema.shape.config }),
+  ],
+  { errorMap: mcpUnionErrorMap },
+);
 
 export const mcpTilesParam = z
   .array(mcpTileSchema)

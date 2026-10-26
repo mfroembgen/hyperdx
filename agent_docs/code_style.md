@@ -92,7 +92,7 @@ for the components listed under "Web Frontend Alignment" in
 `scripts/ci/ratchet.mjs` counts these so the total stays visible in CI. That
 count is advisory, not a gate: annotating a port never fails the build, and
 stripping the tag to go green hides the copy instead of removing it. Lower it by
-moving the shared code into `common-utils`, then run `yarn ratchet:update`.
+moving the shared code into `common-utils`, then run `bun run ratchet:update`.
 
 ## React Patterns
 

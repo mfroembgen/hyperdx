@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 
 import { ChartOverlayControls } from '@/components/charts/ChartOverlayControls';
@@ -16,7 +17,7 @@ describe('ChartOverlayControls', () => {
   });
 
   it('renders only "Show All Series" when only onClearSelection is provided', () => {
-    const onClearSelection = jest.fn();
+    const onClearSelection = vi.fn();
     renderWithMantine(
       <ChartOverlayControls onClearSelection={onClearSelection} />,
     );
@@ -32,7 +33,7 @@ describe('ChartOverlayControls', () => {
   });
 
   it('renders only "Reset zoom" when only onResetZoom is provided', () => {
-    const onResetZoom = jest.fn();
+    const onResetZoom = vi.fn();
     renderWithMantine(<ChartOverlayControls onResetZoom={onResetZoom} />);
 
     const button = screen.getByRole('button', { name: /Reset zoom/i });
@@ -47,10 +48,7 @@ describe('ChartOverlayControls', () => {
 
   it('renders both buttons when both handlers are provided', () => {
     renderWithMantine(
-      <ChartOverlayControls
-        onClearSelection={jest.fn()}
-        onResetZoom={jest.fn()}
-      />,
+      <ChartOverlayControls onClearSelection={vi.fn()} onResetZoom={vi.fn()} />,
     );
 
     expect(

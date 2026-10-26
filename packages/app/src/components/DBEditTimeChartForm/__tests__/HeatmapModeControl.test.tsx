@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -6,14 +7,14 @@ import { HeatmapModeControl } from '@/components/DBEditTimeChartForm/HeatmapMode
 describe('HeatmapModeControl', () => {
   it('offers no histogram mode by default', () => {
     renderWithMantine(
-      <HeatmapModeControl mode="distribution" onModeChange={jest.fn()} />,
+      <HeatmapModeControl mode="distribution" onModeChange={vi.fn()} />,
     );
     expect(screen.getByRole('radio', { name: 'Series' })).toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: 'Histogram' })).toBeNull();
   });
 
   it('offers and selects histogram mode when allowed', async () => {
-    const onModeChange = jest.fn();
+    const onModeChange = vi.fn();
     renderWithMantine(
       <HeatmapModeControl
         mode="distribution"
@@ -34,7 +35,7 @@ describe('HeatmapModeControl', () => {
       renderWithMantine(
         <HeatmapModeControl
           mode="distribution"
-          onModeChange={jest.fn()}
+          onModeChange={vi.fn()}
           allowHistogram={allowHistogram}
         />,
       );

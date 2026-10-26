@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import { fireEvent, render, screen } from '@testing-library/react';
 
@@ -20,17 +21,17 @@ function renderDashboardContainer(
     activeTabId: undefined,
     alertingTabIds: undefined,
     dragHandleProps: {},
-    onToggle: jest.fn(),
-    onToggleDefaultCollapsed: jest.fn(),
-    onToggleCollapsible: jest.fn(),
-    onToggleBordered: jest.fn(),
-    onDelete: jest.fn(),
-    onAddTile: jest.fn(),
-    onTabChange: jest.fn(),
-    onAddTab: jest.fn(),
-    onRenameTab: jest.fn(),
-    onDeleteTab: jest.fn(),
-    onRename: jest.fn(),
+    onToggle: vi.fn(),
+    onToggleDefaultCollapsed: vi.fn(),
+    onToggleCollapsible: vi.fn(),
+    onToggleBordered: vi.fn(),
+    onDelete: vi.fn(),
+    onAddTile: vi.fn(),
+    onTabChange: vi.fn(),
+    onAddTab: vi.fn(),
+    onRenameTab: vi.fn(),
+    onDeleteTab: vi.fn(),
+    onRename: vi.fn(),
     children: () => <div data-testid="group-children">Content</div>,
     ...props,
   };
@@ -72,7 +73,7 @@ describe('DashboardContainer', () => {
     });
 
     it('calls onToggle when chevron is clicked', () => {
-      const onToggle = jest.fn();
+      const onToggle = vi.fn();
       renderDashboardContainer({ onToggle });
       fireEvent.click(screen.getByTestId('group-chevron-g1'));
       expect(onToggle).toHaveBeenCalledTimes(1);
@@ -156,7 +157,7 @@ describe('DashboardContainer', () => {
     // so we test the negative case (items that should NOT be in the DOM).
     it('hides default-collapsed toggle when collapsible is false', () => {
       renderDashboardContainer({
-        onToggleDefaultCollapsed: jest.fn(),
+        onToggleDefaultCollapsed: vi.fn(),
         container: {
           id: 'g1',
           title: 'Test',
@@ -195,7 +196,7 @@ describe('DashboardContainer', () => {
           ],
         },
         activeTabId: 'tab-1',
-        onTabChange: jest.fn(),
+        onTabChange: vi.fn(),
       });
       expect(screen.getByRole('tab', { name: 'First' })).toBeInTheDocument();
       expect(screen.getByRole('tab', { name: 'Second' })).toBeInTheDocument();
@@ -227,11 +228,11 @@ describe('DashboardContainer', () => {
         ],
       },
       activeTabId: 'tab-1' as const,
-      onTabChange: jest.fn(),
+      onTabChange: vi.fn(),
     };
 
     it('opens delete modal when tab delete button is clicked', async () => {
-      const onDeleteTab = jest.fn();
+      const onDeleteTab = vi.fn();
       renderDashboardContainer({ onDeleteTab, ...twoTabProps });
 
       const firstTab = screen.getByRole('tab', { name: 'First' });
@@ -245,7 +246,7 @@ describe('DashboardContainer', () => {
     });
 
     it('calls onDeleteTab with "delete" when Delete Tab & Tiles is clicked', async () => {
-      const onDeleteTab = jest.fn();
+      const onDeleteTab = vi.fn();
       renderDashboardContainer({ onDeleteTab, ...twoTabProps });
 
       const firstTab = screen.getByRole('tab', { name: 'First' });
@@ -257,7 +258,7 @@ describe('DashboardContainer', () => {
     });
 
     it('calls onDeleteTab with "move" when Move Tiles is clicked', async () => {
-      const onDeleteTab = jest.fn();
+      const onDeleteTab = vi.fn();
       renderDashboardContainer({ onDeleteTab, ...twoTabProps });
 
       const firstTab = screen.getByRole('tab', { name: 'First' });
@@ -269,7 +270,7 @@ describe('DashboardContainer', () => {
     });
 
     it('does not call onDeleteTab when cancel is clicked', async () => {
-      const onDeleteTab = jest.fn();
+      const onDeleteTab = vi.fn();
       renderDashboardContainer({ onDeleteTab, ...twoTabProps });
 
       const firstTab = screen.getByRole('tab', { name: 'First' });
@@ -291,7 +292,7 @@ describe('DashboardContainer', () => {
 
     it('opens the delete modal when "Delete Group" menu item is clicked', async () => {
       renderDashboardContainer({
-        onDelete: jest.fn(),
+        onDelete: vi.fn(),
         tileCount: 2,
         container: baseContainer,
       });
@@ -304,7 +305,7 @@ describe('DashboardContainer', () => {
 
     it('offers Ungroup + Delete when tileCount > 0', async () => {
       renderDashboardContainer({
-        onDelete: jest.fn(),
+        onDelete: vi.fn(),
         tileCount: 3,
         container: baseContainer,
       });
@@ -319,7 +320,7 @@ describe('DashboardContainer', () => {
 
     it('hides Ungroup option when tileCount is 0', async () => {
       renderDashboardContainer({
-        onDelete: jest.fn(),
+        onDelete: vi.fn(),
         tileCount: 0,
         container: baseContainer,
       });
@@ -334,7 +335,7 @@ describe('DashboardContainer', () => {
     });
 
     it('calls onDelete with "ungroup" when Ungroup Tiles is clicked', async () => {
-      const onDelete = jest.fn();
+      const onDelete = vi.fn();
       renderDashboardContainer({
         onDelete,
         tileCount: 2,
@@ -347,7 +348,7 @@ describe('DashboardContainer', () => {
     });
 
     it('calls onDelete with "delete" when Delete Group & Tiles is clicked', async () => {
-      const onDelete = jest.fn();
+      const onDelete = vi.fn();
       renderDashboardContainer({
         onDelete,
         tileCount: 2,
@@ -360,7 +361,7 @@ describe('DashboardContainer', () => {
     });
 
     it('does not call onDelete when Cancel is clicked', async () => {
-      const onDelete = jest.fn();
+      const onDelete = vi.fn();
       renderDashboardContainer({
         onDelete,
         tileCount: 2,
@@ -449,7 +450,7 @@ describe('DashboardContainer', () => {
           ],
         },
         activeTabId: 'tab-1',
-        onTabChange: jest.fn(),
+        onTabChange: vi.fn(),
       });
       // The "Alerts" tab should have a dot, "Overview" should not
       const alertsTab = screen.getByRole('tab', { name: 'Alerts' });

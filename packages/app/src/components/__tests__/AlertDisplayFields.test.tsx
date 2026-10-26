@@ -1,4 +1,5 @@
 import { useForm } from 'react-hook-form';
+import { vi } from 'vitest';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -12,14 +13,14 @@ import { AlertDisplayFields } from '@/components/AlertDisplayFields';
 
 const TAGS = ['checkout', 'payments'];
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useTags: () => ({
       data: { data: TAGS },
       isLoading: false,
       isError: false,
-      refetch: jest.fn().mockResolvedValue({ data: { data: TAGS } }),
+      refetch: vi.fn().mockResolvedValue({ data: { data: TAGS } }),
     }),
   },
 }));
@@ -29,7 +30,7 @@ type FormValues = {
   tags?: string[] | null;
 };
 
-const submitted = jest.fn<void, [FormValues]>();
+const submitted = vi.fn<(values: FormValues) => void>();
 
 // The real caps, so the error rendering is tested against the messages the
 // alert forms actually produce.

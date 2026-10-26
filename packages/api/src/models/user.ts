@@ -20,9 +20,25 @@ export interface IUser {
   team: ObjectId;
 }
 
-export type UserDocument = mongoose.HydratedDocument<IUser>;
+interface UserVirtuals {
+  id: string;
+  hasPasswordAuth: boolean;
+}
+type UserModel = mongoose.Model<
+  IUser,
+  Record<string, never>,
+  Record<string, never>,
+  UserVirtuals
+>;
+export type UserDocument = mongoose.HydratedDocument<IUser, UserVirtuals>;
 
-const UserSchema = new Schema(
+const UserSchema = new Schema<
+  IUser,
+  UserModel,
+  Record<string, never>,
+  Record<string, never>,
+  UserVirtuals
+>(
   {
     name: String,
     email: {
@@ -69,4 +85,4 @@ UserSchema.plugin(passportLocalMongoose, {
 UserSchema.index({ email: 1 }, { unique: true });
 UserSchema.index({ accessKey: 1 }, { unique: true });
 
-export default mongoose.model<IUser>('User', UserSchema);
+export default mongoose.model<IUser, UserModel>('User', UserSchema);

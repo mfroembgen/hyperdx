@@ -8,11 +8,11 @@ import { createTeam } from '@/controllers/team';
 import { clearDBCollections, closeDB, connectDB, makeTile } from '@/fixtures';
 import Dashboard from '@/models/dashboard';
 import Team from '@/models/team';
+import ProvisionDashboardsTask from '@/tasks/provisionDashboards';
 import {
   readDashboardFiles,
   syncDashboards,
 } from '@/tasks/provisionDashboards';
-import ProvisionDashboardsTask from '@/tasks/provisionDashboards';
 import { TaskName } from '@/tasks/types';
 
 describe('provisionDashboards', () => {

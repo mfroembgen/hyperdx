@@ -1,4 +1,5 @@
 import type uPlot from 'uplot';
+import { type Mock, vi } from 'vitest';
 
 import {
   gridToPlotData,
@@ -18,7 +19,7 @@ function hover(
   cellKind: HeatmapCellKind = 'count',
   plotSize = { clientWidth: 200, clientHeight: 100 },
 ) {
-  const onPointHighlight = jest.fn();
+  const onPointHighlight = vi.fn();
   const plugin = highlightDataPlugin({
     margin: 20,
     cellKind,
@@ -45,7 +46,7 @@ function hover(
   return onPointHighlight;
 }
 
-const reported = (onPointHighlight: jest.Mock) =>
+const reported = (onPointHighlight: Mock) =>
   onPointHighlight.mock.calls.at(-1)?.[0];
 
 describe('highlightDataPlugin', () => {

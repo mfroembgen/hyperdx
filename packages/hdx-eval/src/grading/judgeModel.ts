@@ -149,6 +149,7 @@ function parseHeaders(raw: string | undefined): Record<string, string> {
       `AI_REQUEST_HEADERS is not valid JSON: ${
         err instanceof Error ? err.message : String(err)
       }`,
+      { cause: err },
     );
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {

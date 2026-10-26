@@ -1,5 +1,7 @@
 import { ClickhouseClient } from '@hyperdx/common-utils/dist/clickhouse/node';
+import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import ms from 'ms';
+import { vi } from 'vitest';
 
 import * as config from '@/config';
 import { bulkInsertLogs } from '@/fixtures';
@@ -23,12 +25,12 @@ export const HOOK_BAD = 'https://webhook.site/hook-bad';
 const NOW = new Date('2023-11-16T22:12:00.000Z');
 
 /**
- * Route the stubbed global fetch (see jest.setup.ts) by URL so each target can
+ * Route the stubbed global fetch (see vi.setup.ts) by URL so each target can
  * succeed or fail independently. Returns the URLs it was called with.
  */
 export const installFetchRouter = () => {
   const requestedUrls: string[] = [];
-  jest.mocked(global.fetch).mockImplementation(async input => {
+  vi.mocked(global.fetch).mockImplementation(async input => {
     const url = String(input);
     requestedUrls.push(url);
     if (url === HOOK_BAD) {
@@ -52,7 +54,7 @@ export const setupAlertFixtures = async (
     password: config.CLICKHOUSE_PASSWORD,
   });
   const source = await Source.create({
-    kind: 'log',
+    kind: SourceKind.Log as const,
     team: team._id,
     from: { databaseName: 'default', tableName: 'otel_logs' },
     timestampValueExpression: 'Timestamp',
@@ -120,7 +122,7 @@ export const runAlert = async ({
   ]);
   const details: any = {
     alert: enhancedAlert,
-    source,
+    source: { ...source.toJSON({ virtuals: true }), connection: connection.id },
     conn: connection,
     taskType: AlertTaskType.SAVED_SEARCH,
     savedSearch,

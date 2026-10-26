@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import type { ColumnMeta } from '@hyperdx/common-utils/dist/clickhouse';
 import { rewriteSqlFilterWithKvItems } from '@hyperdx/common-utils/dist/core/renderChartConfig';
 import { parseQuery } from '@hyperdx/common-utils/dist/filters';
@@ -300,15 +301,15 @@ describe('Service Dashboard', () => {
     const mockJsonColumns: string[] = [];
 
     beforeEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     it('should return loading state when source is undefined', () => {
-      jest.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
         data: undefined,
         isLoading: false,
       } as any);
-      jest.spyOn(metadataModule, 'useColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useColumns').mockReturnValue({
         data: undefined,
         isLoading: false,
       } as any);
@@ -322,11 +323,11 @@ describe('Service Dashboard', () => {
     });
 
     it('should return loading state when columns are loading', () => {
-      jest.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
         data: undefined,
         isLoading: true,
       } as any);
-      jest.spyOn(metadataModule, 'useColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useColumns').mockReturnValue({
         data: undefined,
         isLoading: true,
       } as any);
@@ -340,11 +341,11 @@ describe('Service Dashboard', () => {
     });
 
     it('should return loading state when jsonColumns are loading', () => {
-      jest.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
         data: undefined,
         isLoading: true,
       } as any);
-      jest.spyOn(metadataModule, 'useColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useColumns').mockReturnValue({
         data: mockColumns,
         isLoading: false,
       } as any);
@@ -358,11 +359,11 @@ describe('Service Dashboard', () => {
     });
 
     it('should return expressions when data is loaded with non-JSON columns', () => {
-      jest.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
         data: mockJsonColumns,
         isLoading: false,
       } as any);
-      jest.spyOn(metadataModule, 'useColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useColumns').mockReturnValue({
         data: mockColumns,
         isLoading: false,
       } as any);
@@ -383,11 +384,11 @@ describe('Service Dashboard', () => {
     });
 
     it('should return expressions when data is loaded with JSON columns', () => {
-      jest.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
         data: ['SpanAttributes'],
         isLoading: false,
       } as any);
-      jest.spyOn(metadataModule, 'useColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useColumns').mockReturnValue({
         data: mockColumns,
         isLoading: false,
       } as any);
@@ -409,11 +410,11 @@ describe('Service Dashboard', () => {
         { name: 'endpoint', type: 'String' },
       ] as ColumnMeta[];
 
-      jest.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
         data: mockJsonColumns,
         isLoading: false,
       } as any);
-      jest.spyOn(metadataModule, 'useColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useColumns').mockReturnValue({
         data: columnsWithEndpoint,
         isLoading: false,
       } as any);
@@ -427,11 +428,11 @@ describe('Service Dashboard', () => {
     });
 
     it('should fallback to spanName when materialized endpoint column is not available', () => {
-      jest.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
         data: mockJsonColumns,
         isLoading: false,
       } as any);
-      jest.spyOn(metadataModule, 'useColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useColumns').mockReturnValue({
         data: mockColumns,
         isLoading: false,
       } as any);
@@ -445,11 +446,11 @@ describe('Service Dashboard', () => {
     });
 
     it('should include filter expressions', () => {
-      jest.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
         data: mockJsonColumns,
         isLoading: false,
       } as any);
-      jest.spyOn(metadataModule, 'useColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useColumns').mockReturnValue({
         data: mockColumns,
         isLoading: false,
       } as any);
@@ -471,11 +472,11 @@ describe('Service Dashboard', () => {
     });
 
     it('should include auxiliary expressions', () => {
-      jest.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useJsonColumns').mockReturnValue({
         data: mockJsonColumns,
         isLoading: false,
       } as any);
-      jest.spyOn(metadataModule, 'useColumns').mockReturnValue({
+      vi.spyOn(metadataModule, 'useColumns').mockReturnValue({
         data: mockColumns,
         isLoading: false,
       } as any);

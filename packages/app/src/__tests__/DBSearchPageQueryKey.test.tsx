@@ -1,5 +1,6 @@
 import React from 'react';
 import objectHash from 'object-hash';
+import { type Mock, vi } from 'vitest';
 import {
   ChartConfigWithDateRange,
   DisplayType,
@@ -9,11 +10,11 @@ import { DBTimeChart } from '@/components/DBTimeChart';
 import SearchTotalCountChart from '@/components/SearchTotalCountChart';
 
 // Mock the API and hooks
-jest.mock('@/hooks/useResultColumnFilterKeys', () => ({
-  useResultColumnFilterKeys: jest.fn(() => new Map()),
+vi.mock('@/hooks/useResultColumnFilterKeys', () => ({
+  useResultColumnFilterKeys: vi.fn(() => new Map()),
 }));
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useMe: () => ({
@@ -23,26 +24,26 @@ jest.mock('@/api', () => ({
   },
 }));
 
-jest.mock('@/hooks/useMVOptimizationExplanation', () => ({
-  useMVOptimizationExplanation: jest.fn().mockReturnValue({
+vi.mock('@/hooks/useMVOptimizationExplanation', () => ({
+  useMVOptimizationExplanation: vi.fn().mockReturnValue({
     data: undefined,
     isLoading: false,
     isPlaceholderData: false,
   }),
 }));
 
-jest.mock('@/hooks/useChartConfig', () => ({
-  useQueriedChartConfig: jest.fn(() => ({
+vi.mock('@/hooks/useChartConfig', () => ({
+  useQueriedChartConfig: vi.fn(() => ({
     data: { data: [], isComplete: true },
     isLoading: false,
     isError: false,
     isPlaceholderData: false,
     isSuccess: true,
   })),
-  getMinGranularitySeconds: jest.fn().mockReturnValue(undefined),
+  getMinGranularitySeconds: vi.fn().mockReturnValue(undefined),
 }));
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   useSource: () => ({ data: null, isLoading: false }),
   useChartNumberFormats: () => ({
     formatByColumn: new Map(),
@@ -50,29 +51,36 @@ jest.mock('@/source', () => ({
   }),
 }));
 
-jest.mock('@/ChartUtils', () => ({
-  useTimeChartSettings: () => ({
-    displayType: DisplayType.StackedBar,
-    dateRange: [new Date('2024-01-01'), new Date('2024-01-02')],
-    granularity: '30 minutes',
-    fillNulls: true,
-  }),
-  formatResponseForTimeChart: () => ({
-    graphResults: [],
-    timestampColumn: undefined,
-    lineData: [],
-    groupColumns: [],
-    valueColumns: [],
-    isSingleValueColumn: true,
-  }),
-  getPreviousDateRange: () => [new Date('2023-12-31'), new Date('2024-01-01')],
-  getAlignedDateRange: (dateRange: [Date, Date]) => dateRange,
-  convertToTimeChartConfig:
-    jest.requireActual('@/ChartUtils').convertToTimeChartConfig,
-}));
+vi.mock('@/ChartUtils', async () => {
+  const actualModule0 =
+    await vi.importActual<typeof import('@/ChartUtils')>('@/ChartUtils');
+  return {
+    useTimeChartSettings: () => ({
+      displayType: DisplayType.StackedBar,
+      dateRange: [new Date('2024-01-01'), new Date('2024-01-02')],
+      granularity: '30 minutes',
+      fillNulls: true,
+    }),
+    formatResponseForTimeChart: () => ({
+      graphResults: [],
+      timestampColumn: undefined,
+      lineData: [],
+      groupColumns: [],
+      valueColumns: [],
+      isSingleValueColumn: true,
+    }),
+    getPreviousDateRange: () => [
+      new Date('2023-12-31'),
+      new Date('2024-01-01'),
+    ],
+    getAlignedDateRange: (dateRange: [Date, Date]) => dateRange,
+    MAX_TIME_CHART_SERIES: actualModule0.MAX_TIME_CHART_SERIES,
+    convertToTimeChartConfig: actualModule0.convertToTimeChartConfig,
+  };
+});
 
 describe('DBSearchPage QueryKey Consistency', () => {
-  let mockUseQueriedChartConfig: jest.Mock;
+  let mockUseQueriedChartConfig: Mock;
 
   beforeEach(async () => {
     mockUseQueriedChartConfig = (await import('@/hooks/useChartConfig'))

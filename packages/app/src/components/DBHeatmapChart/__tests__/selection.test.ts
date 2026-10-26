@@ -1,4 +1,5 @@
 import type uPlot from 'uplot';
+import { type Mock, vi } from 'vitest';
 
 import {
   applySelectionToChart,
@@ -10,10 +11,14 @@ type StubU = {
     x?: { min?: number; max?: number };
     y?: { min?: number; max?: number };
   };
-  valToPos: jest.Mock<number, [number, 'x' | 'y']>;
-  setSelect: jest.Mock<
-    void,
-    [{ left: number; top: number; width: number; height: number }, boolean]
+  valToPos: Mock<(...args: [number, 'x' | 'y']) => number>;
+  setSelect: Mock<
+    (
+      ...args: [
+        { left: number; top: number; width: number; height: number },
+        boolean,
+      ]
+    ) => void
   >;
 };
 
@@ -26,10 +31,10 @@ function makeStubU(opts?: {
   const xScale =
     opts?.xScale === undefined ? { min: 0, max: 1_000_000 } : opts.xScale;
   // Default: identity passthrough so callers can verify exact arguments.
-  const valToPos = jest.fn(
+  const valToPos = vi.fn(
     opts?.valToPos ?? ((val: number, _axis: 'x' | 'y') => val),
   );
-  const setSelect = jest.fn();
+  const setSelect = vi.fn();
   return {
     scales: { x: xScale, y: yScale },
     valToPos,

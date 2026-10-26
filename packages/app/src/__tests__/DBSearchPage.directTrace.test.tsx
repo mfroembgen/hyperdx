@@ -1,17 +1,18 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { MantineProvider } from '@mantine/core';
 import { act, render, screen, waitFor } from '@testing-library/react';
 
 import { DBSearchPage } from '@/DBSearchPage';
 
-const mockRouterPush = jest.fn();
-const mockSetSearchedConfig = jest.fn();
-const mockSetDirectTraceId = jest.fn();
-const mockSetAnalysisMode = jest.fn();
-const mockSetIsLive = jest.fn();
-const mockOnSearch = jest.fn();
-const mockOnTimeRangeSelect = jest.fn();
+const mockRouterPush = vi.fn();
+const mockSetSearchedConfig = vi.fn();
+const mockSetDirectTraceId = vi.fn();
+const mockSetAnalysisMode = vi.fn();
+const mockSetIsLive = vi.fn();
+const mockOnSearch = vi.fn();
+const mockOnTimeRangeSelect = vi.fn();
 
 let mockDirectTraceId: string | null = null;
 let mockSearchedConfig: Record<string, any> = {};
@@ -21,23 +22,23 @@ let mockSources: any[] = [];
 let mockSourcesLoading = false;
 let latestDirectTracePanelProps: Record<string, any> | null = null;
 
-jest.mock('@/layout', () => ({
+vi.mock('@/layout', () => ({
   withAppNav: (component: unknown) => component,
 }));
 
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   __esModule: true,
   default: {
     push: (...args: unknown[]) => mockRouterPush(...args),
   },
 }));
 
-jest.mock('next/head', () => ({
+vi.mock('next/head', () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-jest.mock('next/link', () => ({
+vi.mock('next/link', () => ({
   __esModule: true,
   default: ({
     children,
@@ -48,35 +49,29 @@ jest.mock('next/link', () => ({
   }) => <a href={href}>{children}</a>,
 }));
 
-jest.mock('nuqs', () => ({
-  parseAsBoolean: {
-    withDefault: () => 'parseAsBoolean',
-  },
-  parseAsInteger: {
-    withDefault: () => 'parseAsInteger',
-  },
-  parseAsString: 'parseAsString',
-  parseAsStringEnum: () => ({
-    withDefault: () => 'parseAsStringEnum',
-  }),
-  useQueryState: (key: string) => {
-    switch (key) {
-      case 'traceId':
-        return [mockDirectTraceId, mockSetDirectTraceId];
-      case 'mode':
-        return ['results', mockSetAnalysisMode];
-      case 'isLive':
-        return [true, mockSetIsLive];
-      case 'denoise':
-        return [false, jest.fn()];
-      default:
-        return [null, jest.fn()];
-    }
-  },
-  useQueryStates: () => [mockSearchedConfig, mockSetSearchedConfig],
-}));
+vi.mock('nuqs', async () => {
+  const actual = await vi.importActual<typeof import('nuqs')>('nuqs');
+  return {
+    ...actual,
+    useQueryState: (key: string) => {
+      switch (key) {
+        case 'traceId':
+          return [mockDirectTraceId, mockSetDirectTraceId];
+        case 'mode':
+          return ['results', mockSetAnalysisMode];
+        case 'isLive':
+          return [true, mockSetIsLive];
+        case 'denoise':
+          return [false, vi.fn()];
+        default:
+          return [null, vi.fn()];
+      }
+    },
+    useQueryStates: () => [mockSearchedConfig, mockSetSearchedConfig],
+  };
+});
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   getEventBody: () => 'Body',
   getFirstTimestampValueExpression: () => 'Timestamp',
   useSources: () => ({
@@ -90,7 +85,7 @@ jest.mock('@/source', () => ({
   }),
 }));
 
-jest.mock('@/timeQuery', () => ({
+vi.mock('@/timeQuery', () => ({
   parseRelativeTimeQuery: () => [new Date(0), new Date(1)],
   parseTimeQuery: () => [new Date(0), new Date(1)],
   useDefaultTimeRange: () => [new Date(0), new Date(1)],
@@ -105,53 +100,58 @@ jest.mock('@/timeQuery', () => ({
   }),
 }));
 
-jest.mock('@/savedSearch', () => ({
-  useCreateSavedSearch: () => ({ mutate: jest.fn() }),
-  useDeleteSavedSearch: () => ({ mutate: jest.fn() }),
+vi.mock('@/savedSearch', () => ({
+  useCreateSavedSearch: () => ({ mutate: vi.fn() }),
+  useDeleteSavedSearch: () => ({ mutate: vi.fn() }),
   useSavedSearch: () => ({ data: undefined }),
-  useUpdateSavedSearch: () => ({ mutate: jest.fn() }),
+  useUpdateSavedSearch: () => ({ mutate: vi.fn() }),
 }));
 
-jest.mock('@/searchFilters', () => ({
+vi.mock('@/searchFilters', () => ({
   useSearchPageFilterState: () => ({
     filters: [],
     whereSuggestions: [],
-    setFilterValue: jest.fn(),
-    clearAllFilters: jest.fn(),
+    setFilterValue: vi.fn(),
+    clearAllFilters: vi.fn(),
   }),
 }));
 
-jest.mock('@/hooks/useChartConfig', () => ({
+vi.mock('@/hooks/useChartConfig', () => ({
   useAliasMapFromChartConfig: () => ({ data: {} }),
 }));
 
-jest.mock('@/hooks/useExplainQuery', () => ({
+vi.mock('@/hooks/useExplainQuery', () => ({
   useExplainQuery: () => ({}),
 }));
 
-jest.mock('@/theme/ThemeProvider', () => ({
+vi.mock('@/theme/ThemeProvider', () => ({
   useAppTheme: () => ({ themeName: 'hyperdx' }),
   useBrandDisplayName: () => 'HyperDX',
   usePageTitle: (page?: string) => (page ? `${page} - HyperDX` : 'HyperDX'),
 }));
 
-jest.mock('../hooks/useMetadata', () => ({
-  ...jest.requireActual('../hooks/useMetadata'),
-  useTableMetadata: () => ({
-    data: { sorting_key: 'Timestamp' },
-    isLoading: false,
-  }),
-  useColumns: () => ({
-    data: undefined,
-    isLoading: false,
-  }),
-}));
+vi.mock('../hooks/useMetadata', async () => {
+  const actualModule0 = await vi.importActual<
+    typeof import('../hooks/useMetadata')
+  >('../hooks/useMetadata');
+  return {
+    ...actualModule0,
+    useTableMetadata: () => ({
+      data: { sorting_key: 'Timestamp' },
+      isLoading: false,
+    }),
+    useColumns: () => ({
+      data: undefined,
+      isLoading: false,
+    }),
+  };
+});
 
-jest.mock('../hooks/useSqlSuggestions', () => ({
+vi.mock('../hooks/useSqlSuggestions', () => ({
   useSqlSuggestions: () => [],
 }));
 
-jest.mock('../components/Search/DirectTraceSidePanel', () => ({
+vi.mock('../components/Search/DirectTraceSidePanel', () => ({
   __esModule: true,
   default: (props: Record<string, any>) => {
     latestDirectTracePanelProps = props;
@@ -166,73 +166,78 @@ jest.mock('../components/Search/DirectTraceSidePanel', () => ({
   },
 }));
 
-jest.mock('@/components/DBSearchPageFilters', () => ({
+vi.mock('@/components/DBSearchPageFilters', () => ({
   DBSearchPageFilters: () => <div />,
 }));
 
-jest.mock('@/components/DBTimeChart', () => ({
+vi.mock('@/components/DBTimeChart', () => ({
   DBTimeChart: () => <div />,
 }));
 
-jest.mock('@/components/ActiveFilterPills', () => ({
+vi.mock('@/components/ActiveFilterPills', () => ({
   ActiveFilterPills: () => <div />,
 }));
-jest.mock('@/components/ContactSupportText', () => ({
+vi.mock('@/components/ContactSupportText', () => ({
   ContactSupportText: () => <div />,
 }));
-jest.mock('@/components/FavoriteButton', () => ({
+vi.mock('@/components/FavoriteButton', () => ({
   FavoriteButton: () => <div />,
 }));
-jest.mock('@/components/InputControlled', () => ({
+vi.mock('@/components/InputControlled', () => ({
   InputControlled: () => <div />,
 }));
-jest.mock('@/components/OnboardingModal', () => () => <div />);
-jest.mock('@/components/SearchInput/SearchWhereInput', () => ({
+vi.mock('@/components/OnboardingModal', () => ({ default: () => <div /> }));
+vi.mock('@/components/SearchInput/SearchWhereInput', () => ({
   __esModule: true,
   default: () => <div />,
   getStoredLanguage: () => 'lucene',
 }));
-jest.mock('@/components/SearchGroupBy/SearchGroupBySelect', () => ({
+vi.mock('@/components/SearchGroupBy/SearchGroupBySelect', () => ({
   SearchGroupBySelect: () => <div />,
 }));
-jest.mock('@/components/SearchPageActionBar', () => () => <div />);
-jest.mock('@/components/SearchTotalCountChart', () => () => <div />);
-jest.mock('@/components/Sources/SourceForm', () => ({
+vi.mock('@/components/SearchPageActionBar', () => ({ default: () => <div /> }));
+vi.mock('@/components/SearchTotalCountChart', () => ({
+  default: () => <div />,
+}));
+vi.mock('@/components/Sources/SourceForm', () => ({
   TableSourceForm: () => <div />,
 }));
-jest.mock('@/components/SourceSelect', () => ({
+vi.mock('@/components/SourceSelect', () => ({
   SourceSelectControlled: () => <div />,
 }));
-jest.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
+vi.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
   SQLInlineEditorControlled: () => <div />,
 }));
-jest.mock('@/components/Tags', () => ({
+vi.mock('@/components/Tags', () => ({
   Tags: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
-jest.mock('@/components/TimePicker', () => ({
+vi.mock('@/components/TimePicker', () => ({
   TimePicker: () => <div />,
 }));
-jest.mock('../components/ChartSQLPreview', () => ({
+vi.mock('../components/ChartSQLPreview', () => ({
+  default: () => <div />,
   SQLPreview: () => <div />,
 }));
-jest.mock('../components/DBSqlRowTableWithSidebar', () => () => <div />);
-jest.mock('../components/PatternTable', () => () => <div />);
-jest.mock('../components/Search/DBSearchHeatmapChart', () => ({
+vi.mock('../components/DBSqlRowTableWithSidebar', () => ({
+  default: () => <div />,
+}));
+vi.mock('../components/PatternTable', () => ({ default: () => <div /> }));
+vi.mock('../components/Search/DBSearchHeatmapChart', () => ({
   DBSearchHeatmapChart: () => <div />,
 }));
-jest.mock('../components/SourceSchemaPreview', () => ({
+vi.mock('../components/SourceSchemaPreview', () => ({
   __esModule: true,
   default: () => <div />,
   isSourceSchemaPreviewEnabled: () => false,
   getSourceSchemaTables: () => [],
 }));
-jest.mock('../components/Error/ErrorBoundary', () => ({
+vi.mock('../components/Error/ErrorBoundary', () => ({
   ErrorBoundary: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
 }));
 
-jest.mock('../utils/queryParsers', () => ({
+vi.mock('../utils/queryParsers', () => ({
   parseAsJsonEncoded: () => 'parseAsJsonEncoded',
   parseAsSortingStateString: {
     parse: () => null,
@@ -240,7 +245,7 @@ jest.mock('../utils/queryParsers', () => ({
   parseAsStringEncoded: 'parseAsStringEncoded',
 }));
 
-jest.mock('../api', () => ({
+vi.mock('../api', () => ({
   __esModule: true,
   default: {
     useMe: () => ({
@@ -248,26 +253,29 @@ jest.mock('../api', () => ({
       isSuccess: true,
     }),
   },
-  useCompleteOnboardingTask: () => ({ mutate: jest.fn() }),
+  useCompleteOnboardingTask: () => ({ mutate: vi.fn() }),
 }));
 
-jest.mock('@/utils', () => ({
+vi.mock('@/utils', () => ({
   QUERY_LOCAL_STORAGE: 'query-local-storage',
   useLocalStorage: (_key: string, initialValue: unknown) => [
     initialValue,
-    jest.fn(),
+    vi.fn(),
   ],
   usePrevious: (value: unknown) => value,
   useWindowSize: () => ({ width: 1200, height: 800 }),
 }));
 
-jest.mock('@tanstack/react-query', () => ({
+vi.mock('@tanstack/react-query', async () => ({
+  ...(await vi.importActual<typeof import('@tanstack/react-query')>(
+    '@tanstack/react-query',
+  )),
   useIsFetching: () => 0,
 }));
 
 describe('DBSearchPage direct trace flow', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     latestDirectTracePanelProps = null;
     mockSourcesLoading = false;
     mockDirectTraceId = 'trace-123';
@@ -352,7 +360,7 @@ describe('DBSearchPage direct trace flow', () => {
 
     expect(mockOnTimeRangeSelect).toHaveBeenCalled();
 
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     window.history.pushState({}, '', '/search?traceId=trace-123&from=1&to=2');
 
     renderWithMantine(<DBSearchPage />);
@@ -426,7 +434,7 @@ describe('DBSearchPage direct trace flow', () => {
   // than renderWithMantine) is used so `rerender` keeps the provider tree, and
   // with it the page's own state and refs.
   async function renderThroughSourceLoad() {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     const { rerender } = render(<DBSearchPage />, {
       wrapper: ({ children }) => <MantineProvider>{children}</MantineProvider>,
     });
@@ -436,9 +444,9 @@ describe('DBSearchPage direct trace flow', () => {
       rerender(<DBSearchPage />);
     });
     await act(async () => {
-      jest.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(2000);
     });
-    jest.useRealTimers();
+    vi.useRealTimers();
   }
 
   it('canonicalizes a source name to its id without touching the rest of the config', async () => {

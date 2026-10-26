@@ -169,6 +169,17 @@ export function TableSourceForm({
         if (watchedTableName !== prevTableNameRef.current) {
           prevTableNameRef.current = watchedTableName;
 
+          // Loading an existing source hydrates these watched fields. Its saved
+          // configuration must survive that reset without schema inference.
+          if (
+            source &&
+            watchedTableName === source.from.tableName &&
+            watchedDatabaseName === source.from.databaseName &&
+            watchedConnection === source.connection
+          ) {
+            return;
+          }
+
           if (isPrometheusOnlyConnection) {
             return;
           }
@@ -218,6 +229,7 @@ export function TableSourceForm({
     metadata,
     setValue,
     isPrometheusOnlyConnection,
+    source,
   ]);
 
   // Sets the default connection field to the first connection after the

@@ -19,7 +19,7 @@ import z from 'zod';
 
 import { ClickhouseClient } from '@/clickhouse';
 import * as config from '@/config';
-import { ISource } from '@/models/source';
+import type { ISource, SourceDocument } from '@/models/source';
 import { parseJSON } from '@/utils/common';
 import { Api500Error } from '@/utils/errors';
 import logger from '@/utils/logger';
@@ -74,7 +74,7 @@ export function getAIModel(): LanguageModel {
   }
 }
 
-export async function getAIMetadata(source: ISource) {
+export async function getAIMetadata(source: SourceDocument) {
   const connectionId = source.connection.toString();
 
   const connection = await getConnectionById(
@@ -108,7 +108,10 @@ export async function getAIMetadata(source: ISource) {
     databaseName,
     tableName,
     connectionId,
-    metadataMVs: tcFromSource(source).metadataMVs,
+    metadataMVs: tcFromSource({
+      ...source.toJSON({ virtuals: true }),
+      connection: source.connection.toString(),
+    }).metadataMVs,
     timestampValueExpression: source.timestampValueExpression,
   });
 
@@ -171,14 +174,12 @@ function normalizeParsedDate(parsed?: chrono.ParsedComponents): Date | null {
   }
 
   const now = new Date();
-  if (
-    !(
-      parsed.isCertain('hour') ||
-      parsed.isCertain('minute') ||
-      parsed.isCertain('second') ||
-      parsed.isCertain('millisecond')
-    )
-  ) {
+  if (!(
+    parsed.isCertain('hour') ||
+    parsed.isCertain('minute') ||
+    parsed.isCertain('second') ||
+    parsed.isCertain('millisecond')
+  )) {
     // If all of the time components have been inferred, set the time components of now
     // to match the parsed time components. This ensures that the comparison later on uses
     // the same point in time when only worrying about dates.

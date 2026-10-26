@@ -1,3 +1,5 @@
+import { type Mock, vi } from 'vitest';
+
 import {
   ChSql,
   chSqlToAliasMap,
@@ -7,6 +9,7 @@ import {
   JSDataType,
 } from '@/clickhouse';
 import { ClickhouseClient } from '@/clickhouse/node';
+import * as metadataModule from '@/core/metadata';
 import { Metadata, MetadataCache } from '@/core/metadata';
 import { replaceMacros } from '@/macros';
 
@@ -428,7 +431,7 @@ describe('chSqlToAliasMap - backtick-quoted identifiers', () => {
 
 describe('processClickhouseSettings - optimization settings', () => {
   let client: ClickhouseClient;
-  let mockQueryMethod: jest.Mock;
+  let mockQueryMethod: Mock;
 
   const createClient = () => {
     const newClient = new ClickhouseClient({
@@ -438,7 +441,7 @@ describe('processClickhouseSettings - optimization settings', () => {
     });
 
     // Mock the underlying ClickHouse client's query method
-    const newMockQueryMethod = jest.fn();
+    const newMockQueryMethod = vi.fn();
     (newClient as any).client = {
       query: newMockQueryMethod,
     };
@@ -447,12 +450,9 @@ describe('processClickhouseSettings - optimization settings', () => {
     const newCache = new MetadataCache();
 
     // Mock getMetadata to return a metadata instance with our fresh cache
-    jest
-      // eslint-disable-next-line
-      .spyOn(require('@/core/metadata'), 'getMetadata')
-      .mockImplementation(() => {
-        return new Metadata(newClient, newCache);
-      });
+    vi.spyOn(metadataModule, 'getMetadata').mockImplementation(() => {
+      return new Metadata(newClient, newCache);
+    });
 
     return {
       client: newClient,
@@ -465,17 +465,17 @@ describe('processClickhouseSettings - optimization settings', () => {
     // Suppress expected console noise from permission check fallbacks
     // and ClickHouse query debug logging. These must be re-applied each
     // test because afterEach calls restoreAllMocks.
-    jest.spyOn(console, 'debug').mockImplementation(() => {});
-    jest.spyOn(console, 'info').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'debug').mockImplementation(() => {});
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     const setup = createClient();
     client = setup.client;
     mockQueryMethod = setup.mockQueryMethod;
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   const setupMockQuery = (
@@ -513,7 +513,7 @@ describe('processClickhouseSettings - optimization settings', () => {
     );
 
     expect(actualQueryCall).toBeDefined();
-    expect(actualQueryCall[0].clickhouse_settings).toEqual({
+    expect(actualQueryCall?.[0].clickhouse_settings).toEqual({
       allow_experimental_analyzer: 1,
       date_time_output_format: 'iso',
       wait_end_of_query: 0,
@@ -551,7 +551,7 @@ describe('processClickhouseSettings - optimization settings', () => {
     );
 
     expect(actualQueryCall).toBeDefined();
-    expect(actualQueryCall[0].clickhouse_settings).toEqual({
+    expect(actualQueryCall?.[0].clickhouse_settings).toEqual({
       allow_experimental_analyzer: 1,
       date_time_output_format: 'iso',
       wait_end_of_query: 0,
@@ -588,7 +588,7 @@ describe('processClickhouseSettings - optimization settings', () => {
     );
 
     expect(actualQueryCall).toBeDefined();
-    const settings = actualQueryCall[0].clickhouse_settings;
+    const settings = actualQueryCall?.[0].clickhouse_settings;
     expect(settings).toEqual({
       allow_experimental_analyzer: 1,
       date_time_output_format: 'iso',
@@ -619,7 +619,7 @@ describe('processClickhouseSettings - optimization settings', () => {
     );
 
     expect(actualQueryCall).toBeDefined();
-    expect(actualQueryCall[0].clickhouse_settings).toEqual({
+    expect(actualQueryCall?.[0].clickhouse_settings).toEqual({
       allow_experimental_analyzer: 1,
       date_time_output_format: 'iso',
       wait_end_of_query: 0,
@@ -645,7 +645,7 @@ describe('processClickhouseSettings - optimization settings', () => {
     );
 
     expect(settingsQueryCall).toBeDefined();
-    expect(settingsQueryCall[0].clickhouse_settings).toBeUndefined();
+    expect(settingsQueryCall?.[0].clickhouse_settings).toBeUndefined();
   });
 
   it('should handle metadata getSettings returning undefined (permissions error)', async () => {
@@ -668,7 +668,7 @@ describe('processClickhouseSettings - optimization settings', () => {
     );
 
     expect(actualQueryCall).toBeDefined();
-    expect(actualQueryCall[0].clickhouse_settings).toEqual({
+    expect(actualQueryCall?.[0].clickhouse_settings).toEqual({
       allow_experimental_analyzer: 1,
       date_time_output_format: 'iso',
       wait_end_of_query: 0,

@@ -1,41 +1,51 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { Socket } from 'net';
+import { vi } from 'vitest';
 
-jest.mock('@/api-app', () => ({ __esModule: true, default: jest.fn() }));
-jest.mock('@/controllers/team', () => ({
+vi.mock('@/api-app', () => ({ __esModule: true, default: vi.fn() }));
+vi.mock('@/controllers/team', () => ({
   LOCAL_APP_TEAM: { _id: { toString: () => 'local-team' } },
 }));
-jest.mock('@/migrations', () => ({ runStartupMigrations: jest.fn() }));
-jest.mock('@/models', () => ({
-  connectDB: jest.fn().mockResolvedValue(undefined),
-  connectDBWithRetry: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/migrations', () => ({ runStartupMigrations: vi.fn() }));
+vi.mock('@/models', () => ({
+  connectDB: vi.fn().mockResolvedValue(undefined),
+  connectDBWithRetry: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/opamp/app', () => ({ __esModule: true, default: jest.fn() }));
-jest.mock('@/setupDefaults', () => ({ setupTeamDefaults: jest.fn() }));
-jest.mock('@/utils/tokenEncryption', () => ({
-  verifyTokenEncryption: jest.fn(),
+vi.mock('@/opamp/app', () => ({ __esModule: true, default: vi.fn() }));
+vi.mock('@/setupDefaults', () => ({ setupTeamDefaults: vi.fn() }));
+vi.mock('@/utils/tokenEncryption', () => ({
+  verifyTokenEncryption: vi.fn(),
 }));
-jest.mock('@/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   __esModule: true,
-  default: { error: jest.fn(), info: jest.fn() },
+  default: { error: vi.fn(), info: vi.fn() },
 }));
-jest.mock('@/utils/instrumentation', () => ({
-  getCounter: jest.fn(() => ({ add: jest.fn() })),
+vi.mock('@/utils/instrumentation', () => ({
+  getCounter: vi.fn(() => ({ add: vi.fn() })),
 }));
-jest.mock('http-graceful-shutdown', () => jest.fn());
-jest.mock('http', () => ({
-  ...jest.requireActual('http'),
-  createServer: jest.fn(() => ({ listen: jest.fn() })),
-}));
+vi.mock('http-graceful-shutdown', () => ({ default: vi.fn() }));
+vi.mock('http', async () => {
+  const actual = await vi.importActual<typeof import('http')>('http');
+  const createServer = vi.fn(() => ({ listen: vi.fn() }));
+  return {
+    ...actual,
+    createServer,
+    default: { ...actual, createServer },
+  };
+});
 
 describe.each(['server', 'serverless'])(
   'session secret startup diagnostics (%s first)',
   first => {
     const originalEnv = { ...process.env };
 
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
     afterEach(() => {
       process.env = { ...originalEnv };
-      jest.resetModules();
+      vi.resetModules();
     });
 
     it.each([
@@ -60,16 +70,18 @@ describe.each(['server', 'serverless'])(
         else process.env.EXPRESS_SESSION_SECRET = secret;
 
         const { default: logger } =
-          jest.requireMock<typeof import('@/utils/logger')>('@/utils/logger');
-        const { getCounter } = jest.requireMock<
+          await vi.importMock<typeof import('@/utils/logger')>(
+            '@/utils/logger',
+          );
+        const { getCounter } = await vi.importMock<
           typeof import('@/utils/instrumentation')
         >('@/utils/instrumentation');
         const { default: Server } =
-          jest.requireActual<typeof import('@/server')>('@/server');
+          await vi.importActual<typeof import('@/server')>('@/server');
         const { serverlessHandler } =
-          jest.requireActual<typeof import('@/serverless')>('@/serverless');
+          await vi.importActual<typeof import('@/serverless')>('@/serverless');
         const config =
-          jest.requireActual<typeof import('@/config')>('@/config');
+          await vi.importActual<typeof import('@/config')>('@/config');
         expect(logger.error).not.toHaveBeenCalled();
 
         const req = new IncomingMessage(new Socket());
@@ -81,10 +93,10 @@ describe.each(['server', 'serverless'])(
         await serverlessHandler(req, res);
 
         expect(logger.error).toHaveBeenCalledTimes(count);
-        const counter = jest.mocked(getCounter).mock.results[0].value;
+        const counter = vi.mocked(getCounter).mock.results[0].value;
         expect(counter.add).toHaveBeenCalledTimes(count);
         expect(
-          JSON.stringify(jest.mocked(logger.error).mock.calls),
+          JSON.stringify(vi.mocked(logger.error).mock.calls),
         ).not.toContain(config.EXPRESS_SESSION_SECRET);
       },
     );

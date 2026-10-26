@@ -101,3 +101,11 @@ export function formatZodIssues(error: z.ZodError): string {
     })
     .join('\n');
 }
+
+/** Preserve branch details when the MCP SDK renders only top-level issues. */
+export const mcpUnionErrorMap: z.ZodErrorMap = (issue, ctx) => ({
+  message:
+    issue.code === z.ZodIssueCode.invalid_union
+      ? issue.unionErrors.map(formatZodIssues).join('\n')
+      : ctx.defaultError,
+});

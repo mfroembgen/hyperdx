@@ -1,5 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { vi } from 'vitest';
 import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -10,17 +11,17 @@ import {
   DashboardFiltersToggleProps,
 } from '@/components/DBEditTimeChartForm/ChartActionBar';
 
-jest.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
+vi.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
   SQLInlineEditorControlled: (props: any) => (
     <div data-testid="sql-editor-order-by">{props.label}</div>
   ),
 }));
 
-jest.mock('@/components/TimePicker', () => ({
+vi.mock('@/components/TimePicker', () => ({
   TimePicker: () => <div data-testid="time-picker">TimePicker</div>,
 }));
 
-jest.mock('@/GranularityPicker', () => ({
+vi.mock('@/GranularityPicker', () => ({
   GranularityPickerControlled: () => (
     <div data-testid="granularity-picker">Granularity</div>
   ),
@@ -64,8 +65,8 @@ const renderActionBar = (
   overrides: Partial<React.ComponentProps<typeof ChartActionBar>> = {},
   formValues: Partial<ChartEditorFormState> = {},
 ) => {
-  const onSubmit = jest.fn();
-  const setSaveToDashboardModalOpen = jest.fn();
+  const onSubmit = vi.fn();
+  const setSaveToDashboardModalOpen = vi.fn();
 
   const result = renderWithMantine(
     <FormWrapper defaultValues={formValues}>
@@ -100,13 +101,13 @@ const queryFilterSwitch = () =>
 
 const toggle = (overrides: Partial<DashboardFiltersToggleProps> = {}) => ({
   checked: true,
-  onChange: jest.fn(),
+  onChange: vi.fn(),
   ...overrides,
 });
 
 describe('ChartActionBar', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('dashboard filter toggle', () => {
@@ -126,7 +127,7 @@ describe('ChartActionBar', () => {
     });
 
     it('reports a flip of the switch', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       renderActionBar({ filtersToggle: toggle({ onChange }) });
 
       expect(filterSwitch()).toBeChecked();
@@ -283,8 +284,8 @@ describe('ChartActionBar', () => {
   it('should render TimePicker when time range props are provided', () => {
     renderActionBar({
       displayedTimeInputValue: 'Last 24h',
-      setDisplayedTimeInputValue: jest.fn(),
-      onTimeRangeSearch: jest.fn(),
+      setDisplayedTimeInputValue: vi.fn(),
+      onTimeRangeSearch: vi.fn(),
     });
 
     expect(screen.getByTestId('time-picker')).toBeInTheDocument();

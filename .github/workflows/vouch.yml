@@ -39,8 +39,8 @@ jobs:
     # Drafts are skipped and re-checked on ready_for_review, matching
     # external-contributor-alerts.yml so the two agree on what counts.
     if: >-
-      github.event_name == 'pull_request_target' &&
-      !github.event.pull_request.draft
+      github.repository == 'hyperdxio/hyperdx' && (github.event_name ==
+      'pull_request_target' && !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -151,7 +151,7 @@ jobs:
               `To make that quick, check the PR description has:`,
               ``,
               `- The issue it addresses (ideally one labelled \`Accepting PR\`) and why the change is needed`,
-              `- Steps to reproduce the problem and verify the fix, starting from https://play.hyperdx.io or \`yarn app:dev:local\` connected to the demo server`,
+              `- Steps to reproduce the problem and verify the fix, starting from https://play.hyperdx.io or \`bun run app:dev:local\` connected to the demo server`,
               `- Before/after screenshots if anything in the UI changed`,
               ``,
               `More detail in [our contributing guide](https://github.com/${owner}/${repo}/blob/${pr.base.repo.default_branch}/CONTRIBUTING.md#getting-vouched).`,
@@ -167,12 +167,12 @@ jobs:
     # spinning up a write-token runner by typing /vouch. `contains` rather than
     # `startsWith` so a leading space doesn't silently drop a real command.
     if: >-
-      github.event_name == 'issue_comment' &&
-      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+      github.repository == 'hyperdxio/hyperdx' && (github.event_name ==
+      'issue_comment' && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
       github.event.comment.author_association) &&
       (contains(github.event.comment.body, '/vouch') ||
-       contains(github.event.comment.body, '/unvouch') ||
-       contains(github.event.comment.body, '/denounce'))
+      contains(github.event.comment.body, '/unvouch') ||
+      contains(github.event.comment.body, '/denounce')))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # Keyed per comment. A shared group would let a newly queued run cancel a
@@ -186,7 +186,7 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: mitchellh/vouch/action/manage-by-issue@d66fa29a64600490892131ad87597c30c91fcac4 # v1.5.0
         with:

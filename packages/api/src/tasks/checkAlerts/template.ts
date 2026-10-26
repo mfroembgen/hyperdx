@@ -25,6 +25,7 @@ import {
 } from '@hyperdx/common-utils/dist/types';
 import Handlebars, { HelperOptions } from 'handlebars';
 import _ from 'lodash';
+import type ms from 'ms';
 import PromisedHandlebars from 'promised-handlebars';
 import { serializeError } from 'serialize-error';
 import { z } from 'zod';
@@ -38,7 +39,6 @@ import {
 } from '@/models/alert';
 import { IDashboard } from '@/models/dashboard';
 import { ISavedSearch } from '@/models/savedSearch';
-import { ISource } from '@/models/source';
 import { IWebhook } from '@/models/webhook';
 import {
   computeAliasWithClauses,
@@ -54,6 +54,7 @@ import {
   NotificationDispatcher,
   NotificationJob,
 } from '@/tasks/checkAlerts/notifications';
+import type { AlertDataSource } from '@/tasks/checkAlerts/providers';
 import {
   AlertProvider,
   PopulatedAlertChannel,
@@ -252,11 +253,11 @@ export type AlertMessageTemplateDefaultView = {
   attributes: ReturnType<typeof unflattenObject>;
   dashboard?: IDashboard | null;
   endTime: Date;
-  granularity: string;
+  granularity: ms.StringValue;
   group?: string;
   isGroupedAlert: boolean;
   savedSearch?: ISavedSearch | null;
-  source?: ISource | null;
+  source?: AlertDataSource | null;
   startTime: Date;
   value: number;
 };
@@ -547,21 +548,24 @@ export const fetchSampleLines = async ({
     ISavedSearch,
     'id' | 'select' | 'where' | 'whereLanguage' | 'orderBy' | 'filters'
   >;
-  source: ISource;
+  source: AlertDataSource;
   startTime: Date;
 }): Promise<string> => {
   const chartConfig: ChartConfigWithOptDateRange = {
-    ...buildSearchChartConfig(source, {
-      connection: '', // no need for the connection id since clickhouse client is already initialized
-      dateRange: [startTime, endTime],
-      select: savedSearch.select,
-      where: savedSearch.where,
-      whereLanguage: savedSearch.whereLanguage,
-      filters: savedSearch.filters,
-      orderBy: savedSearch.orderBy,
-      dateRangeStartInclusive: true,
-      dateRangeEndInclusive: false,
-    }),
+    ...buildSearchChartConfig(
+      { ...source, connection: source.connection.toString() },
+      {
+        connection: '', // no need for the connection id since clickhouse client is already initialized
+        dateRange: [startTime, endTime],
+        select: savedSearch.select,
+        where: savedSearch.where,
+        whereLanguage: savedSearch.whereLanguage,
+        filters: savedSearch.filters,
+        orderBy: savedSearch.orderBy,
+        dateRangeStartInclusive: true,
+        dateRangeEndInclusive: false,
+      },
+    ),
     limit: {
       limit: 5,
       offset: 0,

@@ -591,12 +591,7 @@ export type StacktraceFrame = {
 };
 
 export type StacktraceBreadcrumbCategory =
-  | 'ui.click'
-  | 'fetch'
-  | 'xhr'
-  | 'console'
-  | 'navigation'
-  | string;
+  'ui.click' | 'fetch' | 'xhr' | 'console' | 'navigation' | string;
 
 export type StacktraceBreadcrumb = {
   type?: string;
@@ -876,13 +871,10 @@ export const alertChannelKey = (channel: Record<string, unknown>) =>
  * ZodIssueCode to report through) can turn this into their own error shape.
  */
 export type AlertChannelSelectionErrorCode =
-  | 'missing'
-  | 'mismatch'
-  | 'duplicate';
+  'missing' | 'mismatch' | 'duplicate';
 
 export type AlertChannelSelectionResult =
-  | { ok: true }
-  | { ok: false; code: AlertChannelSelectionErrorCode };
+  { ok: true } | { ok: false; code: AlertChannelSelectionErrorCode };
 
 /**
  * Cross-field rule shared by every alert input in this repo (internal API,
@@ -1400,18 +1392,52 @@ const PopulatedUserSchema = z
   .object({ email: z.string(), name: z.string().optional() })
   .optional();
 
+// Saved-search listings echo persisted alert fields, including legacy rows;
+// they do not use the validated alert input's source-specific ID dialect.
+export const SavedSearchAlertReadSchema = z.lazy(() =>
+  AlertsPageItemSchema.omit({
+    history: true,
+    dashboardId: true,
+    savedSearchId: true,
+    dashboard: true,
+    savedSearch: true,
+  }).extend({
+    id: z.string(),
+    channel: z.discriminatedUnion('type', [
+      z.object({ type: z.literal('webhook'), webhookId: z.string() }),
+      z.object({ type: z.null() }),
+    ]),
+    channels: z
+      .array(
+        z.discriminatedUnion('type', [
+          z.object({ type: z.literal('webhook'), webhookId: z.string() }),
+          z.object({ type: z.null() }),
+        ]),
+      )
+      .optional(),
+    savedSearch: z.string().nullish(),
+    dashboard: z.string().nullish(),
+    tileId: z.string().nullish(),
+    groupBy: z.string().nullish(),
+    chartConfig: AlertChartConfigSchema.nullish(),
+    scheduleStartAt: z.string().nullish(),
+    createdBy: PopulatedUserSchema.nullable(),
+    silenced: z
+      .object({
+        by: z.string().optional(),
+        at: z.string(),
+        until: z.string(),
+      })
+      .optional(),
+  }),
+);
+
+export type SavedSearchAlertRead = z.infer<typeof SavedSearchAlertReadSchema>;
+
 export const SavedSearchListApiResponseSchema = SavedSearchSchema.omit({
   alerts: true,
 }).extend({
-  alerts: z
-    .array(
-      AlertSchema.and(
-        z.object({
-          createdBy: PopulatedUserSchema,
-        }),
-      ),
-    )
-    .optional(),
+  alerts: z.array(SavedSearchAlertReadSchema).optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
   createdBy: PopulatedUserSchema,
@@ -2880,22 +2906,32 @@ export type TMetricSource = Extract<TSource, { kind: SourceKind.Metric }>;
 export type TPromqlSource = Extract<TSource, { kind: SourceKind.Promql }>;
 
 // Type guards for narrowing TSource by kind
-export function isLogSource(source: TSource): source is TLogSource {
+export function isLogSource<T extends Pick<TSource, 'kind'>>(
+  source: T,
+): source is T & { kind: SourceKind.Log } {
   return source.kind === SourceKind.Log;
 }
-export function isTraceSource(source: TSource): source is TTraceSource {
+export function isTraceSource<T extends Pick<TSource, 'kind'>>(
+  source: T,
+): source is T & { kind: SourceKind.Trace } {
   return source.kind === SourceKind.Trace;
 }
-export function isSessionSource(source: TSource): source is TSessionSource {
+export function isSessionSource<T extends Pick<TSource, 'kind'>>(
+  source: T,
+): source is T & { kind: SourceKind.Session } {
   return source.kind === SourceKind.Session;
 }
-export function isMetricSource(source: TSource): source is TMetricSource {
+export function isMetricSource<T extends Pick<TSource, 'kind'>>(
+  source: T,
+): source is T & { kind: SourceKind.Metric } {
   return source.kind === SourceKind.Metric;
 }
-export function isPromqlSource(source: TSource): source is TPromqlSource {
+export function isPromqlSource<T extends Pick<TSource, 'kind'>>(
+  source: T,
+): source is T & { kind: SourceKind.Promql } {
   return source.kind === SourceKind.Promql;
 }
-export function isSearchableSource(source: TSource): boolean {
+export function isSearchableSource(source: Pick<TSource, 'kind'>): boolean {
   return isLogSource(source) || isTraceSource(source);
 }
 
@@ -3009,8 +3045,7 @@ const AILineQuerySchema = z
   .merge(AIBaseSchema);
 
 export type AILineTableResponse =
-  | z.infer<typeof AILineQuerySchema>
-  | z.infer<typeof AITableQuerySchema>;
+  z.infer<typeof AILineQuerySchema> | z.infer<typeof AITableQuerySchema>;
 
 // Union that covers all 3 objects
 export const AssistantResponseConfig = z.discriminatedUnion('displayType', [

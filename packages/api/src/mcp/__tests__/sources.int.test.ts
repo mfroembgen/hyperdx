@@ -1,3 +1,4 @@
+import { UseTextIndex } from '@hyperdx/common-utils/dist/types';
 import { MetricsDataType, SourceKind } from '@hyperdx/common-utils/dist/types';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 
@@ -50,7 +51,7 @@ describe('MCP Source Tools', () => {
     });
 
     traceSource = await Source.create({
-      kind: SourceKind.Trace,
+      kind: SourceKind.Trace as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -70,7 +71,7 @@ describe('MCP Source Tools', () => {
     });
 
     logSource = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -122,7 +123,7 @@ describe('MCP Source Tools', () => {
       expect(trace).toMatchObject({
         id: traceSource._id.toString(),
         name: 'Traces',
-        kind: SourceKind.Trace,
+        kind: SourceKind.Trace as const,
       });
 
       expect(output.connections).toHaveLength(1);
@@ -157,7 +158,7 @@ describe('MCP Source Tools', () => {
 
     it('quotes table parts that are not bare identifiers so FROM still parses', async () => {
       const source = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         from: { databaseName: 'observability-prod', tableName: 'otel.logs' },
         timestampValueExpression: 'Timestamp',
@@ -226,7 +227,7 @@ describe('MCP Source Tools', () => {
     describe('metric-name previews', () => {
       const createMetricSource = (name = 'Metrics') =>
         Source.create({
-          kind: SourceKind.Metric,
+          kind: SourceKind.Metric as const,
           team: team._id,
           from: { databaseName: DEFAULT_DATABASE, tableName: '' },
           metricTables: {
@@ -299,7 +300,7 @@ describe('MCP Source Tools', () => {
       // tables are still the ones in metricTables.
       it('includes the database for a metric source that also names a table', async () => {
         const metricSource = await Source.create({
-          kind: SourceKind.Metric,
+          kind: SourceKind.Metric as const,
           team: team._id,
           from: {
             databaseName: DEFAULT_DATABASE,
@@ -351,7 +352,7 @@ describe('MCP Source Tools', () => {
 
       it('excludes non-queryable summary metrics from metricNamesPreview', async () => {
         const metricSource = await Source.create({
-          kind: SourceKind.Metric,
+          kind: SourceKind.Metric as const,
           team: team._id,
           from: { databaseName: DEFAULT_DATABASE, tableName: '' },
           metricTables: {
@@ -435,7 +436,7 @@ describe('MCP Source Tools', () => {
       expect(output.source).toMatchObject({
         id: traceSource._id.toString(),
         name: 'Traces',
-        kind: SourceKind.Trace,
+        kind: SourceKind.Trace as const,
       });
 
       // Column schema from ClickHouse DESCRIBE TABLE
@@ -458,7 +459,7 @@ describe('MCP Source Tools', () => {
       expect(output.source).toMatchObject({
         id: logSource._id.toString(),
         name: 'Logs',
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
       });
 
       // Log source should have columns
@@ -520,7 +521,7 @@ describe('MCP Source Tools', () => {
 
     it('should return metricTables AND column schema for a metric source', async () => {
       const metricSource = await Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: team._id,
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -546,7 +547,7 @@ describe('MCP Source Tools', () => {
       expect(output.source).toMatchObject({
         id: metricSource._id.toString(),
         name: 'Metrics',
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
       });
 
       // Metric sources surface metricTables AND run column / map-key
@@ -581,7 +582,7 @@ describe('MCP Source Tools', () => {
 
     it('discovers and describes exponential histogram metrics', async () => {
       const metricSource = await Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: '' },
         metricTables: {
@@ -665,7 +666,7 @@ describe('MCP Source Tools', () => {
       // the query renderer has no summary translation, so every discovery
       // surface must redirect the agent to clickstack_sql.
       const metricSource = await Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: '' },
         metricTables: {
@@ -785,7 +786,7 @@ describe('MCP Source Tools', () => {
         password: config.CLICKHOUSE_PASSWORD,
       });
       const otherSource = await Source.create({
-        kind: SourceKind.Trace,
+        kind: SourceKind.Trace as const,
         team: otherTeam._id,
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -810,7 +811,7 @@ describe('MCP Source Tools', () => {
   describe('clickstack_list_metrics', () => {
     const createMetricSource = () =>
       Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: '' },
         metricTables: {
@@ -1055,7 +1056,7 @@ describe('MCP Source Tools', () => {
       // resolution succeeds) but has no MetricName/TimeUnix columns, so
       // the per-kind listing query throws.
       const brokenSource = await Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: '' },
         metricTables: {
@@ -1085,7 +1086,7 @@ describe('MCP Source Tools', () => {
   describe('clickstack_describe_metric', () => {
     const createMetricSource = () =>
       Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: '' },
         metricTables: {
@@ -1142,7 +1143,7 @@ describe('MCP Source Tools', () => {
       // succeeds) but lacks MetricName/TimeUnix columns, so the
       // attribute-keys discovery query throws.
       const brokenSource = await Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: '' },
         metricTables: {
@@ -1352,7 +1353,7 @@ describe('MCP Source Tools', () => {
     it('rejects explicit kind when the source has no table for that kind', async () => {
       // Source with only gauge populated.
       const gaugeOnly = await Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: '' },
         metricTables: {
@@ -1377,7 +1378,7 @@ describe('MCP Source Tools', () => {
   describe('clickstack_save_source (create)', () => {
     it('creates a log source scoped to the team', async () => {
       const result = await callTool(client, 'clickstack_save_source', {
-        kind: 'log',
+        kind: SourceKind.Log as const,
         name: 'New Logs',
         connection: connection._id.toString(),
         databaseName: DEFAULT_DATABASE,
@@ -1391,7 +1392,7 @@ describe('MCP Source Tools', () => {
       const output = JSON.parse(getFirstText(result));
       expect(output).toMatchObject({
         name: 'New Logs',
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
       });
       expect(output.id).toBeDefined();
 
@@ -1403,7 +1404,7 @@ describe('MCP Source Tools', () => {
 
     it('creates a metric source with metricTables', async () => {
       const result = await callTool(client, 'clickstack_save_source', {
-        kind: 'metric',
+        kind: SourceKind.Metric as const,
         name: 'New Metrics',
         connection: connection._id.toString(),
         databaseName: DEFAULT_DATABASE,
@@ -1425,7 +1426,7 @@ describe('MCP Source Tools', () => {
       // A trace source carrying the fields the curated summary omits:
       // correlation IDs + parent/span-kind/status-message + default select.
       const original = await Source.create({
-        kind: SourceKind.Trace,
+        kind: SourceKind.Trace as const,
         team: team._id,
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -1449,7 +1450,7 @@ describe('MCP Source Tools', () => {
         logSourceId: logSource._id.toString(),
         // Advanced config that must also round-trip (previously invisible AND
         // unwritable through save_source).
-        useTextIndexForImplicitColumn: 'enabled',
+        useTextIndexForImplicitColumn: UseTextIndex.Enabled,
         knownColumnsListExpression: 'TraceId, SpanId',
         sampleRateExpression: 'SampleRate',
         highlightedTraceAttributeExpressions: [
@@ -1533,7 +1534,7 @@ describe('MCP Source Tools', () => {
 
     it('rejects a log source missing defaultTableSelectExpression', async () => {
       const result = await callTool(client, 'clickstack_save_source', {
-        kind: 'log',
+        kind: SourceKind.Log as const,
         name: 'Incomplete Logs',
         connection: connection._id.toString(),
         databaseName: DEFAULT_DATABASE,
@@ -1547,7 +1548,7 @@ describe('MCP Source Tools', () => {
 
     it('rejects a non-ObjectId connection', async () => {
       const result = await callTool(client, 'clickstack_save_source', {
-        kind: 'log',
+        kind: SourceKind.Log as const,
         name: 'Bad Conn',
         connection: 'not-an-object-id',
         databaseName: DEFAULT_DATABASE,
@@ -1571,7 +1572,7 @@ describe('MCP Source Tools', () => {
       });
 
       const result = await callTool(client, 'clickstack_save_source', {
-        kind: 'log',
+        kind: SourceKind.Log as const,
         name: 'Cross Team',
         connection: otherConnection._id.toString(),
         databaseName: DEFAULT_DATABASE,
@@ -1591,7 +1592,7 @@ describe('MCP Source Tools', () => {
   describe('clickstack_save_source (update)', () => {
     it('preserves minAutoGranularity through a describe -> rename -> save round trip', async () => {
       const created = await Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: '' },
         timestampValueExpression: 'TimeUnix',
@@ -1627,7 +1628,7 @@ describe('MCP Source Tools', () => {
 
     it('updates an existing log source (full replace)', async () => {
       const created = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
         timestampValueExpression: 'Timestamp',
@@ -1638,7 +1639,7 @@ describe('MCP Source Tools', () => {
 
       const result = await callTool(client, 'clickstack_save_source', {
         id: created._id.toString(),
-        kind: 'log',
+        kind: SourceKind.Log as const,
         name: 'Updated Name',
         connection: connection._id.toString(),
         databaseName: DEFAULT_DATABASE,
@@ -1667,7 +1668,7 @@ describe('MCP Source Tools', () => {
     it('returns a user error for a non-existent id', async () => {
       const result = await callTool(client, 'clickstack_save_source', {
         id: '000000000000000000000000',
-        kind: 'log',
+        kind: SourceKind.Log as const,
         name: 'Ghost',
         connection: connection._id.toString(),
         databaseName: DEFAULT_DATABASE,
@@ -1683,7 +1684,7 @@ describe('MCP Source Tools', () => {
     it('rejects an invalid id', async () => {
       const result = await callTool(client, 'clickstack_save_source', {
         id: 'not-an-object-id',
-        kind: 'log',
+        kind: SourceKind.Log as const,
         name: 'Bad',
         connection: connection._id.toString(),
         databaseName: DEFAULT_DATABASE,
@@ -1698,7 +1699,7 @@ describe('MCP Source Tools', () => {
 
     it('updates a source across a kind change (raw replaceOne path) and keeps it team-scoped', async () => {
       const created = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
         timestampValueExpression: 'Timestamp',
@@ -1709,7 +1710,7 @@ describe('MCP Source Tools', () => {
 
       const result = await callTool(client, 'clickstack_save_source', {
         id: created._id.toString(),
-        kind: 'trace',
+        kind: SourceKind.Trace as const,
         name: 'Now A Trace',
         connection: connection._id.toString(),
         databaseName: DEFAULT_DATABASE,
@@ -1742,7 +1743,7 @@ describe('MCP Source Tools', () => {
 
     it('full-replaces optional fields on update (omitted => cleared, present => stored)', async () => {
       const created = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
         timestampValueExpression: 'Timestamp',
@@ -1756,7 +1757,7 @@ describe('MCP Source Tools', () => {
       // Omit serviceNameExpression (=> cleared), change bodyExpression (=> stored).
       const result = await callTool(client, 'clickstack_save_source', {
         id: created._id.toString(),
-        kind: 'log',
+        kind: SourceKind.Log as const,
         name: 'Field Replace',
         connection: connection._id.toString(),
         databaseName: DEFAULT_DATABASE,
@@ -1775,7 +1776,7 @@ describe('MCP Source Tools', () => {
 
     it('rejects an update that references another team\u2019s correlated source', async () => {
       const created = await Source.create({
-        kind: SourceKind.Trace,
+        kind: SourceKind.Trace as const,
         team: team._id,
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -1802,7 +1803,7 @@ describe('MCP Source Tools', () => {
         password: config.CLICKHOUSE_PASSWORD,
       });
       const otherLogSource = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: otherTeam._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
         timestampValueExpression: 'Timestamp',
@@ -1813,7 +1814,7 @@ describe('MCP Source Tools', () => {
 
       const result = await callTool(client, 'clickstack_save_source', {
         id: created._id.toString(),
-        kind: 'trace',
+        kind: SourceKind.Trace as const,
         name: 'Trace With Bad Link',
         connection: connection._id.toString(),
         databaseName: DEFAULT_DATABASE,
@@ -1837,7 +1838,7 @@ describe('MCP Source Tools', () => {
   describe('clickstack_delete_source', () => {
     it('deletes a source', async () => {
       const created = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
         timestampValueExpression: 'Timestamp',
@@ -1879,7 +1880,7 @@ describe('MCP Source Tools', () => {
         password: config.CLICKHOUSE_PASSWORD,
       });
       const otherSource = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: otherTeam._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
         timestampValueExpression: 'Timestamp',

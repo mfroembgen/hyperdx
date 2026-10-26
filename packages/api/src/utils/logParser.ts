@@ -130,7 +130,7 @@ export const mapObjectToKeyValuePairs = (
 
   if (_.isPlainObject(blob)) {
     const jsonIt = traverseJson(blob);
-    let pushed = true;
+    let pushed: boolean;
     for (const [key, value] of jsonIt) {
       const compoundKeyPath = key.join('.');
       if (!reachedNumberMaxLength && _.isNumber(value)) {

@@ -57,18 +57,22 @@ export class TableComponent {
    * Click on a specific row, which opens it in the side panel.
    */
   async clickRow(index: number) {
-    await this.getRow(index).click();
+    await this.clickRowButton(this.getRow(index));
   }
 
   /**
    * Click on the first row
    */
   async clickFirstRow() {
-    await this.firstRow.click();
+    await this.clickRow(0);
   }
 
   async clickRowContaining(text: string) {
     const row = this.getRows().filter({ hasText: text }).first();
+    await this.clickRowButton(row);
+  }
+
+  private async clickRowButton(row: Locator) {
     // The leading cell is the selection checkbox. Its click toggles selection
     // and does not open the row. The content button does. An open side panel
     // covers the right side of the table, so aim at the button's left edge.

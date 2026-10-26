@@ -2882,7 +2882,7 @@ test.describe('Dashboard', { tag: ['@dashboard'] }, () => {
 
           const headersAfter =
             await dashboardPage.chartEditor.getPreviewTableHeaders();
-          expect(headersAfter.length).toBe(defaultHeaders.length);
+          expect(headersAfter).toHaveLength(defaultHeaders.length);
           expect(headersAfter[0]).toBe('ServiceName');
           expect(headersAfter[1]).toBe('SeverityText');
           expect(['ServiceName', 'SeverityText']).not.toContain(
@@ -2976,7 +2976,7 @@ test.describe('Dashboard', { tag: ['@dashboard'] }, () => {
           await dashboardPage.chartEditor.runQuery(false);
           defaultHeaders =
             await dashboardPage.chartEditor.getPreviewTableHeaders();
-          expect(defaultHeaders.length).toBe(2);
+          expect(defaultHeaders).toHaveLength(2);
           expect(defaultHeaders[defaultHeaders.length - 1]).toBe('ServiceName');
         });
 
@@ -2987,7 +2987,7 @@ test.describe('Dashboard', { tag: ['@dashboard'] }, () => {
 
           const headersAfter =
             await dashboardPage.chartEditor.getPreviewTableHeaders();
-          expect(headersAfter.length).toBe(2);
+          expect(headersAfter).toHaveLength(2);
           expect(headersAfter[0]).toBe('ServiceName');
         });
 
@@ -3325,6 +3325,7 @@ test.describe('Dashboard', { tag: ['@dashboard'] }, () => {
       });
 
       let mainTimePickerValueBefore = '';
+
       await test.step('Set the dashboard time range to "Last 1 hour"', async () => {
         await dashboardPage.timePicker.selectRelativeTime('Last 1 hour');
         mainTimePickerValueBefore =

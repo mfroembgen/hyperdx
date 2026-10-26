@@ -3,6 +3,7 @@ import { Group, Text, UnstyledButton } from '@mantine/core';
 import { IconArrowDown, IconArrowUp, IconX } from '@tabler/icons-react';
 import { flexRender, Header } from '@tanstack/react-table';
 
+import type { AppTableFeatures } from '@/tableFeatures';
 import { UNDEFINED_WIDTH } from '@/tableUtils';
 
 import { DBRowTableIconButton } from './DBRowTableIconButton';
@@ -16,7 +17,7 @@ export default function TableHeader({
   onRemoveColumn,
 }: {
   isLast: boolean;
-  header: Header<any, any>;
+  header: Header<AppTableFeatures, any, any>;
   lastItemButtons?: React.ReactNode;
   onRemoveColumn?: () => void;
 }) {

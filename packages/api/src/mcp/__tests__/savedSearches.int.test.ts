@@ -41,7 +41,7 @@ describe('MCP Saved Search Tools', () => {
     });
 
     traceSource = await Source.create({
-      kind: SourceKind.Trace,
+      kind: SourceKind.Trace as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,

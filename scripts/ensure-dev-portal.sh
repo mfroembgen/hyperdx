@@ -18,7 +18,7 @@ if ! (echo >/dev/tcp/127.0.0.1/"$HDX_PORTAL_PORT") 2>/dev/null; then
   _script_dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
   _portal_script="${_script_dir}/dev-portal/server.js"
   if [ -f "$_portal_script" ]; then
-    HDX_PORTAL_PORT="$HDX_PORTAL_PORT" node "$_portal_script" >/dev/null 2>&1 &
+    HDX_PORTAL_PORT="$HDX_PORTAL_PORT" bun "$_portal_script" >/dev/null 2>&1 &
     HDX_PORTAL_PID=$!
   fi
   unset _script_dir _portal_script

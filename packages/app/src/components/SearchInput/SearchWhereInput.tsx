@@ -1,3 +1,4 @@
+import type { FieldValues } from 'react-hook-form';
 import { FieldPath, useController, UseControllerProps } from 'react-hook-form';
 import { TableConnectionChoice } from '@hyperdx/common-utils/dist/core/metadata';
 import { ActionIcon, Box, Flex, Tooltip } from '@mantine/core';
@@ -41,7 +42,9 @@ function setStoredLanguage(lang: 'sql' | 'lucene'): void {
   }
 }
 
-export type SearchWhereInputProps = {
+export type SearchWhereInputProps<
+  TFieldValues extends FieldValues = FieldValues,
+> = {
   /**
    * Callback when form should be submitted
    */
@@ -116,7 +119,7 @@ export type SearchWhereInputProps = {
   /** Whether the dashboard variables in scope apply to this expression. */
   enableVariables?: boolean;
 } & TableConnectionChoice &
-  UseControllerProps<any>;
+  UseControllerProps<TFieldValues>;
 
 /**
  * A unified search input component that handles both SQL and Lucene modes.
@@ -138,7 +141,7 @@ export type SearchWhereInputProps = {
  * />
  * ```
  */
-export default function SearchWhereInput({
+export default function SearchWhereInput<TFieldValues extends FieldValues>({
   tableConnection,
   tableConnections,
   control,
@@ -162,16 +165,16 @@ export default function SearchWhereInput({
   sourceId,
   parentRef,
   enableVariables = false,
-}: SearchWhereInputProps) {
+}: SearchWhereInputProps<TFieldValues>) {
   const [syntaxRefOpened, { open: openSyntaxRef, close: closeSyntaxRef }] =
     useDisclosure(false);
 
   const { field: languageField } = useController({
     control,
-    name: languageName as FieldPath<any>,
+    name: languageName as FieldPath<TFieldValues>,
   });
 
-  const language: 'sql' | 'lucene' = languageField.value ?? 'lucene';
+  const language = languageField.value === 'sql' ? 'sql' : 'lucene';
   const isSql = language === 'sql';
 
   const handleLanguageChange = (lang: 'sql' | 'lucene') => {

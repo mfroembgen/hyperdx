@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -11,7 +12,7 @@ describe('FilterPill', () => {
         operator="="
         value="raw"
         displayValue="formatted"
-        onRemove={jest.fn()}
+        onRemove={vi.fn()}
       />,
     );
     expect(screen.getByText('Timestamp')).toBeInTheDocument();
@@ -25,7 +26,7 @@ describe('FilterPill', () => {
         field="duration"
         operator=":"
         value="100 – 500"
-        onRemove={jest.fn()}
+        onRemove={vi.fn()}
         data-testid="pill"
       />,
     );
@@ -35,7 +36,7 @@ describe('FilterPill', () => {
   });
 
   it('removes without opening the popover', async () => {
-    const onRemove = jest.fn();
+    const onRemove = vi.fn();
     renderWithMantine(
       <FilterPill
         field="status"
@@ -53,13 +54,13 @@ describe('FilterPill', () => {
   });
 
   it('opens the popover on click and closes it via close()', async () => {
-    const onOpenedChange = jest.fn();
+    const onOpenedChange = vi.fn();
     renderWithMantine(
       <FilterPill
         field="status"
         operator="="
         value="200"
-        onRemove={jest.fn()}
+        onRemove={vi.fn()}
         onOpenedChange={onOpenedChange}
         renderPopover={close => <button onClick={close}>Done</button>}
         data-testid="pill"
@@ -85,7 +86,7 @@ describe('FilterPill', () => {
         operator="="
         value="200"
         isInvalid
-        onRemove={jest.fn()}
+        onRemove={vi.fn()}
         renderPopover={() => <div>popover content</div>}
         data-testid="pill"
       />,

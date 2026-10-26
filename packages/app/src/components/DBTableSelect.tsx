@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { FieldValues } from 'react-hook-form';
 import { useController, UseControllerProps } from 'react-hook-form';
 import { ComboboxChevron, Flex, Select } from '@mantine/core';
 import { IconTable } from '@tabler/icons-react';
@@ -84,7 +85,7 @@ function DBTableSelect({
   );
 }
 
-export function DBTableSelectControlled({
+export function DBTableSelectControlled<TFieldValues extends FieldValues>({
   database,
   connectionId,
   ...props
@@ -92,7 +93,7 @@ export function DBTableSelectControlled({
   database?: string;
   size?: string;
   connectionId: string | undefined;
-} & UseControllerProps<any>) {
+} & UseControllerProps<TFieldValues>) {
   const { field } = useController(props);
 
   return (

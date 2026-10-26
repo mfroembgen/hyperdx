@@ -8,7 +8,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Text, useInput, useStdout } from 'ink';
+import { Box, Text, useInput, useWindowSize } from 'ink';
 import Spinner from 'ink-spinner';
 
 import type { Tile } from '@hyperdx/common-utils/dist/types';
@@ -65,9 +65,9 @@ export default function DashboardPage({
   sources,
   onClose,
 }: DashboardPageProps) {
-  const { stdout } = useStdout();
-  const termWidth = stdout?.columns ?? 80;
-  const termHeight = stdout?.rows ?? 24;
+  const { columns, rows } = useWindowSize();
+  const termWidth = columns;
+  const termHeight = rows;
 
   const [dashboards, setDashboards] = useState<DashboardResponse[]>([]);
   const [loading, setLoading] = useState(true);

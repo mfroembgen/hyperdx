@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 
 import { linkedSpanKey } from '@/components/linkedSpans';
@@ -51,7 +52,7 @@ describe('SpanLinksSubpanel', () => {
   });
 
   it('calls onOpenTrace with the link when Open trace is clicked', () => {
-    const onOpenTrace = jest.fn();
+    const onOpenTrace = vi.fn();
     renderWithMantine(
       <SpanLinksSubpanel spanLinks={[LINK_A]} onOpenTrace={onOpenTrace} />,
     );
@@ -75,7 +76,7 @@ describe('SpanLinksSubpanel', () => {
   });
 
   it('renders two links to the same destination span as distinct rows', () => {
-    const consoleError = jest
+    const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
 
@@ -172,7 +173,7 @@ describe('SpanLinksSubpanel', () => {
   });
 
   it('opens the trace from a resolved link with the original link payload', () => {
-    const onOpenTrace = jest.fn();
+    const onOpenTrace = vi.fn();
     const linkedSpanDetails = new Map([
       [
         linkedSpanKey(LINK_A.TraceId, LINK_A.SpanId),

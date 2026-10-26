@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { notifications } from '@mantine/notifications';
 import { renderHook } from '@testing-library/react';
@@ -5,15 +6,15 @@ import { renderHook } from '@testing-library/react';
 import { useResolvedSourceParam } from '@/hooks/useResolvedSourceParam';
 import { useSources } from '@/source';
 
-jest.mock('@mantine/notifications', () => ({
-  notifications: { show: jest.fn() },
+vi.mock('@mantine/notifications', () => ({
+  notifications: { show: vi.fn() },
 }));
 
-jest.mock('@/source', () => ({
-  useSources: jest.fn(),
+vi.mock('@/source', () => ({
+  useSources: vi.fn(),
 }));
 
-const mockUseSources = jest.mocked(useSources);
+const mockUseSources = vi.mocked(useSources);
 
 const LOGS = { id: 'log-1', name: 'E2E Logs', kind: SourceKind.Log };
 const OTHER_LOGS = { id: 'log-2', name: 'E2E Logs', kind: SourceKind.Log };
@@ -28,7 +29,7 @@ function mockSources(sources: unknown[] | undefined) {
 
 describe('useResolvedSourceParam', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('resolves nothing while sources are loading, then resolves the name', () => {

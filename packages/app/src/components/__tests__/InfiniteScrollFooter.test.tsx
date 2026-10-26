@@ -1,12 +1,17 @@
+import { vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 
 import { InfiniteScrollFooter } from '@/components/InfiniteScrollFooter';
 
 let mockInViewport = false;
-jest.mock('@mantine/hooks', () => ({
-  ...jest.requireActual('@mantine/hooks'),
-  useInViewport: () => ({ ref: jest.fn(), inViewport: mockInViewport }),
-}));
+vi.mock('@mantine/hooks', async () => {
+  const actualModule0 =
+    await vi.importActual<typeof import('@mantine/hooks')>('@mantine/hooks');
+  return {
+    ...actualModule0,
+    useInViewport: () => ({ ref: vi.fn(), inViewport: mockInViewport }),
+  };
+});
 
 const defaultProps = {
   hasNextPage: true,
@@ -34,7 +39,7 @@ describe('InfiniteScrollFooter', () => {
   });
 
   it('holds off until the sentinel is in viewport', () => {
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
     renderWithMantine(
       <InfiniteScrollFooter {...defaultProps} onLoadMore={onLoadMore} />,
     );
@@ -45,7 +50,7 @@ describe('InfiniteScrollFooter', () => {
 
   it('loads more once the sentinel is in viewport', () => {
     mockInViewport = true;
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
     renderWithMantine(
       <InfiniteScrollFooter {...defaultProps} onLoadMore={onLoadMore} />,
     );
@@ -55,7 +60,7 @@ describe('InfiniteScrollFooter', () => {
 
   it('does not re-trigger while a page is already in flight', () => {
     mockInViewport = true;
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
     renderWithMantine(
       <InfiniteScrollFooter
         {...defaultProps}
@@ -69,7 +74,7 @@ describe('InfiniteScrollFooter', () => {
 
   it('unmounts the sentinel on error and retries only on click', () => {
     mockInViewport = true;
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
     renderWithMantine(
       <InfiniteScrollFooter
         {...defaultProps}

@@ -21,12 +21,14 @@ export default [
       'migrate-mongo-config.ts',
       '**/*.config.js',
       '**/*.config.mjs',
-      'jest.config.js',
-      'jest.setup.ts',
+      '**/*.config.ts',
+      'vitest.config.ts',
+      'vitest.setup.ts',
     ],
   },
   {
     files: ['src/**/*.ts', '!migrations/**'],
+    settings: { node: { version: process.versions.node } },
     plugins: {
       '@typescript-eslint': tseslint.plugin,
       'simple-import-sort': simpleImportSort,

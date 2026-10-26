@@ -1,3 +1,4 @@
+import { AlertThresholdType } from '@hyperdx/common-utils/dist/types';
 import express, { Express } from 'express';
 import request from 'supertest';
 import { z } from 'zod';
@@ -157,7 +158,7 @@ describe('enhancedErrors', () => {
           dashboardId: '507f1f77bcf86cd799439011',
           threshold: -5,
           interval: '99m', // Invalid: not a valid interval
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           channel: {
             type: 'webhook',
             webhookId: '507f1f77bcf86cd799439011',

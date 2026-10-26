@@ -1,3 +1,4 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 
 import {
@@ -44,7 +45,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
       {
         name: 'Tile',
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId: ctx.traceSource._id.toString(),
           select: [{ aggFn: 'count' }],
         },
@@ -66,7 +67,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
       {
         name: 'Count A',
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId,
           select: [{ aggFn: 'count' }],
         },
@@ -74,7 +75,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
       {
         name: 'Count B',
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId,
           select: [{ aggFn: 'count' }],
         },
@@ -107,7 +108,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
       {
         name: 'Count A',
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId,
           select: [{ aggFn: 'count' }],
         },
@@ -136,7 +137,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
       {
         name: 'Good',
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId,
           select: [{ aggFn: 'count' }],
         },
@@ -145,7 +146,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
         name: 'Bad SQL',
         config: {
           configType: 'sql',
-          displayType: 'table',
+          displayType: DisplayType.Table,
           connectionId,
           sourceId,
           // References a column that does not exist -> ClickHouse error.
@@ -182,7 +183,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
         name: 'Static SQL',
         config: {
           configType: 'sql',
-          displayType: 'table',
+          displayType: DisplayType.Table,
           connectionId,
           sqlTemplate: 'SELECT 1 AS value LIMIT 1',
         },
@@ -204,7 +205,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
 
   it('reports rowCount and hasData for a tile returning rows', async () => {
     const logSource = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: ctx.team._id,
       from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
       timestampValueExpression: 'Timestamp',
@@ -223,7 +224,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
       {
         name: 'By service',
         config: {
-          displayType: 'table',
+          displayType: DisplayType.Table,
           sourceId: logSource._id.toString(),
           select: [{ aggFn: 'count' }],
           groupBy: 'ServiceName',
@@ -251,7 +252,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
       {
         name: 'Count',
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId,
           select: [{ aggFn: 'count' }],
         },
@@ -287,7 +288,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
       {
         name: 'Count',
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId,
           select: [{ aggFn: 'count' }],
         },
@@ -314,7 +315,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
     const tiles = Array.from({ length: 51 }, (_, i) => ({
       name: `Count ${i}`,
       config: {
-        displayType: 'number',
+        displayType: DisplayType.Number,
         sourceId,
         select: [{ aggFn: 'count' }],
       },
@@ -346,7 +347,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
       {
         name: 'Count A',
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId,
           select: [{ aggFn: 'count' }],
         },
@@ -354,7 +355,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
       {
         name: 'Count B',
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId,
           select: [{ aggFn: 'count' }],
         },
@@ -381,7 +382,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
       {
         name: 'Count',
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId,
           select: [{ aggFn: 'count' }],
         },
@@ -412,7 +413,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
               name: 'Rows',
               config: {
                 configType: 'sql',
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 connectionId: ctx.connection._id.toString(),
                 sourceId,
                 sqlTemplate:
@@ -453,7 +454,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
 
     it('runs an event_patterns tile with a variable macro in the batch', async () => {
       const logSource = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: ctx.team._id,
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -534,7 +535,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
         {
           name: 'Count',
           config: {
-            displayType: 'number',
+            displayType: DisplayType.Number,
             sourceId,
             select: [{ aggFn: 'count' }],
           },
@@ -562,7 +563,7 @@ describe('MCP Dashboard Tools - clickstack_query_tiles', () => {
             {
               name: 'Count',
               config: {
-                displayType: 'number',
+                displayType: DisplayType.Number,
                 sourceId,
                 select: [{ aggFn: 'count' }],
               },

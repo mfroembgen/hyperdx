@@ -1,8 +1,10 @@
+import { vi } from 'vitest';
+
 import { fetchMetricNames } from '@/mcp/tools/sources/listMetricsQueries';
 
 describe('fetchMetricNames', () => {
   it('throws on the ClickHouse cap instead of returning a truncated name set', async () => {
-    const query = jest.fn().mockResolvedValue({
+    const query = vi.fn().mockResolvedValue({
       json: () => Promise.resolve({ data: [{ MetricName: 'a' }] }),
     });
 

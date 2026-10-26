@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Box, Text, useStdout, useInput } from 'ink';
+import { Box, Text, useWindowSize, useInput } from 'ink';
 import Spinner from 'ink-spinner';
 
 import type { ApiClient, AlertItem, AlertHistoryItem } from '@/api/client';
@@ -87,8 +87,8 @@ interface AlertsPageProps {
 }
 
 export default function AlertsPage({ client, onClose }: AlertsPageProps) {
-  const { stdout } = useStdout();
-  const termHeight = stdout?.rows ?? 24;
+  const { rows } = useWindowSize();
+  const termHeight = rows;
 
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [loading, setLoading] = useState(true);

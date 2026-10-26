@@ -1,3 +1,4 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import { Types } from 'mongoose';
 
 import {
@@ -129,7 +130,7 @@ describe('utils/externalApi', () => {
       const alert = createAlertDocument({
         source: AlertSource.INLINE,
         savedSearch: undefined,
-        chartConfig: { displayType: 'line' },
+        chartConfig: { displayType: DisplayType.Line },
       });
 
       const translated = translateAlertDocumentToExternalAlert(alert);
@@ -209,7 +210,7 @@ describe('utils/externalApi', () => {
 
   describe('chartConfig handling', () => {
     const internalChartConfig = {
-      displayType: 'line',
+      displayType: DisplayType.Line,
       source: '65f5e4a3b9e77c001a123456',
       select: [
         {
@@ -248,7 +249,7 @@ describe('utils/externalApi', () => {
       // seriesReturnType 'ratio' becomes asRatio only with exactly two
       // select items — this single-select config maps to false.
       expect(translated.chartConfig).toMatchObject({
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId: '65f5e4a3b9e77c001a123456',
         asRatio: false,
         select: [
@@ -266,7 +267,7 @@ describe('utils/externalApi', () => {
         source: AlertSource.INLINE,
         chartConfig: {
           configType: 'sql',
-          displayType: 'line',
+          displayType: DisplayType.Line,
           sqlTemplate: 'SELECT 1',
           connection: '65f5e4a3b9e77c001a789012',
           source: '65f5e4a3b9e77c001a123456',
@@ -278,7 +279,7 @@ describe('utils/externalApi', () => {
 
       expect(translated.chartConfig).toMatchObject({
         configType: 'sql',
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sqlTemplate: 'SELECT 1',
         connectionId: '65f5e4a3b9e77c001a789012',
         sourceId: '65f5e4a3b9e77c001a123456',

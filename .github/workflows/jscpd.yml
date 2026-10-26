@@ -7,6 +7,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   jscpd:
+    if: github.repository == 'hyperdxio/hyperdx'
     timeout-minutes: 10
     runs-on: ubuntu-24.04
     permissions:
@@ -22,15 +23,10 @@ jobs:
           fetch-depth: 0
           filter: blob:none
 
-      - name: Setup node
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        with:
-          node-version-file: '.nvmrc'
-          cache-dependency-path: 'yarn.lock'
-          cache: 'yarn'
-
+      - name: Setup Bun
+        uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
       - name: Install dependencies
-        run: yarn install --immutable
+        run: bun ci
 
       # Advisory check. dupes.mjs always exits 0; continue-on-error covers the
       # case where it cannot run at all, so a tool failure can never block a PR.
@@ -39,7 +35,7 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run:
-          node scripts/ci/dupes.mjs --base "origin/$BASE_REF" --markdown >
+          bun scripts/ci/dupes.mjs --base "origin/$BASE_REF" --markdown >
           /tmp/jscpd-comment.md
 
       - name: Read report

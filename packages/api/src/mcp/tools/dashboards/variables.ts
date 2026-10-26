@@ -53,8 +53,7 @@ export type McpVariableValues = z.infer<typeof mcpVariableValuesParam>;
  */
 export function resolveDashboardVariables(
   filters:
-    | (ExternalDashboardFilter | ExternalDashboardFilterWithId)[]
-    | undefined,
+    (ExternalDashboardFilter | ExternalDashboardFilterWithId)[] | undefined,
   variableValues: McpVariableValues | undefined,
 ): { variables: ChartVariable[] } | { error: string } {
   // Empty selection for every variable by default

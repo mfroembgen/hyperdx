@@ -41,10 +41,10 @@ concurrency:
 
 jobs:
   claude-review:
-    if:
-      github.event_name == 'workflow_dispatch' || github.event.action ==
-      'ready_for_review' || !github.event.pull_request.draft
-
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' && (github.event_name ==
+      'workflow_dispatch' || github.event.action == 'ready_for_review' ||
+      !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     # A hung CLI or stalled API would otherwise hold a runner for the 6-hour default;
     # cancel-in-progress only reclaims it if someone pushes again.
@@ -97,7 +97,7 @@ jobs:
       # Checkout the fork's branch so Claude can read the actual PR code.
       # Using the PR head repo/ref works for both fork and non-fork PRs.
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ steps.pr.outputs.head_repo }}
           # The SHA, not the branch: the diff, the line map and the posted comments must
@@ -120,7 +120,7 @@ jobs:
       # was loaded from, so the trusted copy always matches the YAML that is running.
       # base_sha (the PR's merge target) can lag it.
       - name: Checkout trusted prompt and helpers
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           path: .trusted
@@ -131,23 +131,21 @@ jobs:
             .github/prompts
             .github/scripts
             .github/workflows
-            .nvmrc
+            mise.toml
             agent_docs/code_style.md
             AGENTS.md
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
-      - uses: actions/setup-node@v6
+      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
         with:
-          # From the trusted tree: the fork controls its own .nvmrc.
-          node-version-file: .trusted/.nvmrc
-
+          working_directory: .trusted
       # Same pattern as pr-triage.yml: the workflow that consumes a script runs its
       # tests. Fails fast on the comment-routing logic before spending on a review.
       - name: Test review helpers
         run:
-          node --test
-          .trusted/.github/scripts/code-review/__tests__/review-comments.test.mjs
+          bun test
+          ./.trusted/.github/scripts/code-review/__tests__/review-comments.test.mjs
 
       # The reviewer reads the diff from a file: a large diff cannot be embedded in
       # workflow YAML, and subagents/later steps need a stable path.

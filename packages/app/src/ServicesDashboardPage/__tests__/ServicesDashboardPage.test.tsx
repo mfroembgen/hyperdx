@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -7,7 +8,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 // `async () => ServicesDashboardPage`, so the loader resolves asynchronously;
 // hold the resolved component in state so its arrival triggers a re-render
 // (a plain closure assignment would not, leaving the tree empty).
-jest.mock('next/dynamic', () => ({
+vi.mock('next/dynamic', () => ({
   __esModule: true,
   default: (loader: () => Promise<unknown>) => {
     const Wrapped = (props: any) => {
@@ -29,7 +30,7 @@ jest.mock('next/dynamic', () => ({
   },
 }));
 
-jest.mock('nuqs', () => {
+vi.mock('nuqs', () => {
   const noop = () => {};
   return {
     __esModule: true,
@@ -47,107 +48,107 @@ jest.mock('nuqs', () => {
 
 // Trivial stubs for the heavy tab children — the smoke test only needs the
 // page shell to mount, not the chart-heavy tabs.
-jest.mock('../HttpTab', () => ({
+vi.mock('../HttpTab', () => ({
   __esModule: true,
   default: () => <div data-testid="http-tab-mock" />,
   EndpointLatencyChart: () => null,
 }));
-jest.mock('../DatabaseTab', () => ({
+vi.mock('../DatabaseTab', () => ({
   __esModule: true,
   default: () => <div data-testid="database-tab-mock" />,
 }));
-jest.mock('../ErrorsTab', () => ({
+vi.mock('../ErrorsTab', () => ({
   __esModule: true,
   default: () => <div data-testid="errors-tab-mock" />,
 }));
 
 // Side panels + modal + onboarding pull in networked hooks; stub them out.
-jest.mock('@/components/ServiceDashboardEndpointSidePanel', () => ({
+vi.mock('@/components/ServiceDashboardEndpointSidePanel', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('@/components/ServiceDashboardDbQuerySidePanel', () => ({
+vi.mock('@/components/ServiceDashboardDbQuerySidePanel', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('@/components/OnboardingModal', () => ({
+vi.mock('@/components/OnboardingModal', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('@/DashboardFilters', () => ({
+vi.mock('@/DashboardFilters', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('@/components/DashboardFiltersModal', () => ({
+vi.mock('@/components/DashboardFiltersModal', () => ({
   __esModule: true,
   default: () => null,
 }));
 
 // Header input controls pull in networked editors / hooks; stub them out.
-jest.mock('@/components/SearchInput/SearchWhereInput', () => ({
+vi.mock('@/components/SearchInput/SearchWhereInput', () => ({
   __esModule: true,
   default: () => null,
   getStoredLanguage: () => 'sql',
 }));
-jest.mock('@/components/SourceSelect', () => ({
+vi.mock('@/components/SourceSelect', () => ({
   __esModule: true,
   SourceSelectControlled: () => null,
 }));
-jest.mock('@/components/SelectControlled', () => ({
+vi.mock('@/components/SelectControlled', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('@/components/TimePicker', () => ({
+vi.mock('@/components/TimePicker', () => ({
   __esModule: true,
   TimePicker: () => null,
 }));
 
-jest.mock('@/hooks/usePresetDashboardFilters', () => ({
+vi.mock('@/hooks/usePresetDashboardFilters', () => ({
   __esModule: true,
   default: () => ({
     filters: [],
     filterValues: {},
-    setFilterValue: jest.fn(),
+    setFilterValue: vi.fn(),
     filterQueries: [],
-    handleSaveFilter: jest.fn(),
-    handleRemoveFilter: jest.fn(),
+    handleSaveFilter: vi.fn(),
+    handleRemoveFilter: vi.fn(),
     isFetching: false,
     isMutationPending: false,
   }),
 }));
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   __esModule: true,
   useSource: () => ({ data: undefined }),
   useSources: () => ({ data: [] }),
 }));
 
-jest.mock('@/serviceDashboard', () => ({
+vi.mock('@/serviceDashboard', () => ({
   __esModule: true,
   useServiceDashboardExpressions: () => ({ expressions: undefined }),
   getExpressions: () => ({}),
 }));
 
-jest.mock('@/timeQuery', () => ({
+vi.mock('@/timeQuery', () => ({
   __esModule: true,
   parseTimeQuery: () => [new Date(0), new Date(1)],
   useDefaultTimeRange: () => [new Date(0), new Date(1)],
   useNewTimeQuery: () => ({
     searchedTimeRange: [new Date(0), new Date(1)],
-    onSearch: jest.fn(),
-    onTimeRangeSelect: jest.fn(),
+    onSearch: vi.fn(),
+    onTimeRangeSelect: vi.fn(),
   }),
 }));
 
-jest.mock('@/hooks/useDashboardRefresh', () => ({
+vi.mock('@/hooks/useDashboardRefresh', () => ({
   __esModule: true,
   useDashboardRefresh: () => ({
     manualRefreshCooloff: false,
-    refresh: jest.fn(),
+    refresh: vi.fn(),
   }),
 }));
 
-jest.mock('@/hooks/useChartConfig', () => ({
+vi.mock('@/hooks/useChartConfig', () => ({
   __esModule: true,
   useQueriedChartConfig: () => ({
     data: undefined,
@@ -156,13 +157,13 @@ jest.mock('@/hooks/useChartConfig', () => ({
   }),
 }));
 
-jest.mock('@/layout', () => ({
+vi.mock('@/layout', () => ({
   __esModule: true,
   withAppNav: (page: unknown) => page,
   withAppNavForSurface: () => (page: unknown) => page,
 }));
 
-jest.mock('@/theme/ThemeProvider', () => ({
+vi.mock('@/theme/ThemeProvider', () => ({
   __esModule: true,
   useBrandDisplayName: () => 'HyperDX',
   usePageTitle: (page?: string) => (page ? `${page} - HyperDX` : 'HyperDX'),

@@ -23,12 +23,13 @@ concurrency:
 
 jobs:
   resolve:
-    if: |
-      github.event.issue.pull_request != null &&
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' &&
+      (github.event.issue.pull_request != null &&
       startsWith(github.event.comment.body, '/just-fix-it') &&
       (github.event.comment.author_association == 'OWNER' ||
-       github.event.comment.author_association == 'MEMBER' ||
-       github.event.comment.author_association == 'COLLABORATOR')
+      github.event.comment.author_association == 'MEMBER' ||
+      github.event.comment.author_association == 'COLLABORATOR'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -107,7 +108,7 @@ jobs:
             core.setOutput('body', review.body);
 
       - name: Checkout PR head
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ steps.pr.outputs.head_repo }}
           ref: ${{ steps.pr.outputs.head_ref }}
@@ -120,10 +121,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
+        uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
       - name: Enable corepack
         run: corepack enable
 
@@ -163,7 +161,7 @@ jobs:
                touch files not cited by a finding.
 
             After edits:
-            6. Run `yarn lint:fix` to auto-fix formatting. If it errors on
+            6. Run `bun run lint:fix` to auto-fix formatting. If it errors on
                files you didn't touch, leave those alone.
             7. Stage and commit in a single commit:
                  git add -A
@@ -186,7 +184,7 @@ jobs:
 
           claude_args: |
             --setting-sources user
-            --allowedTools "Bash(git:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(yarn lint:fix),Bash(yarn:*),Edit,Write,MultiEdit,Read,Grep,Glob"
+            --allowedTools "Bash(git:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(bun run lint:fix),Bash(bun:*),Edit,Write,MultiEdit,Read,Grep,Glob"
 
       - name: React on failure
         if: failure()

@@ -1,6 +1,7 @@
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
-import request, { SuperAgentTest } from 'supertest';
+import request, { Agent } from 'supertest';
+import { vi } from 'vitest';
 
 import * as config from '@/config';
 import { validateConnectionId } from '@/controllers/connection';
@@ -17,7 +18,7 @@ import { IUser } from '@/models/user';
 
 describe('External API v2 Sources CRUD', () => {
   const server = getServer();
-  let agent: SuperAgentTest;
+  let agent: Agent;
   let team: ITeam;
   let user: IUser;
   let connection: IConnection;
@@ -60,7 +61,7 @@ describe('External API v2 Sources CRUD', () => {
   const BASE_URL = '/api/v2/sources';
 
   const logSourceBody = () => ({
-    kind: SourceKind.Log,
+    kind: SourceKind.Log as const,
     name: 'Created Log Source',
     from: {
       databaseName: DEFAULT_DATABASE,
@@ -72,7 +73,7 @@ describe('External API v2 Sources CRUD', () => {
   });
 
   const traceSourceBody = () => ({
-    kind: SourceKind.Trace,
+    kind: SourceKind.Trace as const,
     name: 'Created Trace Source',
     defaultTableSelectExpression: 'Timestamp, SpanName',
     from: {
@@ -103,7 +104,7 @@ describe('External API v2 Sources CRUD', () => {
     const otherTeamId = new mongoose.Types.ObjectId();
     const otherConnection = await createOtherTeamConnection(otherTeamId);
     return LogSource.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: otherTeamId,
       name: 'Other Team Source',
       from: {
@@ -137,7 +138,7 @@ describe('External API v2 Sources CRUD', () => {
       expect(response.body.data).toMatchObject({
         id: logSource._id.toString(),
         name: 'Created Log Source',
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
       });
     });
 
@@ -175,7 +176,7 @@ describe('External API v2 Sources CRUD', () => {
 
       expect(response.body.data).toMatchObject({
         name: 'Created Log Source',
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         connection: connection._id.toString(),
         timestampValueExpression: 'Timestamp',
         defaultTableSelectExpression: 'Timestamp, Body',
@@ -239,7 +240,7 @@ describe('External API v2 Sources CRUD', () => {
     it('should create a promql source', async () => {
       const response = await authRequest('post', BASE_URL)
         .send({
-          kind: SourceKind.Promql,
+          kind: SourceKind.Promql as const,
           name: 'Prometheus Metrics',
           // Required by the API for all source kinds; unused for promql
           from: { databaseName: 'default', tableName: 'default' },
@@ -249,7 +250,7 @@ describe('External API v2 Sources CRUD', () => {
         .expect(200);
 
       expect(response.body.data).toMatchObject({
-        kind: SourceKind.Promql,
+        kind: SourceKind.Promql as const,
         name: 'Prometheus Metrics',
       });
 
@@ -280,14 +281,17 @@ describe('External API v2 Sources CRUD', () => {
 
     it('should return 400 for an invalid body', async () => {
       await authRequest('post', BASE_URL)
-        .send({ kind: SourceKind.Log, name: 'Missing required fields' })
+        .send({
+          kind: SourceKind.Log as const,
+          name: 'Missing required fields',
+        })
         .expect(400);
     });
   });
 
   describe('PromQL sources with PromQL disabled', () => {
     const promqlSourceBody = () => ({
-      kind: SourceKind.Promql,
+      kind: SourceKind.Promql as const,
       name: 'Prometheus Metrics',
       from: { databaseName: 'default', tableName: 'default' },
       timestampValueExpression: 'timestamp',
@@ -295,11 +299,11 @@ describe('External API v2 Sources CRUD', () => {
     });
 
     beforeEach(() => {
-      jest.replaceProperty(config, 'IS_PROMQL_ENABLED', false);
+      vi.spyOn(config, 'IS_PROMQL_ENABLED', 'get').mockReturnValue(false);
     });
 
     afterEach(() => {
-      jest.restoreAllMocks();
+      vi.restoreAllMocks();
     });
 
     it('rejects creating a PromQL source', async () => {
@@ -385,7 +389,10 @@ describe('External API v2 Sources CRUD', () => {
       });
 
       await authRequest('put', `${BASE_URL}/${logSource._id}`)
-        .send({ kind: SourceKind.Log, name: 'Missing required fields' })
+        .send({
+          kind: SourceKind.Log as const,
+          name: 'Missing required fields',
+        })
         .expect(400);
     });
 
@@ -450,7 +457,7 @@ describe('External API v2 Sources CRUD', () => {
 
       expect(response.body.data).toMatchObject({
         id: logSource._id.toString(),
-        kind: SourceKind.Trace,
+        kind: SourceKind.Trace as const,
         name: 'Now A Trace Source',
       });
 
@@ -475,7 +482,7 @@ describe('External API v2 Sources CRUD', () => {
       // and the raw replaceOne in the kind-change path: the replace matches
       // nothing, so matchedCount === 0 and the controller must report 404
       // rather than hydrating a phantom document.
-      const spy = jest
+      const spy = vi
         .spyOn(Source.collection, 'replaceOne')
         .mockImplementationOnce(async () => {
           await Source.deleteOne({ _id: logSource._id });

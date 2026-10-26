@@ -1,5 +1,5 @@
-import type { Plugin } from 'uplot';
 import type uPlot from 'uplot';
+import type { Plugin } from 'uplot';
 
 import {
   type HeatmapCellKind,
