@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# Dev stack setup for `yarn dev`
+# Dev stack setup for `bun run dev`
 # ---------------------------------------------------------------------------
 # Sets this worktree's slot and ports (see scripts/slots.sh for the scheme),
-# then prepares its dev stack: clears stale Next.js output, registers the slot
+# then prepares its dev stack: clears stale Vite cache, registers the slot
 # with the dev portal, and archives its logs on exit.
 #
 # Only source this when starting or stopping the stack. Tools that just need
@@ -35,10 +35,10 @@ export HDX_DEV_BRANCH
 export HDX_DEV_WORKTREE
 export NX_CACHE_DIRECTORY
 
-# --- Clean up stale Next.js state from previous sessions ---
+# --- Clean up stale Vite state from previous sessions ---
 # Nuke the entire .next directory to avoid stale webpack bundles, lock files,
 # and cached module resolutions after common-utils rebuilds.
-rm -rf "${PWD}/packages/app/.next" 2>/dev/null || true
+rm -rf "${PWD}/packages/app/node_modules/.vite" 2>/dev/null || true
 
 # --- Set up directories for portal discovery + logs ---
 HDX_DEV_SLOTS_DIR="${HOME}/.config/hyperdx/dev-slots"
@@ -100,7 +100,7 @@ echo "╠═══════════════════════�
 echo "║  Branch:     ${HDX_DEV_BRANCH}$(printf '%*s' $((45 - ${#HDX_DEV_BRANCH})) '')║"
 echo "║  Worktree:   ${HDX_DEV_WORKTREE}$(printf '%*s' $((45 - ${#HDX_DEV_WORKTREE})) '')║"
 echo "╠══════════════════════════════════════════════════════════════╣"
-echo "║  App (Next.js)     http://localhost:${HYPERDX_APP_PORT}$(printf '%*s' $((22 - ${#HYPERDX_APP_PORT})) '')║"
+echo "║  App (Vinext)     http://localhost:${HYPERDX_APP_PORT}$(printf '%*s' $((22 - ${#HYPERDX_APP_PORT})) '')║"
 echo "║  API               http://localhost:${HYPERDX_API_PORT}$(printf '%*s' $((22 - ${#HYPERDX_API_PORT})) '')║"
 echo "║  ClickHouse        http://localhost:${HDX_DEV_CH_HTTP_PORT}$(printf '%*s' $((22 - ${#HDX_DEV_CH_HTTP_PORT})) '')║"
 echo "║  MongoDB           localhost:${HDX_DEV_MONGO_PORT}$(printf '%*s' $((29 - ${#HDX_DEV_MONGO_PORT})) '')║"

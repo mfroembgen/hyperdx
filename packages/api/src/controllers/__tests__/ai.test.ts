@@ -1,49 +1,63 @@
-import type { LanguageModel } from 'ai';
+import { MockLanguageModelV4 } from 'ai/test';
+import mongoose from 'mongoose';
+import { vi } from 'vitest';
 
-const mockAnthropicModel = {
+const mockAnthropicModel = new MockLanguageModelV4({
   modelId: 'claude-sonnet-4-5-20250929',
-} as unknown as LanguageModel;
+});
 
-const mockOpenAIModel = {
+const mockOpenAIModel = new MockLanguageModelV4({
   modelId: 'gpt-4o',
-} as unknown as LanguageModel;
+});
 
-const mockAnthropicFactory = jest.fn((_model?: string) => mockAnthropicModel);
-const mockCreateAnthropic = jest.fn(
-  (_opts?: Record<string, unknown>) => mockAnthropicFactory,
+const mockAnthropicFactory = vi.hoisted(() =>
+  vi.fn((_model?: string) => mockAnthropicModel),
+);
+const mockCreateAnthropic = vi.hoisted(() =>
+  vi.fn((_opts?: Record<string, unknown>) => mockAnthropicFactory),
 );
 
-const mockOpenAIResponsesFactory = jest.fn(
-  (_model?: string) => mockOpenAIModel,
+const mockOpenAIResponsesFactory = vi.hoisted(() =>
+  vi.fn((_model?: string) => mockOpenAIModel),
 );
-const mockCreateOpenAI = jest.fn((_opts?: Record<string, unknown>) => ({
-  responses: mockOpenAIResponsesFactory,
-}));
+const mockCreateOpenAI = vi.hoisted(() =>
+  vi.fn((_opts?: Record<string, unknown>) => ({
+    responses: mockOpenAIResponsesFactory,
+  })),
+);
 
-jest.mock('@ai-sdk/anthropic', () => ({
+vi.mock('@ai-sdk/anthropic', () => ({
   createAnthropic: (opts: Record<string, unknown>) => mockCreateAnthropic(opts),
 }));
 
-jest.mock('@ai-sdk/openai', () => ({
+vi.mock('@ai-sdk/openai', () => ({
   createOpenAI: (opts: Record<string, unknown>) => mockCreateOpenAI(opts),
 }));
 
-jest.mock('@/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   __esModule: true,
   default: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
-const mockConfig: Record<string, unknown> = { __esModule: true };
+const mockConfig: Record<string, unknown> = vi.hoisted(() => ({
+  __esModule: true,
+  AI_PROVIDER: undefined,
+  AI_API_KEY: undefined,
+  ANTHROPIC_API_KEY: undefined,
+  AI_BASE_URL: undefined,
+  AI_MODEL_NAME: undefined,
+  AI_REQUEST_HEADERS: undefined,
+}));
 
-jest.mock('@/config', () => mockConfig);
+vi.mock('@/config', () => mockConfig);
 
 function setConfig(overrides: Record<string, string | undefined>) {
   Object.keys(mockConfig).forEach(k => {
-    if (k !== '__esModule') delete mockConfig[k];
+    if (k !== '__esModule') mockConfig[k] = undefined;
   });
   Object.assign(mockConfig, overrides);
 }
@@ -55,7 +69,7 @@ import type { ISource } from '@/models/source';
 
 beforeEach(() => {
   setConfig({});
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('getAIModel', () => {
@@ -257,11 +271,20 @@ describe('openai provider', () => {
 });
 
 describe('getChartConfigFromResolvedConfig', () => {
-  // @ts-expect-error mock source only has the fields getChartConfigFromResolvedConfig reads
   const source: ISource = {
     id: 'source-id',
-    kind: SourceKind.Trace,
-    connection: 'connection-id',
+    kind: SourceKind.Trace as const,
+    connection: new mongoose.Types.ObjectId(),
+    team: new mongoose.Types.ObjectId(),
+    name: 'Traces',
+    defaultTableSelectExpression: '*',
+    durationExpression: 'Duration',
+    durationPrecision: 3,
+    traceIdExpression: 'TraceId',
+    spanIdExpression: 'SpanId',
+    parentSpanIdExpression: 'ParentSpanId',
+    spanNameExpression: 'SpanName',
+    spanKindExpression: 'SpanKind',
     from: { databaseName: 'default', tableName: 'otel_traces' },
     timestampValueExpression: 'Timestamp',
   };

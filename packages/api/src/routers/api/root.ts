@@ -188,7 +188,7 @@ router.post('/team/setup/:token', async (req, res, next) => {
           );
         }
 
-        await TeamInvite.findByIdAndRemove(teamInvite._id);
+        await TeamInvite.findByIdAndDelete(teamInvite._id);
 
         req.login(user, err => {
           if (err) {

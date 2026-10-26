@@ -1,4 +1,5 @@
 import { getMetadata } from '@hyperdx/common-utils/dist/core/metadata';
+import { vi } from 'vitest';
 
 import { ClickhouseClient } from '@/clickhouse';
 import { resolveComparison } from '@/mcp/tools/query/serviceHealth/comparison';
@@ -13,12 +14,14 @@ import {
   serviceHealthSchema,
 } from '@/mcp/tools/query/serviceHealth/schema';
 
-jest.mock('@/mcp/tools/query/serviceHealth/queries', () => ({
-  ...jest.requireActual('@/mcp/tools/query/serviceHealth/queries'),
-  fetchServiceStats: jest.fn(),
+vi.mock('@/mcp/tools/query/serviceHealth/queries', async () => ({
+  ...(await vi.importActual<
+    typeof import('@/mcp/tools/query/serviceHealth/queries')
+  >('@/mcp/tools/query/serviceHealth/queries')),
+  fetchServiceStats: vi.fn(),
 }));
 
-const fetchStats = jest.mocked(fetchServiceStats);
+const fetchStats = vi.mocked(fetchServiceStats);
 
 const current = {
   start: new Date('2026-10-16T10:00:00Z'),
@@ -50,7 +53,7 @@ const source: HealthSource = {
 
 const ctxWith = (results: { data: Record<string, string | number>[] }[]) => {
   const client = new ClickhouseClient({ host: 'http://localhost:1' });
-  const query = jest.spyOn(client, 'queryChartConfig');
+  const query = vi.spyOn(client, 'queryChartConfig');
   for (const r of results) query.mockResolvedValueOnce({ data: r.data });
   const ctx: QueryContext = {
     client,

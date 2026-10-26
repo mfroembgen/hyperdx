@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { screen } from '@testing-library/react';
 
@@ -7,21 +8,21 @@ import DirectTraceSidePanel from '@/components/Search/DirectTraceSidePanel';
 let mockSources: Record<string, any> = {};
 let mockIsLoading = false;
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   useSource: ({ id }: { id?: string | null }) => ({
     data: id ? mockSources[id] : undefined,
     isLoading: mockIsLoading,
   }),
 }));
 
-jest.mock('@/components/DBTracePanel', () => ({
+vi.mock('@/components/DBTracePanel', () => ({
   __esModule: true,
   default: ({ traceId }: { traceId: string }) => (
     <div>trace panel {traceId}</div>
   ),
 }));
 
-jest.mock('@/components/SourceSelect', () => ({
+vi.mock('@/components/SourceSelect', () => ({
   SourceSelectControlled: () => <div>source select</div>,
 }));
 
@@ -46,8 +47,8 @@ describe('DirectTraceSidePanel', () => {
         traceSourceId="trace-source"
         dateRange={[new Date(0), new Date(1000)]}
         focusDate={new Date(500)}
-        onClose={jest.fn()}
-        onSourceChange={jest.fn()}
+        onClose={vi.fn()}
+        onSourceChange={vi.fn()}
       />,
     );
 
@@ -62,8 +63,8 @@ describe('DirectTraceSidePanel', () => {
         traceSourceId={null}
         dateRange={[new Date(0), new Date(1000)]}
         focusDate={new Date(500)}
-        onClose={jest.fn()}
-        onSourceChange={jest.fn()}
+        onClose={vi.fn()}
+        onSourceChange={vi.fn()}
       />,
     );
 
@@ -78,8 +79,8 @@ describe('DirectTraceSidePanel', () => {
         traceSourceId="missing-source"
         dateRange={[new Date(0), new Date(1000)]}
         focusDate={new Date(500)}
-        onClose={jest.fn()}
-        onSourceChange={jest.fn()}
+        onClose={vi.fn()}
+        onSourceChange={vi.fn()}
       />,
     );
 
@@ -97,8 +98,8 @@ describe('DirectTraceSidePanel', () => {
         traceSourceId="trace-source"
         dateRange={[new Date(0), new Date(1000)]}
         focusDate={new Date(500)}
-        onClose={jest.fn()}
-        onSourceChange={jest.fn()}
+        onClose={vi.fn()}
+        onSourceChange={vi.fn()}
       />,
     );
 
@@ -113,8 +114,8 @@ describe('DirectTraceSidePanel', () => {
         traceSourceId={null}
         dateRange={[new Date(0), new Date(1000)]}
         focusDate={new Date(500)}
-        onClose={jest.fn()}
-        onSourceChange={jest.fn()}
+        onClose={vi.fn()}
+        onSourceChange={vi.fn()}
       />,
     );
 

@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import cx from 'classnames';
+import type { FieldValues } from 'react-hook-form';
 import { useController, UseControllerProps } from 'react-hook-form';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
@@ -409,14 +410,14 @@ export default function SQLInlineEditor({
   );
 }
 
-function SQLInlineEditorControlledComponent({
+function SQLInlineEditorControlledComponent<TFieldValues extends FieldValues>({
   placeholder,
   filterField,
   additionalSuggestions,
   queryHistoryType,
   ...props
 }: Omit<SQLInlineEditorProps, 'value' | 'onChange'> &
-  UseControllerProps<any> &
+  UseControllerProps<TFieldValues> &
   TableConnectionChoice) {
   const { field, fieldState } = useController(props);
 
@@ -445,4 +446,4 @@ function SQLInlineEditorControlledComponent({
 }
 export const SQLInlineEditorControlled = memo(
   SQLInlineEditorControlledComponent,
-);
+) as typeof SQLInlineEditorControlledComponent;

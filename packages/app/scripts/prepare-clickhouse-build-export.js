@@ -1,7 +1,21 @@
 const fs = require('fs');
 const path = require('path');
 
+const CLIENT_DIR = path.join(__dirname, '../dist/client');
 const OUT_DIR = path.join(__dirname, '../out');
+
+// Vinext emits the base path in its client tree; the embedded bundle is mounted
+// at /clickstack by its host, so expose that subtree at the export root.
+fs.rmSync(OUT_DIR, { recursive: true, force: true });
+fs.cpSync(path.join(CLIENT_DIR, 'clickstack'), OUT_DIR, { recursive: true });
+fs.copyFileSync(
+  path.join(CLIENT_DIR, 'clickstack.html'),
+  path.join(OUT_DIR, 'index.html'),
+);
+fs.copyFileSync(
+  path.join(CLIENT_DIR, '404.html'),
+  path.join(OUT_DIR, '404.html'),
+);
 const PYODIDE_PATH = path.join(OUT_DIR, 'pyodide');
 const ALLOWED_EXTENSIONS = [
   '.html',
@@ -18,7 +32,7 @@ const ALLOWED_EXTENSIONS = [
 // bundle small — so the "What's new" data is rescued by name.
 const ALLOWED_FILENAMES = ['whats-new.json'];
 
-// removes pyodide from a next static build. We want a small bundle size, so that feature would just be ignored
+// Removes pyodide from the static build. We want a small bundle size, so that feature would just be ignored
 if (fs.existsSync(PYODIDE_PATH)) {
   fs.rmSync(PYODIDE_PATH, { recursive: true, force: true });
   console.log('Removed pyodide from static build');

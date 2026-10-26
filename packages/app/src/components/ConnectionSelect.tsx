@@ -1,14 +1,15 @@
 import { useMemo } from 'react';
+import type { FieldValues } from 'react-hook-form';
 import { UseControllerProps } from 'react-hook-form';
 import { IconServer } from '@tabler/icons-react';
 
 import SelectControlled from '@/components/SelectControlled';
 import { useConnections } from '@/connection';
 
-export function ConnectionSelectControlled({
+export function ConnectionSelectControlled<TFieldValues extends FieldValues>({
   size,
   ...props
-}: { size?: string } & UseControllerProps<any>) {
+}: { size?: string } & UseControllerProps<TFieldValues>) {
   const { data } = useConnections();
 
   const values = useMemo(

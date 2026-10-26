@@ -1,3 +1,5 @@
+import { type Mocked, vi } from 'vitest';
+
 import { chSql, ColumnMeta, parameterizedQueryToSql } from '@/clickhouse';
 import { Metadata } from '@/core/metadata';
 import {
@@ -16,15 +18,15 @@ import {
 } from '@/types';
 
 describe('renderChartConfig', () => {
-  let mockMetadata: jest.Mocked<Metadata>;
+  let mockMetadata: Mocked<Metadata>;
 
   // Suppress expected console.warn noise from missing columns / optimization fallbacks
   beforeAll(() => {
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
   afterAll(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   beforeEach(() => {
@@ -35,23 +37,21 @@ describe('renderChartConfig', () => {
       { name: 'ServiceName', type: 'String' },
     ];
     mockMetadata = {
-      getColumns: jest.fn().mockResolvedValue([
+      getColumns: vi.fn().mockResolvedValue([
         { name: 'timestamp', type: 'DateTime' },
         { name: 'value', type: 'Float64' },
       ]),
-      getMaterializedColumnsLookupTable: jest.fn().mockResolvedValue(null),
-      getColumn: jest
+      getMaterializedColumnsLookupTable: vi.fn().mockResolvedValue(null),
+      getColumn: vi
         .fn()
         .mockImplementation(async ({ column }) =>
           columns.find(col => col.name === column),
         ),
-      getTableMetadata: jest
-        .fn()
-        .mockResolvedValue({ primary_key: 'timestamp' }),
-      getSkipIndices: jest.fn().mockResolvedValue([]),
-      getSetting: jest.fn().mockResolvedValue(undefined),
-      isClickHouseCloud: jest.fn().mockResolvedValue(false),
-    } as unknown as jest.Mocked<Metadata>;
+      getTableMetadata: vi.fn().mockResolvedValue({ primary_key: 'timestamp' }),
+      getSkipIndices: vi.fn().mockResolvedValue([]),
+      getSetting: vi.fn().mockResolvedValue(undefined),
+      isClickHouseCloud: vi.fn().mockResolvedValue(false),
+    } as unknown as Mocked<Metadata>;
   });
 
   const gaugeConfiguration: ChartConfigWithOptDateRange = {
@@ -107,7 +107,7 @@ describe('renderChartConfig', () => {
   });
 
   it('carries computed columns through the gauge CTEs, skipping CTE alias names', async () => {
-    mockMetadata.getColumns = jest.fn().mockResolvedValue([
+    mockMetadata.getColumns = vi.fn().mockResolvedValue([
       { name: 'Value', type: 'Float64', default_type: '' },
       {
         name: 'host.name',
@@ -133,7 +133,7 @@ describe('renderChartConfig', () => {
   });
 
   it('groups buckets by grouped-by computed columns', async () => {
-    mockMetadata.getColumns = jest.fn().mockResolvedValue([
+    mockMetadata.getColumns = vi.fn().mockResolvedValue([
       { name: 'host.name', type: 'String', default_type: 'MATERIALIZED' },
       { name: 'region', type: 'String', default_type: 'ALIAS' },
     ]);
@@ -155,7 +155,7 @@ describe('renderChartConfig', () => {
     ],
     ['a segment of a quoted dotted name', '`host.region`'],
   ])('does not group buckets by %s', async (_, groupBy) => {
-    mockMetadata.getColumns = jest
+    mockMetadata.getColumns = vi
       .fn()
       .mockResolvedValue([
         { name: 'region', type: 'String', default_type: 'ALIAS' },
@@ -177,7 +177,7 @@ describe('renderChartConfig', () => {
   ])(
     'groups buckets by computed column %s written as %s',
     async (name, groupBy, rendered) => {
-      mockMetadata.getColumns = jest
+      mockMetadata.getColumns = vi
         .fn()
         .mockResolvedValue([{ name, type: 'String', default_type: 'ALIAS' }]);
       const { sql } = await renderChartConfig(
@@ -192,7 +192,7 @@ describe('renderChartConfig', () => {
   );
 
   it('groups by a computed column Bucketed already carries, without projecting it twice', async () => {
-    mockMetadata.getColumns = jest
+    mockMetadata.getColumns = vi
       .fn()
       .mockResolvedValue([
         { name: 'ServiceName', type: 'String', default_type: 'MATERIALIZED' },
@@ -211,7 +211,7 @@ describe('renderChartConfig', () => {
   });
 
   it('carries a computed column the gauge Bucketed CTE does not project', async () => {
-    mockMetadata.getColumns = jest
+    mockMetadata.getColumns = vi
       .fn()
       .mockResolvedValue([
         { name: 'IsMonotonic', type: 'Bool', default_type: 'ALIAS' },
@@ -237,7 +237,7 @@ describe('renderChartConfig', () => {
   ])(
     'groups buckets by a computed column referenced by group-by %p',
     async groupBy => {
-      mockMetadata.getColumns = jest
+      mockMetadata.getColumns = vi
         .fn()
         .mockResolvedValue([
           { name: 'region', type: 'String', default_type: 'ALIAS' },
@@ -1532,7 +1532,7 @@ describe('renderChartConfig', () => {
 
   describe('materialized column optimization with expression alias CTEs', () => {
     it('should rewrite WHERE to use materialized column when with clauses are expression aliases (isSubquery: false)', async () => {
-      mockMetadata.getMaterializedColumnsLookupTable = jest
+      mockMetadata.getMaterializedColumnsLookupTable = vi
         .fn()
         .mockResolvedValue(
           new Map([["LogAttributes['attr_key']", 'attr_key']]),
@@ -1572,7 +1572,7 @@ describe('renderChartConfig', () => {
     });
 
     it('should skip materialized columns when with clauses are subquery CTEs', async () => {
-      mockMetadata.getMaterializedColumnsLookupTable = jest
+      mockMetadata.getMaterializedColumnsLookupTable = vi
         .fn()
         .mockResolvedValue(
           new Map([["LogAttributes['attr_key']", 'attr_key']]),
@@ -1688,7 +1688,7 @@ describe('renderChartConfig', () => {
 
   describe('SQL filter KV items direct_read optimization', () => {
     const stubKvItemsMetadata = () => {
-      mockMetadata.getColumns = jest.fn().mockResolvedValue([
+      mockMetadata.getColumns = vi.fn().mockResolvedValue([
         {
           name: 'LogAttributes',
           type: 'Map(String, String)',
@@ -1703,7 +1703,7 @@ describe('renderChartConfig', () => {
             "arrayMap((arr) -> concat(arr.1, '=', arr.2), LogAttributes::Array(Tuple(String, String)))",
         },
       ]);
-      mockMetadata.getSkipIndices = jest.fn().mockResolvedValue([
+      mockMetadata.getSkipIndices = vi.fn().mockResolvedValue([
         {
           name: 'idx_log_attr_items',
           type: 'text',
@@ -1712,10 +1712,8 @@ describe('renderChartConfig', () => {
           granularity: 10000000,
         },
       ]);
-      mockMetadata.getServerVersion = jest
-        .fn()
-        .mockResolvedValue([26, 5, 0, 0]);
-      mockMetadata.getMaterializedColumnsLookupTable = jest
+      mockMetadata.getServerVersion = vi.fn().mockResolvedValue([26, 5, 0, 0]);
+      mockMetadata.getMaterializedColumnsLookupTable = vi
         .fn()
         .mockResolvedValue(new Map());
     };
@@ -1777,9 +1775,7 @@ describe('renderChartConfig', () => {
 
     it('rewrites `Map[key] IN (many)` to a chain of has() ORs on older ClickHouse (< 26.5)', async () => {
       stubKvItemsMetadata();
-      mockMetadata.getServerVersion = jest
-        .fn()
-        .mockResolvedValue([26, 4, 3, 37]);
+      mockMetadata.getServerVersion = vi.fn().mockResolvedValue([26, 4, 3, 37]);
       const sql = parameterizedQueryToSql(
         await renderChartConfig(
           buildConfig("LogAttributes['k'] IN ('a', 'b', 'c')"),
@@ -1795,7 +1791,7 @@ describe('renderChartConfig', () => {
     });
 
     it('leaves the condition unchanged when no KV items column exists', async () => {
-      mockMetadata.getColumns = jest.fn().mockResolvedValue([
+      mockMetadata.getColumns = vi.fn().mockResolvedValue([
         {
           name: 'LogAttributes',
           type: 'Map(String, String)',
@@ -1803,11 +1799,9 @@ describe('renderChartConfig', () => {
           default_expression: '',
         },
       ]);
-      mockMetadata.getSkipIndices = jest.fn().mockResolvedValue([]);
-      mockMetadata.getServerVersion = jest
-        .fn()
-        .mockResolvedValue([26, 5, 0, 0]);
-      mockMetadata.getMaterializedColumnsLookupTable = jest
+      mockMetadata.getSkipIndices = vi.fn().mockResolvedValue([]);
+      mockMetadata.getServerVersion = vi.fn().mockResolvedValue([26, 5, 0, 0]);
+      mockMetadata.getMaterializedColumnsLookupTable = vi
         .fn()
         .mockResolvedValue(new Map());
 
@@ -1908,7 +1902,7 @@ describe('renderChartConfig', () => {
     });
 
     it('leaves a SQL `where` unchanged when no KV items column exists', async () => {
-      mockMetadata.getColumns = jest.fn().mockResolvedValue([
+      mockMetadata.getColumns = vi.fn().mockResolvedValue([
         {
           name: 'LogAttributes',
           type: 'Map(String, String)',
@@ -1916,11 +1910,9 @@ describe('renderChartConfig', () => {
           default_expression: '',
         },
       ]);
-      mockMetadata.getSkipIndices = jest.fn().mockResolvedValue([]);
-      mockMetadata.getServerVersion = jest
-        .fn()
-        .mockResolvedValue([26, 5, 0, 0]);
-      mockMetadata.getMaterializedColumnsLookupTable = jest
+      mockMetadata.getSkipIndices = vi.fn().mockResolvedValue([]);
+      mockMetadata.getServerVersion = vi.fn().mockResolvedValue([26, 5, 0, 0]);
+      mockMetadata.getMaterializedColumnsLookupTable = vi
         .fn()
         .mockResolvedValue(new Map());
 
@@ -1939,7 +1931,7 @@ describe('renderChartConfig', () => {
       stubKvItemsMetadata();
       // The stub's items column is MATERIALIZED (always eligible); switch it
       // to ALIAS so the supportsDirectReadMap version gate applies.
-      mockMetadata.getColumns = jest.fn().mockResolvedValue([
+      mockMetadata.getColumns = vi.fn().mockResolvedValue([
         {
           name: 'LogAttributes',
           type: 'Map(String, String)',
@@ -1954,9 +1946,7 @@ describe('renderChartConfig', () => {
             "arrayMap((arr) -> concat(arr.1, '=', arr.2), LogAttributes::Array(Tuple(String, String)))",
         },
       ]);
-      mockMetadata.getServerVersion = jest
-        .fn()
-        .mockResolvedValue([26, 1, 0, 0]);
+      mockMetadata.getServerVersion = vi.fn().mockResolvedValue([26, 1, 0, 0]);
 
       const sql = parameterizedQueryToSql(
         await renderChartConfig(
@@ -3520,7 +3510,7 @@ describe('renderChartConfig', () => {
     });
 
     it('renders lucene filters to SQL in $__filters when source is specified', async () => {
-      mockMetadata.getMaterializedColumnsLookupTable = jest
+      mockMetadata.getMaterializedColumnsLookupTable = vi
         .fn()
         .mockResolvedValue(new Map());
       const result = await renderChartConfig(
@@ -3543,7 +3533,7 @@ describe('renderChartConfig', () => {
     });
 
     it('renders mixed lucene and sql filters in $__filters', async () => {
-      mockMetadata.getMaterializedColumnsLookupTable = jest
+      mockMetadata.getMaterializedColumnsLookupTable = vi
         .fn()
         .mockResolvedValue(new Map());
       const result = await renderChartConfig(
@@ -3569,7 +3559,7 @@ describe('renderChartConfig', () => {
     });
 
     it('renders ad hoc filter conditions for every operator in $__filters', async () => {
-      mockMetadata.getMaterializedColumnsLookupTable = jest
+      mockMetadata.getMaterializedColumnsLookupTable = vi
         .fn()
         .mockResolvedValue(new Map());
       const result = await renderChartConfig(
@@ -3662,7 +3652,7 @@ describe('renderChartConfig', () => {
   it('bare-text Lucene where uses bodyExpression when implicitColumnExpression is unset', async () => {
     // A ChartConfig with only bodyExpression (no implicitColumnExpression) must
     // route bare-text Lucene search through the body column end-to-end.
-    mockMetadata.getMaterializedColumnsLookupTable = jest
+    mockMetadata.getMaterializedColumnsLookupTable = vi
       .fn()
       .mockResolvedValue(new Map());
     const config: ChartConfigWithOptDateRange = {
@@ -3691,7 +3681,7 @@ describe('renderChartConfig', () => {
     // aggCondition serialization and the filters list, not only `where`.
     // Pins the threading contract for those two paths beyond the
     // top-level where (covered by the test above).
-    mockMetadata.getMaterializedColumnsLookupTable = jest
+    mockMetadata.getMaterializedColumnsLookupTable = vi
       .fn()
       .mockResolvedValue(new Map());
     const config: ChartConfigWithOptDateRange = {
@@ -4369,7 +4359,7 @@ describe('renderChartConfig', () => {
   // partition pruning still works.
   describe('multi-column timestampValueExpression (HDX-4371)', () => {
     it('picks the DateTime token for the bucket, keeps the Date in WHERE', async () => {
-      mockMetadata.getColumn = jest
+      mockMetadata.getColumn = vi
         .fn()
         .mockImplementation(async ({ column }: { column: string }) => {
           if (column === 'EventDate')
@@ -4418,7 +4408,7 @@ describe('renderChartConfig', () => {
     });
 
     it('picks the DateTime token when its type carries a timezone', async () => {
-      mockMetadata.getColumn = jest
+      mockMetadata.getColumn = vi
         .fn()
         .mockImplementation(async ({ column }: { column: string }) => {
           if (column === 'EventDate')
@@ -4463,7 +4453,7 @@ describe('renderChartConfig', () => {
     });
 
     it('all-Date input falls back to the first token (and warns)', async () => {
-      mockMetadata.getColumn = jest
+      mockMetadata.getColumn = vi
         .fn()
         .mockImplementation(async ({ column }: { column: string }) => {
           if (column === 'EventDate')
@@ -4508,7 +4498,7 @@ describe('renderChartConfig', () => {
     });
 
     it('single-column EventTime works unchanged (no regression)', async () => {
-      mockMetadata.getColumn = jest
+      mockMetadata.getColumn = vi
         .fn()
         .mockImplementation(async ({ column }: { column: string }) =>
           column === 'EventTime'

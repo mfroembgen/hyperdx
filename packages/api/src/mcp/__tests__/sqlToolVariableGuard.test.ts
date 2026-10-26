@@ -1,21 +1,24 @@
+import { vi } from 'vitest';
 // Unit test for the clickstack_sql input guard that rejects the variable
 // macros. Mocks runConfigTile so the accepted cases prove "the guard let this
 // through" without needing ClickHouse: the guard returns before any query, so
 // whether runConfigTile was called is exactly the signal under test.
 
-const mockRunConfigTile = jest.fn();
+const mockRunConfigTile = vi.hoisted(() => vi.fn());
 
-jest.mock('@/mcp/tools/query/helpers', () => {
-  const actual = jest.requireActual('@/mcp/tools/query/helpers');
+vi.mock('@/mcp/tools/query/helpers', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/mcp/tools/query/helpers')
+  >('@/mcp/tools/query/helpers');
   return {
     ...actual,
     runConfigTile: (...args: unknown[]) => mockRunConfigTile(...args),
   };
 });
 
-jest.mock('@/models/source', () => ({}));
-jest.mock('@/controllers/sources', () => ({}));
-jest.mock('@/controllers/connection', () => ({}));
+vi.mock('@/models/source', () => ({}));
+vi.mock('@/controllers/sources', () => ({}));
+vi.mock('@/controllers/connection', () => ({}));
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import mongoose from 'mongoose';
@@ -52,7 +55,7 @@ const okResult = {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockRunConfigTile.mockResolvedValue(okResult);
 });
 

@@ -2,7 +2,7 @@
 
 ## Core Services
 
-- **HyperDX UI (`packages/app`)**: Next.js frontend serving the user interface
+- **HyperDX UI (`packages/app`)**: Vinext/Vite frontend serving the user interface
 - **HyperDX API (`packages/api`)**: Node.js/Express backend handling queries and business logic
 - **OpenTelemetry Collector**: Receives and processes telemetry data
 - **ClickHouse**: Primary data store for all telemetry (logs, metrics, traces)
@@ -34,7 +34,7 @@ All models follow consistent patterns with:
 
 ## Frontend Architecture
 
-- **Pages**: `packages/app/pages/` (Next.js routing)
+- **Pages**: `packages/app/pages/` (Vinext Pages routing)
 - **Components**: `packages/app/src/` (reusable components)
 - **API communication**: Custom hooks wrapping TanStack Query
 - **State**: See tech_stack.md for state management details
@@ -62,11 +62,11 @@ Key (`validateUserAccessKey` middleware), rate-limited to 100 req/min.
 - **Routes**: `alerts.ts`, `charts.ts`, `dashboards.ts`, `sources.ts`,
   `webhooks.ts`
 - **OpenAPI spec**: `packages/api/openapi.json` (auto-generated via
-  `yarn docgen`, linted via `yarn lint:openapi` using Spectral)
+  `bun run docgen`, linted via `bun run lint:openapi` using Spectral)
 - **Tests**: `src/routers/external-api/__tests__/`
 
-When adding or modifying external API endpoints, run `yarn docgen` to regenerate
-the OpenAPI spec and `yarn lint:openapi` to validate it.
+When adding or modifying external API endpoints, run `bun run docgen` to regenerate
+the OpenAPI spec and `bun run lint:openapi` to validate it.
 
 `scripts/ci/check-openapi-sync.sh` (run by `make ci-lint` and by CI) fails if the
 committed spec is stale. `swaggerOptions` in `src/utils/swagger.ts` is also an
@@ -85,7 +85,7 @@ Key, rate-limited to 600 req/min.
 - **Prompts**: `prompts/dashboards/` - context prompts for AI assistants
 - **Tests**: `src/mcp/__tests__/` (alerts, dashboards, query, savedSearches,
   tracing)
-- **Dev/debug**: `yarn dev:mcp` launches the MCP Inspector for interactive
+- **Dev/debug**: `bun run dev:mcp` launches the MCP Inspector for interactive
   testing
 - **Response size**: each tool call records the UTF-8 bytes it returns
   (`mcp.tool.response.size_bytes` span attribute,
@@ -110,7 +110,7 @@ Config is derived from the team document with the ingestion API key.
 ### Background Tasks (`src/tasks/`)
 
 Cron-driven tasks that run outside the request/response cycle. In development,
-tasks run via `yarn dev-task`; in production, they are triggered externally.
+tasks run via `bun run dev-task`; in production, they are triggered externally.
 
 - `checkAlerts/` - Alert evaluation (runs every minute in dev)
 - `provisionDashboards/` - Dashboard provisioning from config files

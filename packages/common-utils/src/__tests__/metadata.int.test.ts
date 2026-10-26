@@ -1,5 +1,6 @@
 import { createClient } from '@clickhouse/client';
 import { ClickHouseClient } from '@clickhouse/client';
+import { type MockInstance, vi } from 'vitest';
 
 import { ClickhouseClient as HdxClickhouseClient } from '@/clickhouse/node';
 import { supportsMergeTreeTextIndex } from '@/core/clickhouseVersion';
@@ -852,21 +853,21 @@ describe('Metadata Integration Tests', () => {
     });
 
     afterEach(() => {
-      jest.restoreAllMocks();
+      vi.restoreAllMocks();
     });
 
     type StrategySpies = {
-      mapTextIndex: jest.SpyInstance;
-      textIndex: jest.SpyInstance;
-      mv: jest.SpyInstance;
-      raw: jest.SpyInstance;
+      mapTextIndex: MockInstance;
+      textIndex: MockInstance;
+      mv: MockInstance;
+      raw: MockInstance;
     };
 
     const spyOnAllStrategies = (m: Metadata): StrategySpies => ({
-      mapTextIndex: jest.spyOn(m as any, 'getMapTextIndexKeyValues'),
-      textIndex: jest.spyOn(m as any, 'getTextIndexKeyValues'),
-      mv: jest.spyOn(m as any, 'getMetadataMVKeyValues'),
-      raw: jest.spyOn(m, 'getKeyValues'),
+      mapTextIndex: vi.spyOn(m as any, 'getMapTextIndexKeyValues'),
+      textIndex: vi.spyOn(m as any, 'getTextIndexKeyValues'),
+      mv: vi.spyOn(m as any, 'getMetadataMVKeyValues'),
+      raw: vi.spyOn(m, 'getKeyValues'),
     });
 
     const expectOnlyCalled = (
@@ -1270,7 +1271,7 @@ describe('Metadata Integration Tests', () => {
     });
 
     it('caches per database, table and inner table type', async () => {
-      const querySpy = jest.spyOn(hdxClient, 'query');
+      const querySpy = vi.spyOn(hdxClient, 'query');
 
       const first = await metadata.getTimeSeriesTableColumns({
         connectionId: 'test_connection',
@@ -1402,7 +1403,7 @@ describe('Metadata Integration Tests', () => {
     });
 
     it('falls back to an unbounded scan when no timestampValueExpression is given', async () => {
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       const keys = await metadata.getMapKeys({
         databaseName: 'default',
@@ -1520,7 +1521,7 @@ describe('Metadata Integration Tests', () => {
       });
 
       afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
       });
 
       it('keeps the most frequent keys when maxKeys truncates the list', async () => {
@@ -1530,7 +1531,7 @@ describe('Metadata Integration Tests', () => {
           );
           return;
         }
-        const querySpy = jest.spyOn(hdxClient, 'query');
+        const querySpy = vi.spyOn(hdxClient, 'query');
 
         const keys = await metadata.getMapKeys({
           databaseName: 'default',

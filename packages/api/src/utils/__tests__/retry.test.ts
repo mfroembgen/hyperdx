@@ -1,15 +1,17 @@
+import { vi } from 'vitest';
+
 import { withRetry } from '@/utils/retry';
 
 describe('withRetry', () => {
   it('should return successfully if function succeeds on first try', async () => {
-    const fn = jest.fn().mockResolvedValue('success');
+    const fn = vi.fn().mockResolvedValue('success');
     const result = await withRetry(fn);
     expect(result).toBe('success');
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
   it('should retry on failure and succeed', async () => {
-    const fn = jest
+    const fn = vi
       .fn()
       .mockRejectedValueOnce(new Error('fail 1'))
       .mockResolvedValueOnce('success');
@@ -21,7 +23,7 @@ describe('withRetry', () => {
 
   it('should throw after reaching maxRetries', async () => {
     const error = new Error('persistent fail');
-    const fn = jest.fn().mockRejectedValue(error);
+    const fn = vi.fn().mockRejectedValue(error);
 
     await expect(
       withRetry(fn, { maxRetries: 3, initialDelayMs: 10, jitter: false }),
@@ -34,7 +36,7 @@ describe('withRetry', () => {
     const error400 = new Error('bad request') as any;
     error400.status = 400;
 
-    const fn400 = jest.fn().mockRejectedValue(error400);
+    const fn400 = vi.fn().mockRejectedValue(error400);
 
     await expect(
       withRetry(fn400, { initialDelayMs: 10, jitter: false }),
@@ -46,7 +48,7 @@ describe('withRetry', () => {
     const redirectError = new Error('redirect') as any;
     redirectError.status = 302;
 
-    const fn = jest.fn().mockRejectedValue(redirectError);
+    const fn = vi.fn().mockRejectedValue(redirectError);
 
     await expect(
       withRetry(fn, { initialDelayMs: 10, jitter: false }),
@@ -58,7 +60,7 @@ describe('withRetry', () => {
     const error429 = new Error('rate limited') as any;
     error429.status = 429;
 
-    const fn429 = jest
+    const fn429 = vi
       .fn()
       .mockRejectedValueOnce(error429)
       .mockResolvedValueOnce('success');
@@ -75,7 +77,7 @@ describe('withRetry', () => {
     const error500 = new Error('internal server error') as any;
     error500.status = 500;
 
-    const fn500 = jest
+    const fn500 = vi
       .fn()
       .mockRejectedValueOnce(error500)
       .mockResolvedValueOnce('success');
@@ -92,7 +94,7 @@ describe('withRetry', () => {
     const abortError = new Error('The operation was aborted');
     abortError.name = 'AbortError';
 
-    const fn = jest.fn().mockRejectedValue(abortError);
+    const fn = vi.fn().mockRejectedValue(abortError);
 
     await expect(
       withRetry(fn, { initialDelayMs: 10, jitter: false }),
@@ -104,7 +106,7 @@ describe('withRetry', () => {
     const timeoutError = new Error('The operation was aborted due to timeout');
     timeoutError.name = 'TimeoutError';
 
-    const fn = jest.fn().mockRejectedValue(timeoutError);
+    const fn = vi.fn().mockRejectedValue(timeoutError);
 
     await expect(
       withRetry(fn, { initialDelayMs: 10, jitter: false }),
@@ -119,7 +121,7 @@ describe('withRetry', () => {
     const error429 = new Error('rate limited') as any;
     error429.status = 429;
 
-    const fn = jest
+    const fn = vi
       .fn()
       .mockRejectedValueOnce(error500) // Should throw immediately since not in retryOnlyOnStatus
       .mockResolvedValueOnce('success');
@@ -133,7 +135,7 @@ describe('withRetry', () => {
     ).rejects.toThrow('internal server error');
     expect(fn).toHaveBeenCalledTimes(1);
 
-    const fn2 = jest
+    const fn2 = vi
       .fn()
       .mockRejectedValueOnce(error429) // Should retry
       .mockResolvedValueOnce('success2');

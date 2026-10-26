@@ -1,16 +1,16 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 /**
  * E2E Test Runner
  *
  * Usage:
- *   yarn test:e2e                    # Run all tests (full-stack mode, default)
- *   yarn test:e2e --local            # Run frontend-only tests
- *   yarn test:e2e --ui               # Open Playwright UI (full-stack)
- *   yarn test:e2e --ui --local       # Open UI (local mode)
- *   yarn test:e2e --debug            # Debug mode (full-stack)
- *   yarn test:e2e --debug --local    # Debug (local mode)
- *   yarn test:e2e --dev              # Hot reload (next dev) instead of build+start
+ *   bun run test:e2e                    # Run all tests (full-stack mode, default)
+ *   bun run test:e2e --local            # Run frontend-only tests
+ *   bun run test:e2e --ui               # Open Playwright UI (full-stack)
+ *   bun run test:e2e --ui --local       # Open UI (local mode)
+ *   bun run test:e2e --debug            # Debug mode (full-stack)
+ *   bun run test:e2e --debug --local    # Debug (local mode)
+ *   bun run test:e2e --dev              # Hot reload (Vite dev) instead of build+start
  */
 
 import { spawn } from 'child_process';
@@ -35,7 +35,11 @@ const playwrightArgs = args.filter(
 );
 
 // Build playwright command
-const playwrightCmd = ['playwright', 'test'];
+const playwrightCmd = [
+  '--bun',
+  fileURLToPath(import.meta.resolve('@playwright/test/cli')),
+  'test',
+];
 
 // Add mode flags
 if (useUI) {
@@ -92,9 +96,8 @@ console.info(
   `Mode: ${useLocal ? 'Local (frontend only)' : 'Full-stack'}${useDev ? ' + dev (hot reload)' : ''}`,
 );
 
-const child = spawn('npx', playwrightCmd, {
+const child = spawn(process.execPath, playwrightCmd, {
   stdio: 'inherit',
-  shell: true,
   env,
   cwd: path.join(__dirname, '..'),
 });

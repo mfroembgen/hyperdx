@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   AlertSource,
   AlertThresholdType,
@@ -8,9 +9,9 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { EditAlertModal } from '@/components/alerts/EditAlertModal';
 import type { AlertsPageItem } from '@/types';
 
-const updateAlertMutateAsync = jest.fn().mockResolvedValue({ data: {} });
+const updateAlertMutateAsync = vi.fn().mockResolvedValue({ data: {} });
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useUpdateAlert: () => ({
@@ -23,12 +24,12 @@ jest.mock('@/api', () => ({
       data: { data: ['checkout'] },
       isLoading: false,
       isError: false,
-      refetch: jest.fn(),
+      refetch: vi.fn(),
     }),
   },
 }));
 
-jest.mock('@/savedSearch', () => ({
+vi.mock('@/savedSearch', () => ({
   __esModule: true,
   useSavedSearch: () => ({
     data: { id: 'saved-search-id', source: 'source-id' },
@@ -36,29 +37,29 @@ jest.mock('@/savedSearch', () => ({
   }),
 }));
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   __esModule: true,
   useSource: () => ({ data: undefined }),
 }));
 
-jest.mock('@/theme/ThemeProvider', () => ({
+vi.mock('@/theme/ThemeProvider', () => ({
   __esModule: true,
   useBrandDisplayName: () => 'HyperDX',
 }));
 
 // Heavy / visual child components are stubbed so the form still renders and
 // its submit handler runs.
-jest.mock('@/components/Alerts', () => ({
+vi.mock('@/components/Alerts', () => ({
   __esModule: true,
   AlertChannelForm: () => <div data-testid="alert-channel-form" />,
 }));
-jest.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
+vi.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
   __esModule: true,
   SQLInlineEditorControlled: () => <div data-testid="sql-inline-editor" />,
 }));
 // The threshold preview stub surfaces the live values it was rendered with so
 // tests can assert the form -> preview wiring.
-jest.mock('@/components/alerts/AlertDetailChart', () => ({
+vi.mock('@/components/alerts/AlertDetailChart', () => ({
   __esModule: true,
   AlertDetailChart: ({
     alert,
@@ -123,7 +124,7 @@ const renderModal = (alert: AlertsPageItem) => {
       <EditAlertModal
         alert={alert}
         opened
-        onClose={jest.fn()}
+        onClose={vi.fn()}
         dateRange={dateRange}
       />
     </QueryClientProvider>,

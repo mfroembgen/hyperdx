@@ -1,4 +1,4 @@
-import { env } from 'next-runtime-env';
+import { env } from '@/config/runtime-env';
 
 // eslint-disable-next-line no-restricted-imports -- package.json lives outside src, no @/ alias reaches it
 import packageJson from '../package.json';

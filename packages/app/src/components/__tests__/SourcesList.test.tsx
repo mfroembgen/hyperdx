@@ -1,3 +1,4 @@
+import { type Mock, vi } from 'vitest';
 import { SourceKind, TSource } from '@hyperdx/common-utils/dist/types';
 import { screen } from '@testing-library/react';
 
@@ -5,17 +6,17 @@ import { SourcesList } from '@/components/Sources/SourcesList';
 import { useConnections } from '@/connection';
 import { useSources } from '@/source';
 
-jest.mock('next/router', () => ({
-  useRouter: () => ({ push: jest.fn(), query: {}, pathname: '/' }),
+vi.mock('next/router', () => ({
+  useRouter: () => ({ push: vi.fn(), query: {}, pathname: '/' }),
 }));
-jest.mock('@/source', () => ({ useSources: jest.fn() }));
-jest.mock('@/connection', () => ({ useConnections: jest.fn() }));
-jest.mock('@/config', () => ({ IS_LOCAL_MODE: false }));
+vi.mock('@/source', () => ({ useSources: vi.fn() }));
+vi.mock('@/connection', () => ({ useConnections: vi.fn() }));
+vi.mock('@/config', () => ({ IS_LOCAL_MODE: false }));
 // TableSourceForm only renders while editing/creating; stub it so the list test
 // does not pull in the full source form.
-jest.mock('../Sources/SourceForm', () => ({ TableSourceForm: () => null }));
+vi.mock('../Sources/SourceForm', () => ({ TableSourceForm: () => null }));
 
-const asMock = (fn: unknown) => fn as jest.Mock;
+const asMock = (fn: unknown) => fn as Mock;
 
 const makeSource = (
   id: string,
@@ -35,7 +36,7 @@ describe('SourcesList section display', () => {
     asMock(useConnections).mockReturnValue({
       data: [{ id: 'conn-a', name: 'Default' }],
       isLoading: false,
-      refetch: jest.fn(),
+      refetch: vi.fn(),
     });
   });
 
@@ -46,7 +47,7 @@ describe('SourcesList section display', () => {
         makeSource('b', 'Plain Source'),
       ],
       isLoading: false,
-      refetch: jest.fn(),
+      refetch: vi.fn(),
     });
     renderWithMantine(<SourcesList withCard={false} />);
 
@@ -60,7 +61,7 @@ describe('SourcesList section display', () => {
     asMock(useSources).mockReturnValue({
       data: [makeSource('a', 'App'), makeSource('b', 'Host')],
       isLoading: false,
-      refetch: jest.fn(),
+      refetch: vi.fn(),
     });
     renderWithMantine(<SourcesList withCard={false} />);
 
@@ -78,7 +79,7 @@ describe('SourcesList section display', () => {
         makeSource('e', 'E', { kind: SourceKind.Promql }),
       ],
       isLoading: false,
-      refetch: jest.fn(),
+      refetch: vi.fn(),
     });
     renderWithMantine(<SourcesList withCard={false} />);
 

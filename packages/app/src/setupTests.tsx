@@ -2,14 +2,25 @@ import React from 'react';
 /* Polyfills for browser APIs in Node.js test environment */
 import { TextDecoder, TextEncoder } from 'util';
 import { ClickUIProvider } from '@clickhouse/click-ui';
-import { MantineProvider } from '@mantine/core';
+import { MantineProvider, Popover } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { render } from '@testing-library/react';
 import structuredClone from '@ungap/structured-clone';
 
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 global.TextEncoder = TextEncoder as any;
 global.TextDecoder = TextDecoder as any;
+
+// jsdom does not implement the Font Loading API used by Mantine autosizing.
+if (!document.fonts) {
+  Object.defineProperty(document, 'fonts', {
+    value: Object.assign(new EventTarget(), {
+      ready: Promise.resolve(),
+      check: () => true,
+      load: () => Promise.resolve([]),
+    }),
+  });
+}
 
 /* Mocks for mantine */
 class ResizeObserver {
@@ -34,8 +45,16 @@ Object.defineProperty(window, 'matchMedia', {
   }),
 });
 
+// jsdom has no layout: preserve real portals, but do not hide popovers based
+// on zero-sized anchor rectangles.
 global.TestProviders = ({ children }: { children: React.ReactNode }) => (
-  <MantineProvider>
+  <MantineProvider
+    theme={{
+      components: {
+        Popover: Popover.extend({ defaultProps: { hideDetached: false } }),
+      },
+    }}
+  >
     <ClickUIProvider theme="dark" persistTheme={false}>
       <Notifications />
       {children}

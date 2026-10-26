@@ -1,14 +1,15 @@
+import { type Mock, vi } from 'vitest';
 import { SavedSearch, TSource } from '@hyperdx/common-utils/dist/types';
 
 // Mock config so we can control HDX_LOCAL_DEFAULT_SOURCES in tests
-jest.mock('../config', () => ({
+vi.mock('../config', () => ({
   HDX_LOCAL_DEFAULT_SOURCES: null,
 }));
 
 // Mock parseJSON so tests aren't coupled to its implementation.
 // Returns null for empty/falsy input, matching the real parseJSON behaviour.
-jest.mock('../utils', () => ({
-  parseJSON: jest.fn((s: string) => {
+vi.mock('../utils', () => ({
+  parseJSON: vi.fn((s: string) => {
     if (!s) return null;
     return JSON.parse(s);
   }),
@@ -32,7 +33,7 @@ function makeStore() {
 
 beforeEach(() => {
   localStorage.clear();
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 // ---------------------------------------------------------------------------
@@ -56,7 +57,7 @@ describe('createEntityStore', () => {
 
     it('calls getDefaultItems when the key is absent', () => {
       const defaults: Item[] = [{ id: 'default-1', name: 'default' }];
-      const getDefaultItems = jest.fn(() => defaults);
+      const getDefaultItems = vi.fn(() => defaults);
       const store = createEntityStore<Item>(TEST_KEY, getDefaultItems);
 
       const result = store.getAll();
@@ -66,7 +67,7 @@ describe('createEntityStore', () => {
     });
 
     it('does not call getDefaultItems once data exists in storage', () => {
-      const getDefaultItems = jest.fn(() => [
+      const getDefaultItems = vi.fn(() => [
         { id: 'default-1', name: 'default' },
       ]);
       const store = createEntityStore<Item>(TEST_KEY, getDefaultItems);
@@ -302,12 +303,16 @@ describe('createEntityStore', () => {
 // localSources — env-var default fallback
 // ---------------------------------------------------------------------------
 
-describe('localSources', () => {
-  const mockedUtils = jest.requireMock('../utils') as { parseJSON: jest.Mock };
-  const mockedConfig = jest.requireMock('../config') as {
-    HDX_LOCAL_DEFAULT_SOURCES: string | null;
-  };
+const mockedUtils = (await vi.importMock<typeof import('../utils')>(
+  '../utils',
+)) as { parseJSON: Mock };
+const mockedConfig = (await vi.importMock<typeof import('../config')>(
+  '../config',
+)) as {
+  HDX_LOCAL_DEFAULT_SOURCES: string | null;
+};
 
+describe('localSources', () => {
   it('returns empty array when storage is empty and no env-var default', () => {
     mockedConfig.HDX_LOCAL_DEFAULT_SOURCES = null;
     expect(localSources.getAll()).toEqual([]);

@@ -1,4 +1,5 @@
 import router from 'next/router';
+import { vi } from 'vitest';
 import { SourceKind, TTraceSource } from '@hyperdx/common-utils/dist/types';
 
 import {
@@ -18,10 +19,10 @@ import {
 import type { ServiceAggregation } from '@/hooks/useServiceMap';
 
 // Mock next/router
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   __esModule: true,
   default: {
-    push: jest.fn(),
+    push: vi.fn(),
   },
 }));
 
@@ -47,7 +48,7 @@ describe('navigateToTraceSearch', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should navigate to search page with correct query parameters', () => {
@@ -64,7 +65,8 @@ describe('navigateToTraceSearch', () => {
 
     expect(router.push).toHaveBeenCalledTimes(1);
 
-    const callArg = (router.push as jest.Mock).mock.calls[0][0];
+    const callArg = vi.mocked(router.push).mock.calls[0][0];
+    if (typeof callArg !== 'string') throw new Error('Expected a URL string');
     expect(callArg).toContain('/search?');
 
     // Parse query params
@@ -91,7 +93,8 @@ describe('navigateToTraceSearch', () => {
       where: 'status_code = 500',
     });
 
-    const callArg = (router.push as jest.Mock).mock.calls[0][0];
+    const callArg = vi.mocked(router.push).mock.calls[0][0];
+    if (typeof callArg !== 'string') throw new Error('Expected a URL string');
     const url = new URL(callArg, 'http://localhost');
     const params = url.searchParams;
 
@@ -114,7 +117,8 @@ describe('navigateToTraceSearch', () => {
       where: complexWhere,
     });
 
-    const callArg = (router.push as jest.Mock).mock.calls[0][0];
+    const callArg = vi.mocked(router.push).mock.calls[0][0];
+    if (typeof callArg !== 'string') throw new Error('Expected a URL string');
     const url = new URL(callArg, 'http://localhost');
     const params = url.searchParams;
 
@@ -135,7 +139,8 @@ describe('navigateToTraceSearch', () => {
       where: whereWithSpecialChars,
     });
 
-    const callArg = (router.push as jest.Mock).mock.calls[0][0];
+    const callArg = vi.mocked(router.push).mock.calls[0][0];
+    if (typeof callArg !== 'string') throw new Error('Expected a URL string');
     const url = new URL(callArg, 'http://localhost');
     const params = url.searchParams;
 

@@ -1,3 +1,5 @@
+import { type Mocked, vi } from 'vitest';
+
 /**
  * Unit tests for useUserPreferences migration function
  *
@@ -6,7 +8,6 @@
  * - Partial/corrupted localStorage data handling
  * - Migration idempotency (safe to run multiple times)
  */
-
 import type { UserPreferences } from '@/useUserPreferences';
 import { migrateUserPreferences } from '@/useUserPreferences';
 
@@ -15,16 +16,16 @@ const STORAGE_KEY = 'hdx-user-preferences';
 describe('migrateUserPreferences', () => {
   // Store original localStorage
   const originalLocalStorage = window.localStorage;
-  let localStorageMock: jest.Mocked<Storage>;
+  let localStorageMock: Mocked<Storage>;
 
   beforeEach(() => {
     // Create localStorage mock
     localStorageMock = {
-      getItem: jest.fn().mockReturnValue(null),
-      setItem: jest.fn(),
-      removeItem: jest.fn(),
-      clear: jest.fn(),
-      key: jest.fn(),
+      getItem: vi.fn().mockReturnValue(null),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+      key: vi.fn(),
       length: 0,
     };
 
@@ -36,7 +37,7 @@ describe('migrateUserPreferences', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterAll(() => {

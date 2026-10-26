@@ -1,0 +1,33 @@
+version: 2
+updates:
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      compatible-updates:
+        update-types: [minor, patch]
+    # Current middleware and typed ESLint require these API versions.
+    ignore:
+      - dependency-name: express
+        versions: ['>=5']
+      - dependency-name: '@types/express'
+        versions: ['>=5']
+      - dependency-name: '@types/express-serve-static-core'
+        versions: ['>=5']
+      - dependency-name: zod
+        versions: ['>=4']
+      - dependency-name: typescript
+        versions: ['>=6.1']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+  - package-ecosystem: docker
+    directories: [/docker/hyperdx, /packages/api, /packages/app]
+    schedule:
+      interval: weekly

@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { vi } from 'vitest';
 import { ColumnMeta, JSDataType } from '@hyperdx/common-utils/dist/clickhouse';
 import {
   AdhocDashboardFilter,
@@ -26,25 +27,31 @@ import {
 
 let mockSources: Partial<TSource>[] = [];
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   useSources: () => ({ data: mockSources }),
 }));
-jest.mock('@/queryAttribution', () => ({
+vi.mock('@/queryAttribution', () => ({
   useMetadataQueryAttribution: () => undefined,
 }));
-jest.mock('@/hooks/useMetadata', () => ({
-  useMultipleAllFields: jest.fn(),
-  useMultipleGetKeyValues: jest.fn(() => ({
+vi.mock('@/hooks/useMetadata', () => ({
+  SINGLE_KEY_VALUES_LIMIT: 10000,
+  useMultipleAllFields: vi.fn(),
+  useMultipleGetKeyValues: vi.fn(() => ({
     data: undefined,
     isFetching: false,
     isError: false,
   })),
 }));
-jest.mock('@/hooks/usePromqlMetadata', () => ({
-  ...jest.requireActual('@/hooks/usePromqlMetadata'),
-  fetchPromqlLabelNames: jest.fn(),
-  fetchPromqlLabelValues: jest.fn(),
-}));
+vi.mock('@/hooks/usePromqlMetadata', async () => {
+  const actualModule0 = await vi.importActual<
+    typeof import('@/hooks/usePromqlMetadata')
+  >('@/hooks/usePromqlMetadata');
+  return {
+    ...actualModule0,
+    fetchPromqlLabelNames: vi.fn(),
+    fetchPromqlLabelValues: vi.fn(),
+  };
+});
 
 const column = (name: string, type: string): ColumnMeta => ({
   name,
@@ -191,7 +198,7 @@ describe('useAdhocFilterOptions', () => {
     columnsBySource: ColumnMeta[][],
     { isLoading = false } = {},
   ) =>
-    jest.mocked(useMultipleAllFields).mockReturnValue({
+    vi.mocked(useMultipleAllFields).mockReturnValue({
       fieldsByTableConnection: new Map(),
       columnsByTableConnection: new Map(columnsBySource.entries()),
       isFieldMetadataDisabled: true,
@@ -215,12 +222,12 @@ describe('useAdhocFilterOptions', () => {
 
   beforeEach(() => {
     mockAllFields([]);
-    jest.mocked(fetchPromqlLabelNames).mockResolvedValue([]);
-    jest.mocked(fetchPromqlLabelValues).mockResolvedValue([]);
+    vi.mocked(fetchPromqlLabelNames).mockResolvedValue([]);
+    vi.mocked(fetchPromqlLabelValues).mockResolvedValue([]);
   });
 
   const lastSqlLookup = () =>
-    jest.mocked(useMultipleGetKeyValues).mock.calls.at(-1)!;
+    vi.mocked(useMultipleGetKeyValues).mock.calls.at(-1)!;
 
   it('waits for keys, then looks up values only in the sources that have the key', () => {
     mockSources = [
@@ -257,9 +264,10 @@ describe('useAdhocFilterOptions', () => {
 
   it('leaves the SQL lookup disabled for a PromQL filter', async () => {
     mockSources = [source('prom', SourceKind.Promql)];
-    jest
-      .mocked(fetchPromqlLabelNames)
-      .mockResolvedValue(['__name__', 'SeverityText']);
+    vi.mocked(fetchPromqlLabelNames).mockResolvedValue([
+      '__name__',
+      'SeverityText',
+    ]);
     const { result } = renderOptions(filter('promql', ['prom']));
 
     await waitFor(() =>

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { SourceKind, TSourceNoId } from '@hyperdx/common-utils/dist/types';
 import { notifications } from '@mantine/notifications';
 import { screen } from '@testing-library/react';
@@ -5,7 +6,7 @@ import { screen } from '@testing-library/react';
 import OnboardingModal from '@/components/OnboardingModal';
 
 const mockConfig = { IS_PROMQL_ENABLED: true };
-jest.mock('@/config', () => ({
+vi.mock('@/config', () => ({
   IS_CLICKHOUSE_BUILD: false,
   IS_LOCAL_MODE: false,
   get IS_PROMQL_ENABLED() {
@@ -13,56 +14,61 @@ jest.mock('@/config', () => ({
   },
 }));
 
-const mockCreateSource = jest.fn();
-const mockUpdateSource = jest.fn();
+const mockCreateSource = vi.fn();
+const mockUpdateSource = vi.fn();
 // Stable references: new objects on every render would re-run the modal's
 // effects, which depend on them.
 const mockSourcesResult = { data: [] };
 const mockCreateSourceMutation = { mutateAsync: mockCreateSource };
 const mockUpdateSourceMutation = { mutateAsync: mockUpdateSource };
-jest.mock('@/source', () => ({
-  pickTimeSeriesTable: jest.requireActual('@/source').pickTimeSeriesTable,
-  PROMQL_TIMESTAMP_EXPRESSION:
-    jest.requireActual('@/source').PROMQL_TIMESTAMP_EXPRESSION,
-  inferTableSourceConfig: async ({ kind }: { kind: SourceKind }) => ({
-    kind,
-    timestampValueExpression: 'Timestamp',
-    defaultTableSelectExpression: 'Timestamp, Body',
-  }),
-  useSources: () => mockSourcesResult,
-  useCreateSource: () => mockCreateSourceMutation,
-  useUpdateSource: () => mockUpdateSourceMutation,
-  useDeleteSource: () => ({ mutateAsync: jest.fn() }),
-}));
+vi.mock('@/source', async () => {
+  const actualModule0 =
+    await vi.importActual<typeof import('@/source')>('@/source');
+  const actualModule1 =
+    await vi.importActual<typeof import('@/source')>('@/source');
+  return {
+    pickTimeSeriesTable: actualModule0.pickTimeSeriesTable,
+    PROMQL_TIMESTAMP_EXPRESSION: actualModule1.PROMQL_TIMESTAMP_EXPRESSION,
+    inferTableSourceConfig: async ({ kind }: { kind: SourceKind }) => ({
+      kind,
+      timestampValueExpression: 'Timestamp',
+      defaultTableSelectExpression: 'Timestamp, Body',
+    }),
+    useSources: () => mockSourcesResult,
+    useCreateSource: () => mockCreateSourceMutation,
+    useUpdateSource: () => mockUpdateSourceMutation,
+    useDeleteSource: () => ({ mutateAsync: vi.fn() }),
+  };
+});
 
 const mockConnectionsResult = {
   data: [{ id: 'conn-1', name: 'Default', host: 'http://localhost:8123' }],
 };
-const mockUpdateConnectionMutation = { mutateAsync: jest.fn() };
-jest.mock('@/connection', () => ({
+const mockUpdateConnectionMutation = { mutateAsync: vi.fn() };
+vi.mock('@/connection', () => ({
   useConnections: () => mockConnectionsResult,
-  useCreateConnection: () => ({ mutate: jest.fn() }),
+  useCreateConnection: () => ({ mutate: vi.fn() }),
   useUpdateConnection: () => mockUpdateConnectionMutation,
 }));
 
 const mockMetadata = {
-  getOtelTables: jest.fn(),
-  getTimeSeriesTables: jest.fn(),
+  getOtelTables: vi.fn(),
+  getTimeSeriesTables: vi.fn(),
 };
-jest.mock('@/hooks/useMetadata', () => ({
+vi.mock('@/hooks/useMetadata', () => ({
   useMetadataWithSettings: () => mockMetadata,
 }));
 
-jest.mock('@/theme/ThemeProvider', () => ({
+vi.mock('@/theme/ThemeProvider', () => ({
   useBrandDisplayName: () => 'HyperDX',
 }));
-jest.mock('@/components/ConnectionForm', () => ({
+vi.mock('@/components/ConnectionForm', () => ({
   ConnectionForm: () => null,
 }));
-jest.mock('@/components/Sources/SourceForm', () => ({
+vi.mock('@/components/Sources/SourceForm', () => ({
   TableSourceForm: () => null,
 }));
-jest.mock('@/components/Sources/SourcesList', () => ({
+vi.mock('@/components/Sources/SourcesList', () => ({
   SourcesList: () => null,
 }));
 
@@ -72,19 +78,17 @@ const OTEL_LOGS_ONLY = {
 };
 
 const createdKinds = () =>
-  mockCreateSource.mock.calls.map(
-    ([{ source }]: [{ source: TSourceNoId }]) => source.kind,
-  );
+  mockCreateSource.mock.calls.map(([{ source }]) => source.kind);
 
 describe('OnboardingModal auto-detection', () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   beforeEach(() => {
     // The notifications store is global, so earlier tests' toasts linger.
     notifications.clean();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockConfig.IS_PROMQL_ENABLED = true;
     mockCreateSource.mockImplementation(
       async ({ source }: { source: TSourceNoId }) => ({
@@ -138,7 +142,7 @@ describe('OnboardingModal auto-detection', () => {
   });
 
   it('keeps the other sources when the PromQL source fails', async () => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     mockCreateSource.mockImplementation(
       async ({ source }: { source: TSourceNoId }) => {
         if (source.kind === SourceKind.Promql) {
@@ -155,7 +159,7 @@ describe('OnboardingModal auto-detection', () => {
   });
 
   it('keeps OTel detection when TimeSeries detection fails', async () => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     mockMetadata.getTimeSeriesTables.mockRejectedValue(new Error('boom'));
 
     renderWithMantine(<OnboardingModal />);

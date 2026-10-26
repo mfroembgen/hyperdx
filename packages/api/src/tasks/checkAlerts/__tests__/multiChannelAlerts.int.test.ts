@@ -1,5 +1,6 @@
 import { AlertErrorType } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
+import { vi } from 'vitest';
 
 import { createAlert } from '@/controllers/alerts';
 import { createTeam } from '@/controllers/team';
@@ -43,7 +44,7 @@ describe('Multi-channel alert dispatch', () => {
 
   afterEach(async () => {
     await server.clearDBs();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterAll(async () => {
@@ -215,7 +216,7 @@ describe('Multi-channel alert dispatch', () => {
       threshold: 1,
       savedSearch: savedSearch._id,
       name: 'Legacy Alert',
-      state: 'OK',
+      state: AlertState.OK,
     }).save();
 
     expect(alert.channels).toBeUndefined();

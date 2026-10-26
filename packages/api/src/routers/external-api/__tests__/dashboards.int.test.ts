@@ -171,7 +171,7 @@ describe('External API v2 Dashboards - old format', () => {
     });
 
     traceSource = await Source.create({
-      kind: SourceKind.Trace,
+      kind: SourceKind.Trace as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -183,7 +183,7 @@ describe('External API v2 Dashboards - old format', () => {
     });
 
     metricSource = await Source.create({
-      kind: SourceKind.Metric,
+      kind: SourceKind.Metric as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -294,7 +294,7 @@ describe('External API v2 Dashboards - old format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 sourceId: traceSource._id.toString(),
                 select: [
                   {
@@ -316,7 +316,7 @@ describe('External API v2 Dashboards - old format', () => {
               w: 3,
               h: 3,
               config: {
-                displayType: 'number',
+                displayType: DisplayType.Number,
                 sourceId: traceSource._id.toString(),
                 select: [
                   {
@@ -543,7 +543,7 @@ describe('External API v2 Dashboards - old format', () => {
               factor: 0.001,
               unit: 'ms',
             },
-            displayType: 'line',
+            displayType: DisplayType.Line,
           } satisfies TimeChartSeries,
           {
             type: 'time',
@@ -560,7 +560,7 @@ describe('External API v2 Dashboards - old format', () => {
               factor: 0.001,
               unit: 'ms',
             },
-            displayType: 'line',
+            displayType: DisplayType.Line,
           } satisfies TimeChartSeries,
         ],
       };
@@ -701,7 +701,7 @@ describe('External API v2 Dashboards - old format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'line',
+          displayType: DisplayType.Line,
           asRatio: true,
           fillNulls: true,
           sourceId: traceSource._id.toString(),
@@ -770,7 +770,7 @@ describe('External API v2 Dashboards - old format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'table',
+          displayType: DisplayType.Table,
           asRatio: false,
           sourceId: traceSource._id.toString(),
           select: [
@@ -808,7 +808,7 @@ describe('External API v2 Dashboards - old format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId: traceSource._id.toString(),
           select: [
             {
@@ -1429,7 +1429,7 @@ describe('External API v2 Dashboards - old format', () => {
               factor: 0.001,
               unit: 'ms',
             },
-            displayType: 'line',
+            displayType: DisplayType.Line,
           } satisfies TimeChartSeries,
           {
             type: 'time',
@@ -1446,7 +1446,7 @@ describe('External API v2 Dashboards - old format', () => {
               factor: 0.001,
               unit: 'ms',
             },
-            displayType: 'line',
+            displayType: DisplayType.Line,
           } satisfies TimeChartSeries,
         ],
       };
@@ -1597,7 +1597,7 @@ describe('External API v2 Dashboards - old format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'line',
+          displayType: DisplayType.Line,
           asRatio: true,
           fillNulls: true,
           sourceId: traceSource._id.toString(),
@@ -1666,7 +1666,7 @@ describe('External API v2 Dashboards - old format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'table',
+          displayType: DisplayType.Table,
           asRatio: false,
           sourceId: traceSource._id.toString(),
           select: [
@@ -1704,7 +1704,7 @@ describe('External API v2 Dashboards - old format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId: traceSource._id.toString(),
           select: [
             {
@@ -1810,7 +1810,7 @@ describe('External API v2 Dashboards - new format', () => {
     w: 6,
     h: 3,
     config: {
-      displayType: 'line',
+      displayType: DisplayType.Line,
       sourceId,
       select: [
         {
@@ -1829,7 +1829,7 @@ describe('External API v2 Dashboards - new format', () => {
     h: 3,
     id: new ObjectId().toString(),
     config: {
-      displayType: 'table',
+      displayType: DisplayType.Table,
       sourceId,
       select: [
         {
@@ -1850,7 +1850,7 @@ describe('External API v2 Dashboards - new format', () => {
     h: 3,
     id: new ObjectId().toString(),
     config: {
-      displayType: 'number',
+      displayType: DisplayType.Number,
       sourceId,
       select: [
         {
@@ -1882,7 +1882,7 @@ describe('External API v2 Dashboards - new format', () => {
     h: 3,
     id: new ObjectId().toString(),
     config: {
-      displayType: 'pie',
+      displayType: DisplayType.Pie,
       sourceId,
       select: [
         {
@@ -1902,7 +1902,7 @@ describe('External API v2 Dashboards - new format', () => {
     h: 3,
     id: new ObjectId().toString(),
     config: {
-      displayType: 'bar',
+      displayType: DisplayType.Bar,
       sourceId,
       select: [
         {
@@ -1937,7 +1937,7 @@ describe('External API v2 Dashboards - new format', () => {
     });
 
     traceSource = await Source.create({
-      kind: SourceKind.Trace,
+      kind: SourceKind.Trace as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -1949,7 +1949,7 @@ describe('External API v2 Dashboards - new format', () => {
     });
 
     metricSource = await Source.create({
-      kind: SourceKind.Metric,
+      kind: SourceKind.Metric as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -1966,7 +1966,7 @@ describe('External API v2 Dashboards - new format', () => {
     });
 
     promqlSource = await Source.create({
-      kind: SourceKind.Promql,
+      kind: SourceKind.Promql as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -2037,7 +2037,7 @@ describe('External API v2 Dashboards - new format', () => {
               config: {
                 asRatio: false,
                 fillNulls: true,
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 sourceId: traceSource._id.toString(),
                 select: [
                   {
@@ -2057,7 +2057,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 3,
               h: 3,
               config: {
-                displayType: 'number',
+                displayType: DisplayType.Number,
                 sourceId: traceSource._id.toString(),
                 select: [
                   {
@@ -2239,7 +2239,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'pie',
+          displayType: DisplayType.Pie,
           sourceId: traceSource._id.toString(),
           select: [
             {
@@ -2268,7 +2268,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'bar',
+          displayType: DisplayType.Bar,
           sourceId: traceSource._id.toString(),
           select: [
             {
@@ -2297,7 +2297,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'line',
+          displayType: DisplayType.Line,
           asRatio: true,
           fillNulls: true,
           fitYAxisToData: true,
@@ -2376,7 +2376,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'table',
+          displayType: DisplayType.Table,
           asRatio: false,
           sourceId: traceSource._id.toString(),
           select: [
@@ -2437,7 +2437,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId: traceSource._id.toString(),
           select: [
             {
@@ -2581,7 +2581,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'pie',
+          displayType: DisplayType.Pie,
           sourceId: traceSource._id.toString(),
           select: [
             {
@@ -2604,7 +2604,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'bar',
+          displayType: DisplayType.Bar,
           sourceId: traceSource._id.toString(),
           select: [
             {
@@ -2660,7 +2660,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'line',
+          displayType: DisplayType.Line,
           sourceId: traceSource._id.toString(),
           select: [
             {
@@ -2783,7 +2783,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'line',
+          displayType: DisplayType.Line,
           sourceId: traceSource._id.toString(),
           select: [
             {
@@ -2817,7 +2817,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'pie',
+          displayType: DisplayType.Pie,
           sourceId: traceSource._id.toString(),
           select: [
             {
@@ -3017,7 +3017,7 @@ describe('External API v2 Dashboards - new format', () => {
 
     it('round-trips a series-mode heatmap tile on a Log source', async () => {
       const logSource = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: 'otel_logs' },
         timestampValueExpression: 'Timestamp',
@@ -3117,7 +3117,7 @@ describe('External API v2 Dashboards - new format', () => {
 
     it('rejects a series-mode heatmap tile on a Session source', async () => {
       const sessionSource = await Source.create({
-        kind: SourceKind.Session,
+        kind: SourceKind.Session as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: 'rrweb_events' },
         timestampValueExpression: 'Timestamp',
@@ -3155,7 +3155,7 @@ describe('External API v2 Dashboards - new format', () => {
 
     it('re-checks the source when an existing heatmap changes mode', async () => {
       const logSource = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: 'otel_logs' },
         timestampValueExpression: 'Timestamp',
@@ -3337,7 +3337,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'line',
+          displayType: DisplayType.Line,
           sourceId: traceSource._id.toString(),
           select: [{ aggFn: 'count' }],
         },
@@ -3423,7 +3423,7 @@ describe('External API v2 Dashboards - new format', () => {
         h: 3,
         config: {
           configType: 'sql',
-          displayType: 'line',
+          displayType: DisplayType.Line,
           connectionId,
           sqlTemplate,
           sourceId,
@@ -3479,7 +3479,7 @@ describe('External API v2 Dashboards - new format', () => {
         h: 3,
         config: {
           configType: 'sql',
-          displayType: 'table',
+          displayType: DisplayType.Table,
           connectionId,
           sqlTemplate,
           sourceId,
@@ -3504,7 +3504,7 @@ describe('External API v2 Dashboards - new format', () => {
         h: 3,
         config: {
           configType: 'sql',
-          displayType: 'number',
+          displayType: DisplayType.Number,
           connectionId,
           sqlTemplate,
           sourceId,
@@ -3522,7 +3522,7 @@ describe('External API v2 Dashboards - new format', () => {
         h: 3,
         config: {
           configType: 'sql',
-          displayType: 'pie',
+          displayType: DisplayType.Pie,
           connectionId,
           sqlTemplate,
           sourceId,
@@ -3537,7 +3537,7 @@ describe('External API v2 Dashboards - new format', () => {
         h: 3,
         config: {
           configType: 'sql',
-          displayType: 'bar',
+          displayType: DisplayType.Bar,
           connectionId,
           sqlTemplate,
           sourceId,
@@ -3587,7 +3587,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'line',
+          displayType: DisplayType.Line,
           sourceId,
           fitYAxisToData: true,
           select: [{ aggFn: 'count', where: '', whereLanguage: 'sql' }],
@@ -3617,7 +3617,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'line',
+          displayType: DisplayType.Line,
           sourceId,
           select: [{ aggFn: 'count', where: '', whereLanguage: 'sql' }],
         },
@@ -3653,7 +3653,12 @@ describe('External API v2 Dashboards - new format', () => {
         { aggFn: 'count' as const, where: '', whereLanguage: 'sql' as const },
       ];
       const configs = [
-        { displayType: 'line', sourceId, select, lineInterpolation: 'step' },
+        {
+          displayType: DisplayType.Line,
+          sourceId,
+          select,
+          lineInterpolation: 'step',
+        },
         {
           displayType: 'stacked_line',
           sourceId,
@@ -3662,7 +3667,7 @@ describe('External API v2 Dashboards - new format', () => {
         },
         {
           configType: 'sql',
-          displayType: 'line',
+          displayType: DisplayType.Line,
           connectionId,
           sqlTemplate,
           lineInterpolation: 'linear',
@@ -3680,7 +3685,7 @@ describe('External API v2 Dashboards - new format', () => {
           select,
           lineInterpolation: 'step',
         },
-        { displayType: 'line', sourceId, select },
+        { displayType: DisplayType.Line, sourceId, select },
       ];
 
       const createResponse = await authRequest('post', BASE_URL)
@@ -3752,7 +3757,7 @@ describe('External API v2 Dashboards - new format', () => {
               h: 3,
               config: {
                 configType: 'sql',
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 connectionId: otherConnectionId,
                 sqlTemplate: 'SELECT count() FROM otel_logs WHERE {timeFilter}',
               },
@@ -3788,7 +3793,7 @@ describe('External API v2 Dashboards - new format', () => {
               h: 3,
               config: {
                 configType: 'sql',
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 connectionId: otherConnection._id.toString(),
                 sourceId: traceSource._id.toString(),
                 sqlTemplate: 'SELECT count() FROM otel_logs',
@@ -3818,7 +3823,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 sourceId: traceSource._id.toString(),
                 select: [{ aggFn: 'count' }],
                 onClick: {
@@ -3850,7 +3855,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 sourceId: traceSource._id.toString(),
                 select: [{ aggFn: 'count' }],
                 onClick: {
@@ -3886,7 +3891,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 sourceId: traceSource._id.toString(),
                 select: [{ aggFn: 'count' }],
                 onClick: {
@@ -3923,7 +3928,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 sourceId: traceSource._id.toString(),
                 select: [{ aggFn: 'count' }],
                 onClick: {
@@ -3961,7 +3966,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 sourceId: traceSource._id.toString(),
                 select: [{ aggFn: 'count' }],
                 onClick: {
@@ -3978,7 +3983,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 sourceId: traceSource._id.toString(),
                 select: [{ aggFn: 'count' }],
                 onClick: {
@@ -4019,7 +4024,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 sourceId: traceSource._id.toString(),
                 select: [{ aggFn: 'count' }],
                 onClick: {
@@ -4052,7 +4057,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 sourceId: traceSource._id.toString(),
                 select: [{ aggFn: 'count' }],
                 onClick: {
@@ -4359,7 +4364,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'line',
+          displayType: DisplayType.Line,
           sourceId: traceSource._id.toString(),
           select: [
             {
@@ -4910,7 +4915,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'line',
+          displayType: DisplayType.Line,
           asRatio: true,
           fillNulls: true,
           fitYAxisToData: true,
@@ -4991,7 +4996,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'table',
+          displayType: DisplayType.Table,
           asRatio: false,
           sourceId: traceSource._id.toString(),
           select: [
@@ -5046,7 +5051,7 @@ describe('External API v2 Dashboards - new format', () => {
         w: 6,
         h: 3,
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId: traceSource._id.toString(),
           select: [
             {
@@ -5209,7 +5214,7 @@ describe('External API v2 Dashboards - new format', () => {
         h: 3,
         config: {
           configType: 'sql',
-          displayType: 'line',
+          displayType: DisplayType.Line,
           connectionId,
           sqlTemplate,
           sourceId,
@@ -5249,7 +5254,7 @@ describe('External API v2 Dashboards - new format', () => {
         h: 3,
         config: {
           configType: 'sql',
-          displayType: 'table',
+          displayType: DisplayType.Table,
           connectionId,
           sqlTemplate,
           sourceId,
@@ -5274,7 +5279,7 @@ describe('External API v2 Dashboards - new format', () => {
         h: 3,
         config: {
           configType: 'sql',
-          displayType: 'number',
+          displayType: DisplayType.Number,
           connectionId,
           sqlTemplate,
           sourceId,
@@ -5293,7 +5298,7 @@ describe('External API v2 Dashboards - new format', () => {
         h: 3,
         config: {
           configType: 'sql',
-          displayType: 'pie',
+          displayType: DisplayType.Pie,
           connectionId,
           sqlTemplate,
           sourceId,
@@ -5309,7 +5314,7 @@ describe('External API v2 Dashboards - new format', () => {
         h: 3,
         config: {
           configType: 'sql',
-          displayType: 'bar',
+          displayType: DisplayType.Bar,
           connectionId,
           sqlTemplate,
           sourceId,
@@ -5396,7 +5401,7 @@ describe('External API v2 Dashboards - new format', () => {
               h: 3,
               config: {
                 configType: 'sql',
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 connectionId: otherConnectionId,
                 sqlTemplate: 'SELECT count() FROM otel_logs WHERE {timeFilter}',
               },
@@ -5434,7 +5439,7 @@ describe('External API v2 Dashboards - new format', () => {
               h: 3,
               config: {
                 configType: 'sql',
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 connectionId: otherConnection._id.toString(),
                 sourceId: traceSource._id.toString(),
                 sqlTemplate: 'SELECT count() FROM otel_logs',
@@ -5466,7 +5471,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 sourceId: traceSource._id.toString(),
                 select: [{ aggFn: 'count' }],
                 onClick: {
@@ -5502,7 +5507,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 sourceId: traceSource._id.toString(),
                 select: [{ aggFn: 'count' }],
                 onClick: {
@@ -5534,7 +5539,7 @@ describe('External API v2 Dashboards - new format', () => {
             w: 6,
             h: 3,
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               source: traceSource._id.toString(),
               select: [
                 {
@@ -5590,7 +5595,7 @@ describe('External API v2 Dashboards - new format', () => {
               h: 3,
               config: {
                 configType: 'sql',
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 connectionId: connection._id.toString(),
                 sqlTemplate: 'SELECT count() FROM otel_logs WHERE {timeFilter}',
               },
@@ -5614,7 +5619,7 @@ describe('External API v2 Dashboards - new format', () => {
             h: 3,
             config: {
               name: 'Builder Tile',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               source: traceSource._id.toString(),
               select: [
                 { aggFn: 'count', aggCondition: '', valueExpression: '' },
@@ -5655,7 +5660,7 @@ describe('External API v2 Dashboards - new format', () => {
               h: 3,
               config: {
                 configType: 'promql',
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 sourceId: promqlSource._id.toString(),
                 expressions: [{ expression: 'up' }],
               },
@@ -5680,7 +5685,7 @@ describe('External API v2 Dashboards - new format', () => {
             w: 6,
             h: 3,
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               source: traceSource._id.toString(),
               select: [
                 {
@@ -5705,7 +5710,7 @@ describe('External API v2 Dashboards - new format', () => {
             w: 6,
             h: 3,
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               source: traceSource._id.toString(),
               select: [
                 {
@@ -5759,7 +5764,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 sourceId: traceSource._id.toString(),
                 select: [{ aggFn: 'count', where: '' }],
               },
@@ -5804,7 +5809,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 sourceId: traceSource._id.toString(),
                 select: [{ aggFn: 'count', where: '' }],
               },
@@ -5834,7 +5839,7 @@ describe('External API v2 Dashboards - new format', () => {
       // source as long as the heatmap tile itself was not changed.
       await Source.collection.updateOne(
         { _id: traceSource._id },
-        { $set: { kind: SourceKind.Log } },
+        { $set: { kind: SourceKind.Log as const } },
       );
 
       // PUT the dashboard back with the heatmap tile unchanged but a
@@ -5868,7 +5873,7 @@ describe('External API v2 Dashboards - new format', () => {
               w: 6,
               h: 3,
               config: {
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 sourceId: traceSource._id.toString(),
                 select: [{ aggFn: 'count', where: 'level:error' }],
               },
@@ -6560,7 +6565,7 @@ describe('External API v2 Dashboards - new format', () => {
       w: 3,
       h: 3,
       config: {
-        displayType: 'number',
+        displayType: DisplayType.Number,
         sourceId: traceSource._id.toString(),
         select: [{ aggFn: 'count', where: '' }],
         ...config,
@@ -6582,7 +6587,7 @@ describe('External API v2 Dashboards - new format', () => {
       h: 3,
       config: {
         configType: 'sql',
-        displayType: 'number',
+        displayType: DisplayType.Number,
         connectionId: connection._id.toString(),
         sqlTemplate: 'SELECT count() FROM otel_logs WHERE {timeFilter}',
         sourceId: traceSource._id.toString(),
@@ -6980,7 +6985,7 @@ describe('External API v2 Dashboards - new format', () => {
       w: 3,
       h: 3,
       config: {
-        displayType: 'number',
+        displayType: DisplayType.Number,
         sourceId: traceSource._id.toString(),
         select: [{ aggFn: 'count', where: '' }],
         ...config,
@@ -7002,7 +7007,7 @@ describe('External API v2 Dashboards - new format', () => {
       h: 3,
       config: {
         configType: 'sql',
-        displayType: 'number',
+        displayType: DisplayType.Number,
         connectionId: connection._id.toString(),
         sqlTemplate: 'SELECT count() FROM otel_logs WHERE {timeFilter}',
         sourceId: traceSource._id.toString(),
@@ -7147,7 +7152,7 @@ describe('External API v2 Dashboards - new format', () => {
       h: 3,
       config: {
         configType: 'promql',
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId: promqlSource._id.toString(),
         expressions: [{ expression: 'up', alias: 'Up' }],
         legendTemplate: '{{job}}',
@@ -7232,7 +7237,7 @@ describe('External API v2 Dashboards - new format', () => {
         const create = await postTile().expect(200);
         await Source.updateOne(
           { _id: promqlSource._id },
-          { $set: { kind: SourceKind.Log } },
+          { $set: { kind: SourceKind.Log as const } },
         );
         return create.body.data;
       };
@@ -7314,7 +7319,7 @@ describe('External API v2 Dashboards - new format', () => {
       w: 6,
       h: 3,
       config: {
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId: metricSource._id.toString(),
         select: metricSelect(),
         ...config,
@@ -7356,7 +7361,7 @@ describe('External API v2 Dashboards - new format', () => {
     it('round-trips a table tile with formulas', async () => {
       const formulas = [{ expression: 'A + B', alias: 'Combined' }];
       const create = await postTile({
-        displayType: 'table',
+        displayType: DisplayType.Table,
         formulas,
       }).expect(200);
       expect(create.body.data.tiles[0].config.formulas).toEqual(formulas);
@@ -7371,7 +7376,7 @@ describe('External API v2 Dashboards - new format', () => {
     it('round-trips a number tile with multiple operands and one formula', async () => {
       const formulas = [{ expression: 'A / B * 100', alias: 'Error rate %' }];
       const create = await postTile({
-        displayType: 'number',
+        displayType: DisplayType.Number,
         formulas,
       }).expect(200);
       const config = create.body.data.tiles[0].config;
@@ -7445,7 +7450,7 @@ describe('External API v2 Dashboards - new format', () => {
 
     it('rejects multiple formulas on a number tile', async () => {
       const res = await postTile({
-        displayType: 'number',
+        displayType: DisplayType.Number,
         formulas: [{ expression: 'A / B' }, { expression: 'A + B' }],
       }).expect(400);
       expect(res.body.message).toContain(
@@ -7454,7 +7459,9 @@ describe('External API v2 Dashboards - new format', () => {
     });
 
     it('rejects multiple select items on a number tile without formulas', async () => {
-      const res = await postTile({ displayType: 'number' }).expect(400);
+      const res = await postTile({ displayType: DisplayType.Number }).expect(
+        400,
+      );
       expect(res.body.message).toContain(
         'Number tiles support a single select item',
       );
@@ -7500,7 +7507,7 @@ describe('External API v2 Dashboards - new format', () => {
 
     it('rejects formulas on a formula-incapable source kind (session)', async () => {
       const sessionSource = await Source.create({
-        kind: SourceKind.Session,
+        kind: SourceKind.Session as const,
         team: team._id,
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -7542,7 +7549,7 @@ describe('External API v2 Dashboards - new format', () => {
       // same way a source-replace API call would leave the doc.
       await Source.collection.updateOne(
         { _id: metricSource._id },
-        { $set: { kind: SourceKind.Session } },
+        { $set: { kind: SourceKind.Session as const } },
       );
 
       // Unrelated edit (rename) resubmitting the unchanged tile: accepted.
@@ -7594,7 +7601,7 @@ describe('External API v2 Dashboards - new format', () => {
       w: 6,
       h: 3,
       config: {
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId,
         select: [{ aggFn: 'count', where: '' }],
       },

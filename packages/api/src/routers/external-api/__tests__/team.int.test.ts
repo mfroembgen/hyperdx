@@ -1,4 +1,4 @@
-import request, { SuperAgentTest } from 'supertest';
+import request, { Agent } from 'supertest';
 
 import { getLoggedInAgent, getServer } from '@/fixtures';
 import { ITeam } from '@/models/team';
@@ -8,7 +8,7 @@ const TEAM_BASE_URL = '/api/v2/team';
 
 describe('External API v2 Team', () => {
   const server = getServer();
-  let agent: SuperAgentTest;
+  let agent: Agent;
   let team: ITeam;
   let user: IUser;
 

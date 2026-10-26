@@ -172,7 +172,7 @@ export const AppNavUserMenu = ({
               data-testid="logout-menu-item"
               color="red"
               leftSection={<IconLogout size={16} />}
-              component={Link}
+              component="a"
               href={logoutUrl}
             >
               Logout

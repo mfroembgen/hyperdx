@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "declarationMap": true,
-    "types": ["jest", "node"],
+    "types": ["vitest/globals", "node"],
     "paths": {
       "@/*": ["./src/*"]
     },

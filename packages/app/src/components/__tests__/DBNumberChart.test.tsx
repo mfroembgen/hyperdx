@@ -1,4 +1,5 @@
 import React from 'react';
+import { type Mock, vi } from 'vitest';
 import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import { act, screen } from '@testing-library/react';
 
@@ -16,58 +17,61 @@ import { NumberFormat } from '@/types';
 import { formatNumber, getColorFromCSSToken } from '@/utils';
 
 // Mock dependencies
-jest.mock('@/hooks/useChartConfig', () => ({
-  useQueriedChartConfig: jest.fn(),
-  getMinGranularitySeconds: jest.fn().mockReturnValue(undefined),
+vi.mock('@/hooks/useChartConfig', () => ({
+  useQueriedChartConfig: vi.fn(),
+  getMinGranularitySeconds: vi.fn().mockReturnValue(undefined),
 }));
 
-jest.mock('@/hooks/useMVOptimizationExplanation', () => ({
-  useMVOptimizationExplanation: jest.fn().mockReturnValue({
+vi.mock('@/hooks/useMVOptimizationExplanation', () => ({
+  useMVOptimizationExplanation: vi.fn().mockReturnValue({
     data: undefined,
     isLoading: false,
     isPlaceholderData: false,
   }),
 }));
 
-jest.mock('@/source', () => ({
-  useSource: jest.fn().mockReturnValue({ data: null }),
-  useSingleSeriesNumberFormat: jest
+vi.mock('@/source', () => ({
+  useSource: vi.fn().mockReturnValue({ data: null }),
+  useSingleSeriesNumberFormat: vi
     .fn()
     .mockImplementation((config: any) => config.numberFormat),
 }));
 
-jest.mock('@/utils', () => ({
-  formatNumber: jest.fn(),
-  omit: jest.fn((obj: Record<string, unknown>, keys: string[]) => {
-    const result = { ...obj };
-    keys.forEach((key: string) => delete result[key]);
-    return result;
-  }),
-  // The renderer resolves palette tokens through getColorFromCSSToken.
-  // Return a valid CSS hex so Mantine applies it as an inline color style,
-  // letting us assert that the resolved value reaches the DOM element.
-  getColorFromCSSToken: jest.fn(() => '#00ff00'),
-  // Use the real resolver so integration tests verify the actual logic.
-  resolveConditionalColor:
-    jest.requireActual('@/utils').resolveConditionalColor,
+vi.mock('@/utils', async () => {
+  const actualModule0 =
+    await vi.importActual<typeof import('@/utils')>('@/utils');
+  return {
+    formatNumber: vi.fn(),
+    omit: vi.fn((obj: Record<string, unknown>, keys: string[]) => {
+      const result = { ...obj };
+      keys.forEach((key: string) => delete result[key]);
+      return result;
+    }),
+    // The renderer resolves palette tokens through getColorFromCSSToken.
+    // Return a valid CSS hex so Mantine applies it as an inline color style,
+    // letting us assert that the resolved value reaches the DOM element.
+    getColorFromCSSToken: vi.fn(() => '#00ff00'),
+    // Use the real resolver so integration tests verify the actual logic.
+    resolveConditionalColor: actualModule0.resolveConditionalColor,
+  };
+});
+
+vi.mock('../MaterializedViews/MVOptimizationIndicator', () => ({
+  default: vi.fn(() => null),
 }));
 
-jest.mock('../MaterializedViews/MVOptimizationIndicator', () =>
-  jest.fn(() => null),
-);
-
-jest.mock('../charts/DateRangeIndicator', () => jest.fn(() => null));
+vi.mock('../charts/DateRangeIndicator', () => ({ default: vi.fn(() => null) }));
 
 // Stub the sparkline so these tests assert only the wiring (when it mounts
 // and what props it receives); its data path is covered by its own test.
-jest.mock('../NumberTileBackgroundChart', () => ({
+vi.mock('../NumberTileBackgroundChart', () => ({
   __esModule: true,
-  default: jest.fn(() => <div data-testid="number-tile-background-chart" />),
+  default: vi.fn(() => <div data-testid="number-tile-background-chart" />),
 }));
 
 describe('DBNumberChart', () => {
-  const mockUseQueriedChartConfig = useQueriedChartConfig as jest.Mock;
-  const mockFormatNumber = formatNumber as jest.Mock;
+  const mockUseQueriedChartConfig = useQueriedChartConfig as Mock;
+  const mockFormatNumber = formatNumber as Mock;
 
   const baseTestConfig = {
     dateRange: [new Date(), new Date()] as [Date, Date],
@@ -79,7 +83,7 @@ describe('DBNumberChart', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     mockUseQueriedChartConfig.mockReturnValue({
       data: { data: [{ value: 1234 }] },
@@ -123,7 +127,7 @@ describe('DBNumberChart', () => {
       const [numberFormat, setNumberFormat] = React.useState<
         NumberFormat | undefined
       >(undefined);
-      // eslint-disable-next-line react-hooks/globals
+
       setNumberFormatFn = setNumberFormat;
       return <DBNumberChart config={{ ...baseTestConfig, numberFormat }} />;
     };
@@ -288,26 +292,26 @@ describe('DBNumberChart', () => {
 
   it('passes the same config to useMVOptimizationExplanation, useQueriedChartConfig, and MVOptimizationIndicator', () => {
     // Mock useSource to return a source so MVOptimizationIndicator is rendered
-    jest.mocked(useSource).mockReturnValue({
+    vi.mocked(useSource).mockReturnValue({
       data: { id: 'test-source', name: 'Test Source' },
     } as any);
 
     renderWithMantine(<DBNumberChart config={baseTestConfig} />);
 
     // Get the config that was passed to useMVOptimizationExplanation
-    expect(jest.mocked(useMVOptimizationExplanation)).toHaveBeenCalled();
-    const mvOptExplanationConfig = jest.mocked(useMVOptimizationExplanation)
-      .mock.calls[0][0];
+    expect(vi.mocked(useMVOptimizationExplanation)).toHaveBeenCalled();
+    const mvOptExplanationConfig = vi.mocked(useMVOptimizationExplanation).mock
+      .calls[0][0];
 
     // Get the config that was passed to useQueriedChartConfig
-    expect(jest.mocked(useQueriedChartConfig)).toHaveBeenCalled();
-    const queriedChartConfig = jest.mocked(useQueriedChartConfig).mock
+    expect(vi.mocked(useQueriedChartConfig)).toHaveBeenCalled();
+    const queriedChartConfig = vi.mocked(useQueriedChartConfig).mock
       .calls[0][0];
 
     // Get the config that was passed to MVOptimizationIndicator
-    expect(jest.mocked(MVOptimizationIndicator)).toHaveBeenCalled();
-    const indicatorConfig = jest.mocked(MVOptimizationIndicator).mock
-      .calls[0][0].config;
+    expect(vi.mocked(MVOptimizationIndicator)).toHaveBeenCalled();
+    const indicatorConfig = vi.mocked(MVOptimizationIndicator).mock.calls[0][0]
+      .config;
 
     // All three should receive the same config object reference
     expect(mvOptExplanationConfig).toBe(queriedChartConfig);
@@ -327,7 +331,7 @@ describe('DBNumberChart', () => {
     };
 
     // Mock useMVOptimizationExplanation to return an optimized config with aligned date range
-    jest.mocked(useMVOptimizationExplanation).mockReturnValue({
+    vi.mocked(useMVOptimizationExplanation).mockReturnValue({
       data: {
         optimizedConfig: {
           ...config,
@@ -350,11 +354,11 @@ describe('DBNumberChart', () => {
     renderWithMantine(<DBNumberChart config={config} />);
 
     // Verify DateRangeIndicator was called
-    expect(jest.mocked(DateRangeIndicator)).toHaveBeenCalled();
+    expect(vi.mocked(DateRangeIndicator)).toHaveBeenCalled();
 
     // Verify it was called with the correct props
     const dateRangeIndicatorCall =
-      jest.mocked(DateRangeIndicator).mock.calls[0][0];
+      vi.mocked(DateRangeIndicator).mock.calls[0][0];
     expect(dateRangeIndicatorCall.originalDateRange).toEqual([
       originalStartDate,
       originalEndDate,
@@ -368,7 +372,7 @@ describe('DBNumberChart', () => {
 
   it('does not render DateRangeIndicator when MV optimization has no optimized date range', () => {
     // Mock useMVOptimizationExplanation to return data without an optimized config
-    jest.mocked(useMVOptimizationExplanation).mockReturnValue({
+    vi.mocked(useMVOptimizationExplanation).mockReturnValue({
       data: {
         optimizedConfig: undefined,
         explanations: [],
@@ -380,11 +384,11 @@ describe('DBNumberChart', () => {
     renderWithMantine(<DBNumberChart config={baseTestConfig} />);
 
     // Verify DateRangeIndicator was not called
-    expect(jest.mocked(DateRangeIndicator)).not.toHaveBeenCalled();
+    expect(vi.mocked(DateRangeIndicator)).not.toHaveBeenCalled();
   });
 
   describe('colorRules (conditional colors)', () => {
-    const mockGetColorFromCSSToken = getColorFromCSSToken as jest.Mock;
+    const mockGetColorFromCSSToken = getColorFromCSSToken as Mock;
 
     beforeEach(() => {
       // Each test controls the data value independently
@@ -519,7 +523,7 @@ describe('DBNumberChart', () => {
   });
 
   describe('color', () => {
-    const mockGetColorFromCSSToken = getColorFromCSSToken as jest.Mock;
+    const mockGetColorFromCSSToken = getColorFromCSSToken as Mock;
 
     it('resolves a palette token through getColorFromCSSToken when config.color is set', () => {
       const config = {
@@ -621,24 +625,24 @@ describe('DBNumberChart', () => {
       // produce realistic measurements during the binary search.
       widthPerChar = 0.6,
     ) => {
-      const containerSpy = jest
+      const containerSpy = vi
         .spyOn(HTMLElement.prototype, 'clientWidth', 'get')
         .mockImplementation(function (this: HTMLElement) {
           return this.tagName === 'DIV' ? containerWidth : 0;
         });
-      const containerHeightSpy = jest
+      const containerHeightSpy = vi
         .spyOn(HTMLElement.prototype, 'clientHeight', 'get')
         .mockImplementation(function (this: HTMLElement) {
           return this.tagName === 'DIV' ? containerHeight : 0;
         });
-      const scrollWidthSpy = jest
+      const scrollWidthSpy = vi
         .spyOn(HTMLElement.prototype, 'scrollWidth', 'get')
         .mockImplementation(function (this: HTMLElement) {
           if (this.tagName !== 'P') return 0;
           const fs = parseFloat(this.style.fontSize) || 0;
           return Math.ceil((this.textContent ?? '').length * widthPerChar * fs);
         });
-      const scrollHeightSpy = jest
+      const scrollHeightSpy = vi
         .spyOn(HTMLElement.prototype, 'scrollHeight', 'get')
         .mockImplementation(function (this: HTMLElement) {
           if (this.tagName !== 'P') return 0;
@@ -708,7 +712,7 @@ describe('DBNumberChart', () => {
      * (so dashboards never go blank because of a measurement bug).
      */
     it('falls back to a simpler text rendering if AutoSizeNumber throws', () => {
-      const containerSpy = jest
+      const containerSpy = vi
         .spyOn(HTMLElement.prototype, 'clientWidth', 'get')
         .mockImplementation(function (this: HTMLElement) {
           if (this.tagName === 'DIV') {
@@ -719,7 +723,7 @@ describe('DBNumberChart', () => {
 
       // ErrorBoundary logs the caught error to console.error; silence
       // it so the test output stays focused on the assertions.
-      const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       try {
         renderWithMantine(<DBNumberChart config={baseTestConfig} />);
@@ -739,8 +743,7 @@ describe('DBNumberChart', () => {
   });
 
   describe('background chart', () => {
-    const mockBackgroundChart =
-      NumberTileBackgroundChart as unknown as jest.Mock;
+    const mockBackgroundChart = NumberTileBackgroundChart as unknown as Mock;
 
     it('renders the background sparkline when backgroundChart is configured', () => {
       const config = {
@@ -799,7 +802,7 @@ describe('DBNumberChart', () => {
     };
 
     it("floors an auto granularity at the source's minimum", () => {
-      jest.mocked(getMinGranularitySeconds).mockReturnValueOnce(300);
+      vi.mocked(getMinGranularitySeconds).mockReturnValueOnce(300);
 
       renderWithMantine(
         <DBNumberChart
@@ -892,7 +895,7 @@ describe('DBNumberChart', () => {
           <DBNumberChart config={rangeConfig} queryKeyPrefix="tile-1" />,
         );
 
-        expect(jest.mocked(NumberTileBackgroundChart)).toHaveBeenCalledWith(
+        expect(vi.mocked(NumberTileBackgroundChart)).toHaveBeenCalledWith(
           expect.objectContaining({
             config: rangeConfig,
             backgroundChart: { type: 'area' },
@@ -910,7 +913,7 @@ describe('DBNumberChart', () => {
           <DBNumberChart config={rangeConfig} enabled={false} />,
         );
 
-        expect(jest.mocked(NumberTileBackgroundChart)).toHaveBeenCalledWith(
+        expect(vi.mocked(NumberTileBackgroundChart)).toHaveBeenCalledWith(
           expect.objectContaining({ enabled: false }),
           undefined,
         );
@@ -949,7 +952,7 @@ describe('DBNumberChart', () => {
       };
       renderWithMantine(<DBNumberChart config={config} />);
 
-      expect(jest.mocked(getColorFromCSSToken)).toHaveBeenCalledWith(
+      expect(vi.mocked(getColorFromCSSToken)).toHaveBeenCalledWith(
         'chart-warning',
       );
     });

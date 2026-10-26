@@ -83,8 +83,7 @@ function parseAndCompile(
 }
 
 type CompileResult =
-  | { delegate: Handlebars.TemplateDelegate }
-  | { error: unknown };
+  { delegate: Handlebars.TemplateDelegate } | { error: unknown };
 
 const strictCache = new Map<string, CompileResult>();
 const lenientCache = new Map<string, CompileResult>();

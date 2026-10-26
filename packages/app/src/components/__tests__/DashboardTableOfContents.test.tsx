@@ -1,4 +1,5 @@
 import React from 'react';
+import { type Mock, type MockInstance, vi } from 'vitest';
 import { DashboardContainer as DashboardContainerSchema } from '@hyperdx/common-utils/dist/types';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -19,15 +20,15 @@ const renderTOC = (
   containers: DashboardContainerSchema[],
   overrides: {
     isCollapsed?: (c: DashboardContainerSchema) => boolean;
-    onToggleCollapse?: jest.Mock;
-    onClose?: jest.Mock;
+    onToggleCollapse?: Mock;
+    onClose?: Mock;
   } = {},
 ) => {
   const props = {
     containers,
     isCollapsed: overrides.isCollapsed ?? (c => c.collapsed === true),
-    onToggleCollapse: overrides.onToggleCollapse ?? jest.fn(),
-    onClose: overrides.onClose ?? jest.fn(),
+    onToggleCollapse: overrides.onToggleCollapse ?? vi.fn(),
+    onClose: overrides.onClose ?? vi.fn(),
   };
   return {
     ...renderWithMantine(<DashboardTableOfContents {...props} />),
@@ -37,7 +38,7 @@ const renderTOC = (
 
 describe('DashboardTableOfContents', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('visibility', () => {
@@ -91,7 +92,7 @@ describe('DashboardTableOfContents', () => {
 
   describe('close button', () => {
     it('calls onClose when the close button is clicked', async () => {
-      const onClose = jest.fn();
+      const onClose = vi.fn();
       const user = userEvent.setup();
       renderTOC([makeContainer({ id: 'a' })], { onClose });
 
@@ -101,19 +102,19 @@ describe('DashboardTableOfContents', () => {
   });
 
   describe('click-to-jump behavior', () => {
-    let scrollIntoViewMock: jest.Mock;
-    let rafSpy: jest.SpyInstance;
+    let scrollIntoViewMock: Mock;
+    let rafSpy: MockInstance;
 
     beforeEach(() => {
-      scrollIntoViewMock = jest.fn();
+      scrollIntoViewMock = vi.fn();
       // jsdom does not implement scrollIntoView; provide a global mock.
       Element.prototype.scrollIntoView = scrollIntoViewMock;
       // Run rAF callbacks synchronously so we can assert on the scroll call.
-      rafSpy = jest
+      rafSpy = vi
         .spyOn(window, 'requestAnimationFrame')
         .mockImplementation(cb => {
           cb(0);
-          return 0 as unknown as number;
+          return 0;
         });
     });
 
@@ -122,7 +123,7 @@ describe('DashboardTableOfContents', () => {
     });
 
     it('scrolls to the matching anchor element on click without toggling when section is expanded', async () => {
-      const onToggleCollapse = jest.fn();
+      const onToggleCollapse = vi.fn();
       const user = userEvent.setup();
 
       const anchor = document.createElement('div');
@@ -146,7 +147,7 @@ describe('DashboardTableOfContents', () => {
     });
 
     it('expands a collapsed section before scrolling', async () => {
-      const onToggleCollapse = jest.fn();
+      const onToggleCollapse = vi.fn();
       const user = userEvent.setup();
 
       const anchor = document.createElement('div');
@@ -167,7 +168,7 @@ describe('DashboardTableOfContents', () => {
     });
 
     it('does not throw when no matching anchor exists in the DOM', async () => {
-      const onToggleCollapse = jest.fn();
+      const onToggleCollapse = vi.fn();
       const user = userEvent.setup();
 
       renderTOC([makeContainer({ id: 'orphan', collapsed: false })], {
@@ -181,7 +182,7 @@ describe('DashboardTableOfContents', () => {
     });
 
     it('never calls onToggleCollapse for non-collapsible sections, even if isCollapsed returns true', async () => {
-      const onToggleCollapse = jest.fn();
+      const onToggleCollapse = vi.fn();
       const user = userEvent.setup();
 
       const anchor = document.createElement('div');

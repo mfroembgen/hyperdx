@@ -2315,12 +2315,14 @@ export class DashboardPage {
    */
   async selectFullscreenRelativeTime(label: string) {
     const input = this.fullscreenTimePickerInput;
-    const popover = this.page.getByTestId('time-picker-popover');
-    const isOpen = await popover.isVisible();
-    if (!isOpen) {
+    if ((await input.getAttribute('aria-expanded')) !== 'true') {
       await input.click();
-      await popover.waitFor({ state: 'visible', timeout: 5000 });
     }
+    const dropdownId = await input.getAttribute('aria-controls');
+    const popover = this.page
+      .getByTestId('time-picker-popover')
+      .and(this.page.locator(`[id="${dropdownId}"]`));
+    await popover.waitFor({ state: 'visible', timeout: 5000 });
     const intervalButton = popover.getByRole('button', { name: label });
     await intervalButton.waitFor({ state: 'visible', timeout: 5000 });
     await intervalButton.click({ timeout: 10000 });

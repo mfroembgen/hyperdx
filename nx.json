@@ -15,16 +15,16 @@
     "ci:build": {
       "cache": true,
       "dependsOn": ["^ci:build"],
-      // The `runtime` input pairs with `.nvmrc` in sharedGlobals: the file
+      // The `runtime` input pairs with `mise.toml` in sharedGlobals: the file
       // catches a declared version bump, this catches an actual interpreter
       // that disagrees with it (local shells, a runner image change).
-      "inputs": ["production", "^production", { "runtime": "node --version" }],
+      "inputs": ["production", "^production", { "runtime": "bun --version" }],
       "outputs": ["{projectRoot}/dist"]
     },
     "ci:lint": {
       "cache": true,
       "dependsOn": ["^ci:build"],
-      "inputs": ["default", "^production", { "runtime": "node --version" }]
+      "inputs": ["default", "^production", { "runtime": "bun --version" }]
     },
     // Unit tests import the compiled `dist` of workspace dependencies (e.g.
     // `@hyperdx/common-utils/dist/types`), so they need the same `^ci:build`
@@ -34,13 +34,13 @@
     "ci:unit": {
       "cache": true,
       "dependsOn": ["^ci:build"],
-      "inputs": ["default", "^production", { "runtime": "node --version" }]
+      "inputs": ["default", "^production", { "runtime": "bun --version" }]
     },
     // `outputs` is not optional here. Without it nx caches only the terminal
     // output, so a cache hit replays a convincing build log and leaves `dist`
     // exactly as it found it — stale, or missing entirely. That bites because
     // `ci:build` writes the same `dist` from a different command (tsup alone,
-    // no `tsc --emitDeclarationOnly`), so running unit tests and then `yarn dev`
+    // no `tsc --emitDeclarationOnly`), so running unit tests and then `bun run dev`
     // leaves you on whichever dist won the race, with no sign anything is off.
     "dev:build": {
       "cache": true,
@@ -68,7 +68,7 @@
       "default",
       "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
       "!{projectRoot}/tsconfig.spec.json",
-      "!{projectRoot}/jest.config.[jt]s",
+      "!{projectRoot}/vitest*.{ts,mts}",
       "!{projectRoot}/eslint.config.mjs"
     ],
     "sharedGlobals": [
@@ -76,8 +76,9 @@
       "{workspaceRoot}/.prettierrc",
       "{workspaceRoot}/.prettierignore",
       "{workspaceRoot}/package.json",
-      "{workspaceRoot}/yarn.lock",
-      "{workspaceRoot}/.nvmrc"
+      "{workspaceRoot}/bun.lock",
+      "{workspaceRoot}/mise.toml",
+      "{workspaceRoot}/bunfig.toml"
     ]
   }
 }

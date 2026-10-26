@@ -1,5 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -16,7 +17,7 @@ function Harness(
   return (
     <ChartSaveActions
       handleSubmit={handleSubmit}
-      handleSave={props.handleSave ?? jest.fn()}
+      handleSave={props.handleSave ?? vi.fn()}
       {...props}
     />
   );
@@ -24,14 +25,14 @@ function Harness(
 
 describe('ChartSaveActions', () => {
   it('renders Save when saving is handled', () => {
-    renderWithMantine(<Harness onSave={jest.fn()} />);
+    renderWithMantine(<Harness onSave={vi.fn()} />);
 
     expect(screen.getByTestId('chart-save-button')).toHaveTextContent('Save');
   });
 
   it('saves through the form', async () => {
-    const handleSave = jest.fn();
-    renderWithMantine(<Harness onSave={jest.fn()} handleSave={handleSave} />);
+    const handleSave = vi.fn();
+    renderWithMantine(<Harness onSave={vi.fn()} handleSave={handleSave} />);
 
     await userEvent.click(screen.getByTestId('chart-save-button'));
 
@@ -39,7 +40,7 @@ describe('ChartSaveActions', () => {
   });
 
   it('renders Cancel when closing is handled', async () => {
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     renderWithMantine(<Harness onClose={onClose} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -48,9 +49,7 @@ describe('ChartSaveActions', () => {
   });
 
   it('disables Cancel while saving', () => {
-    renderWithMantine(
-      <Harness onSave={jest.fn()} onClose={jest.fn()} isSaving />,
-    );
+    renderWithMantine(<Harness onSave={vi.fn()} onClose={vi.fn()} isSaving />);
 
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
   });

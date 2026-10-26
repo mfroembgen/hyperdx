@@ -62,11 +62,10 @@ import {
   ColumnDef,
   ColumnResizeMode,
   flexRender,
-  getCoreRowModel,
   Row as TableRow,
   SortingState,
   TableOptions,
-  useReactTable,
+  useTable,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
@@ -90,6 +89,8 @@ import useRowWhere, {
 } from '@/hooks/useRowWhere';
 import { useTableSearch } from '@/hooks/useTableSearch';
 import { getLevelExpression, useSource } from '@/source';
+import type { AppTableFeatures } from '@/tableFeatures';
+import { tableFeatures } from '@/tableFeatures';
 import {
   MIN_COLUMN_WIDTH,
   MIN_LAST_COLUMN_WIDTH,
@@ -651,7 +652,7 @@ export const RawLogTable = memo(
       wrapLines ?? false,
     );
 
-    const columns = useMemo<ColumnDef<any>[]>(
+    const columns = useMemo<ColumnDef<AppTableFeatures, any>[]>(
       () => [
         ...(showExpandButton
           ? [
@@ -743,7 +744,7 @@ export const RawLogTable = memo(
                 ? lastColumnWidth
                 : getResolvedColumnSize(column, columnSizeOpts),
           };
-        }) as ColumnDef<any>[]),
+        }) as ColumnDef<AppTableFeatures, any>[]),
       ],
       [
         timeZone,
@@ -789,7 +790,7 @@ export const RawLogTable = memo(
       fetchMoreOnBottomReached(tableContainerRef);
     }, [fetchMoreOnBottomReached, tableContainerRef]);
 
-    const reactTableProps = useMemo((): TableOptions<any> => {
+    const reactTableProps = useMemo((): TableOptions<AppTableFeatures, any> => {
       //TODO: fix any
       const onColumnSizingChange = (updaterOrValue: any) => {
         const state =
@@ -802,7 +803,7 @@ export const RawLogTable = memo(
       const initReactTableProps = {
         data: dedupedRows,
         columns,
-        getCoreRowModel: getCoreRowModel(),
+        features: tableFeatures,
         // debugTable: true,
         enableSorting,
         manualSorting: true,
@@ -822,7 +823,7 @@ export const RawLogTable = memo(
         },
         enableColumnResizing: true,
         columnResizeMode: 'onChange' as ColumnResizeMode,
-      } satisfies TableOptions<any>;
+      } satisfies TableOptions<AppTableFeatures, any>;
 
       const columnSizeProps = {
         state: {
@@ -846,7 +847,7 @@ export const RawLogTable = memo(
       setColumnSizeStorage,
     ]);
 
-    const table = useReactTable(reactTableProps);
+    const table = useTable(reactTableProps);
 
     // Sum actual column widths to derive a pixel min-width for the table.
     // This enables horizontal scrolling when the viewport is narrower than
@@ -1201,7 +1202,10 @@ export const RawLogTable = memo(
                 </tbody>
               )}
               {items.map(virtualRow => {
-                const row = _rows[virtualRow.index] as TableRow<any>;
+                const row = _rows[virtualRow.index] as TableRow<
+                  AppTableFeatures,
+                  any
+                >;
                 const rowId = getRowId(row.original);
                 const isExpanded = expandedRows[rowId] ?? false;
                 const isRowSelected =

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { AlertState, AlertTransition } from '@hyperdx/common-utils/dist/types';
 import { renderHook } from '@testing-library/react';
 
@@ -109,9 +110,11 @@ describe('useAlertAnnotations', () => {
   ];
 
   const mockHistory = (data: unknown) =>
-    jest.spyOn(api, 'useAlertHistory').mockReturnValue({ data } as any);
+    vi.spyOn(api, 'useAlertHistory').mockReturnValue({ data } as any);
 
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it('returns undefined when disabled, even if data is present', () => {
     mockHistory({

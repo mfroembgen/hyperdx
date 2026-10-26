@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { vi } from 'vitest';
 import { SourceKind, TSource } from '@hyperdx/common-utils/dist/types';
 import { MantineProvider } from '@mantine/core';
 import { render, waitFor } from '@testing-library/react';
 
 import { MetricTableModelForm } from '@/components/Sources/SourceForm/MetricTableModelForm';
 
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 
 // Table lists per database, used by the mocked `useTablesDirect`.
 const TABLES_BY_DB: Record<string, string[]> = {
@@ -21,11 +22,14 @@ const TABLES_BY_DB: Record<string, string[]> = {
 
 let savedSource: TSource | undefined;
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
+  default: {
+    useTeam: () => ({ data: { isMetricsSeriesTableEnabled: false } }),
+  },
   useTeam: () => ({ data: { isMetricsSeriesTableEnabled: false } }),
 }));
 
-jest.mock('@/clickhouse', () => ({
+vi.mock('@/clickhouse', () => ({
   useTablesDirect: ({ database }: { database: string }) => ({
     data: {
       data: (TABLES_BY_DB[database] ?? []).map(name => ({ name })),
@@ -33,41 +37,41 @@ jest.mock('@/clickhouse', () => ({
   }),
 }));
 
-jest.mock('@/hooks/useMetadata', () => ({
+vi.mock('@/hooks/useMetadata', () => ({
   useMetadataWithSettings: () => ({}),
 }));
 
-jest.mock('@/hooks/useMetricsSeriesTableAvailability', () => ({
+vi.mock('@/hooks/useMetricsSeriesTableAvailability', () => ({
   useMetricsSeriesTableAvailability: () => ({
     status: 'disabled',
     missingSeriesHashTables: [],
   }),
 }));
 
-jest.mock('@/source', () => ({
-  isValidMetricTable: jest.fn(() => Promise.resolve(true)),
+vi.mock('@/source', () => ({
+  isValidMetricTable: vi.fn(() => Promise.resolve(true)),
   useSource: ({ id }: { id?: string }) => ({
     data: id ? savedSource : undefined,
   }),
 }));
 
-jest.mock('@/theme/ThemeProvider', () => ({
+vi.mock('@/theme/ThemeProvider', () => ({
   useBrandDisplayName: () => 'HyperDX',
 }));
 
-jest.mock('@mantine/notifications', () => ({
-  notifications: { show: jest.fn() },
+vi.mock('@mantine/notifications', () => ({
+  notifications: { show: vi.fn() },
 }));
 
-jest.mock('@/components/DBTableSelect', () => ({
+vi.mock('@/components/DBTableSelect', () => ({
   DBTableSelectControlled: ({ name }: { name: string }) => <div>{name}</div>,
 }));
 
-jest.mock('@/components/SourceSelect', () => ({
+vi.mock('@/components/SourceSelect', () => ({
   SourceSelectControlled: () => <div />,
 }));
 
-const mockSetValue = jest.fn();
+const mockSetValue = vi.fn();
 
 // Rendered with a wrapper rather than the global `renderWithMantine` helper so
 // that `rerender` keeps the provider (and the component instance) in place.

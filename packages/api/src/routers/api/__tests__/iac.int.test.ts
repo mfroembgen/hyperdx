@@ -1,4 +1,6 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
+import { Types } from 'mongoose';
 
 import {
   getAgent,
@@ -11,7 +13,7 @@ import Connection from '@/models/connection';
 import Dashboard from '@/models/dashboard';
 import { SavedSearch } from '@/models/savedSearch';
 import { Source } from '@/models/source';
-import Webhook from '@/models/webhook';
+import Webhook, { WebhookService } from '@/models/webhook';
 
 describe('iac router', () => {
   const server = getServer();
@@ -98,7 +100,7 @@ describe('iac router', () => {
             configType: 'promql',
             promqlExpression: 'up',
             source: randomMongoId(),
-            displayType: 'line',
+            displayType: DisplayType.Line,
           },
         },
       ],
@@ -133,7 +135,7 @@ describe('iac router', () => {
           h: 2,
           config: {
             configType: 'sql',
-            displayType: 'search',
+            displayType: DisplayType.Search,
             connection: randomMongoId(),
             sqlTemplate: 'SELECT 1',
           },
@@ -183,7 +185,7 @@ describe('iac router', () => {
     });
 
     const source = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       name: 'Logs',
       team: team._id,
       connection: connection._id,
@@ -214,7 +216,7 @@ describe('iac router', () => {
     await Webhook.create({
       team: team._id,
       name: 'Ops Slack',
-      service: 'slack',
+      service: WebhookService.Slack,
       url: 'https://hooks.slack.test/abc',
     });
 
@@ -260,7 +262,7 @@ describe('iac router', () => {
       y: 0,
       w: 4,
       h: 2,
-      config: { name, displayType: 'line' },
+      config: { name, displayType: DisplayType.Line },
     });
     const dashboard = await Dashboard.create({
       name: 'Ops',
@@ -324,7 +326,7 @@ describe('iac router', () => {
           y: 0,
           w: 4,
           h: 2,
-          config: { name: 'Errors', displayType: 'line' },
+          config: { name: 'Errors', displayType: DisplayType.Line },
         },
       ],
     });
@@ -362,12 +364,12 @@ describe('iac router', () => {
           y: 0,
           w: 4,
           h: 2,
-          config: { name: 'Errors', displayType: 'line' },
+          config: { name: 'Errors', displayType: DisplayType.Line },
         },
       ],
     });
 
-    const alert = async (name: string, dashboardId: unknown) =>
+    const alert = async (name: string, dashboardId: Types.ObjectId | string) =>
       Alert.create({
         team: team._id,
         name,
@@ -494,7 +496,7 @@ describe('iac router', () => {
     await Webhook.create({
       team: otherTeam,
       name: "Other team's webhook",
-      service: 'slack',
+      service: WebhookService.Slack,
       url: 'https://hooks.slack.test/other',
     });
 

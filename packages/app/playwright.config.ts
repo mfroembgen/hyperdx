@@ -3,7 +3,7 @@ import path from 'path';
 
 // Check if we should use full-stack mode (with backend)
 const USE_FULLSTACK = process.env.E2E_FULLSTACK === 'true';
-// Check if we should use next dev (hot reload) instead of build + start
+// Check if we should use Vite dev (hot reload) instead of build + start
 const USE_DEV = process.env.E2E_USE_DEV === 'true';
 const AUTH_FILE = path.join(__dirname, 'tests/e2e/.auth/user.json');
 
@@ -15,7 +15,7 @@ const APP_LOCAL_PORT = process.env.HDX_E2E_APP_LOCAL_PORT || '21200';
 // Timeout configuration constants (in milliseconds)
 const TEST_TIMEOUT_MS = 60 * 1000; // 60 seconds per test
 const API_SERVER_STARTUP_TIMEOUT_MS = 120 * 1000; // 2 minutes for API to start
-const APP_SERVER_STARTUP_TIMEOUT_MS = 180 * 1000; // 3 minutes for Next.js build + start
+const APP_SERVER_STARTUP_TIMEOUT_MS = 180 * 1000; // 3 minutes for Vinext build + start
 
 /**
  * @see https://playwright.dev/docs/test-configuration
@@ -89,13 +89,12 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  // Note: webServer array syntax requires Playwright v1.32.0+ (current: v1.57.0)
   webServer: USE_FULLSTACK
     ? [
         // Full-stack mode: Start API and App servers (infrastructure started separately)
         {
           // Connections/sources come from env (injected by run-e2e.js from e2e-fixtures.json)
-          command: `cd ../api && ${process.env.MONGO_URI ? `MONGO_URI="${process.env.MONGO_URI}"` : ''} DOTENV_CONFIG_PATH=.env.e2e npx ts-node --transpile-only -r tsconfig-paths/register -r dotenv-expand/config -r @hyperdx/node-opentelemetry/build/src/tracing src/index.ts`,
+          command: `cd ../api && ${process.env.MONGO_URI ? `MONGO_URI="${process.env.MONGO_URI}"` : ''} bun --env-file=.env.e2e --preload ./src/tracing.ts src/index.ts`,
           port: parseInt(API_PORT, 10),
           reuseExistingServer: !process.env.CI,
           timeout: API_SERVER_STARTUP_TIMEOUT_MS,
@@ -105,8 +104,8 @@ export default defineConfig({
         {
           // Full UI: Alerts + Dashboards. Not local mode; Alerts enabled;
           command: USE_DEV
-            ? `SERVER_URL=http://localhost:${API_PORT} PORT=${APP_PORT} NEXT_DIST_DIR=.next-e2e NEXT_PUBLIC_ENABLE_ALERT_DETAILS=true NEXT_PUBLIC_ENABLE_PROMQL=true NEXT_PUBLIC_ENABLE_ADHOC_FILTERS=true next dev --webpack`
-            : `SERVER_URL=http://localhost:${API_PORT} PORT=${APP_PORT} NEXT_DIST_DIR=.next-e2e NEXT_PUBLIC_ENABLE_ALERT_DETAILS=true NEXT_PUBLIC_ENABLE_PROMQL=true NEXT_PUBLIC_ENABLE_ADHOC_FILTERS=true yarn build && SERVER_URL=http://localhost:${API_PORT} PORT=${APP_PORT} NEXT_DIST_DIR=.next-e2e NEXT_PUBLIC_ENABLE_ALERT_DETAILS=true NEXT_PUBLIC_ENABLE_PROMQL=true NEXT_PUBLIC_ENABLE_ADHOC_FILTERS=true yarn start`,
+            ? `SERVER_URL=http://localhost:${API_PORT} PORT=${APP_PORT} VITE_CACHE_DIR=node_modules/.vite-e2e NEXT_PUBLIC_ENABLE_ALERT_DETAILS=true NEXT_PUBLIC_ENABLE_PROMQL=true NEXT_PUBLIC_ENABLE_ADHOC_FILTERS=true bun run dev`
+            : `SERVER_URL=http://localhost:${API_PORT} PORT=${APP_PORT} VITE_CACHE_DIR=node_modules/.vite-e2e NEXT_PUBLIC_ENABLE_ALERT_DETAILS=true NEXT_PUBLIC_ENABLE_PROMQL=true NEXT_PUBLIC_ENABLE_ADHOC_FILTERS=true bun run build && SERVER_URL=http://localhost:${API_PORT} PORT=${APP_PORT} VITE_CACHE_DIR=node_modules/.vite-e2e NEXT_PUBLIC_ENABLE_ALERT_DETAILS=true NEXT_PUBLIC_ENABLE_PROMQL=true NEXT_PUBLIC_ENABLE_ADHOC_FILTERS=true bun run start`,
           port: parseInt(APP_PORT, 10),
           reuseExistingServer: !process.env.CI,
           timeout: APP_SERVER_STARTUP_TIMEOUT_MS,
@@ -117,8 +116,8 @@ export default defineConfig({
     : {
         // Local mode: Frontend only
         command: USE_DEV
-          ? `NEXT_PUBLIC_IS_LOCAL_MODE=true PORT=${APP_LOCAL_PORT} NEXT_DIST_DIR=.next-e2e next dev --webpack`
-          : `NEXT_PUBLIC_IS_LOCAL_MODE=true NEXT_DIST_DIR=.next-e2e yarn build && NEXT_PUBLIC_IS_LOCAL_MODE=true PORT=${APP_LOCAL_PORT} NEXT_DIST_DIR=.next-e2e yarn start`,
+          ? `NEXT_PUBLIC_IS_LOCAL_MODE=true PORT=${APP_LOCAL_PORT} VITE_CACHE_DIR=node_modules/.vite-e2e bun run dev`
+          : `NEXT_PUBLIC_IS_LOCAL_MODE=true VITE_CACHE_DIR=node_modules/.vite-e2e bun run build && NEXT_PUBLIC_IS_LOCAL_MODE=true PORT=${APP_LOCAL_PORT} VITE_CACHE_DIR=node_modules/.vite-e2e bun run start`,
         port: parseInt(APP_LOCAL_PORT, 10),
         reuseExistingServer: !process.env.CI,
         timeout: APP_SERVER_STARTUP_TIMEOUT_MS,

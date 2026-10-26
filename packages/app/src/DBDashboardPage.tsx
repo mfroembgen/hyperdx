@@ -11,8 +11,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { formatDistanceToNow, formatRelative } from 'date-fns';
-import produce from 'immer';
-import { pick } from 'lodash';
+import { produce } from 'immer';
+import { isEqual, pick } from 'lodash';
 import {
   parseAsArrayOf,
   parseAsBoolean,
@@ -20,7 +20,7 @@ import {
   useQueryState,
 } from 'nuqs';
 import { ErrorBoundary } from 'react-error-boundary';
-import RGL from 'react-grid-layout';
+import { type Layout, type LayoutItem } from 'react-grid-layout/legacy';
 import { useForm, useWatch } from 'react-hook-form';
 import {
   TableConnection,
@@ -208,7 +208,11 @@ import useDashboardFilters from './hooks/useDashboardFilters';
 import { useDashboardRefresh } from './hooks/useDashboardRefresh';
 import useTileSelection from './hooks/useTileSelection';
 import { usePageTitle } from './theme/ThemeProvider';
-import { parseAsJsonEncoded, parseAsStringEncoded } from './utils/queryParsers';
+import {
+  dashboardFilterValuesParser,
+  parseAsJsonEncoded,
+  parseAsStringEncoded,
+} from './utils/queryParsers';
 import {
   buildDashboardReplaySearchUrl,
   buildEventsSearchUrl,
@@ -391,7 +395,7 @@ function HeatmapTile({
   );
 }
 
-const tileToLayoutItem = (chart: Tile): RGL.Layout => ({
+const tileToLayoutItem = (chart: Tile): LayoutItem => ({
   i: chart.id,
   x: chart.x,
   y: chart.y,
@@ -1714,7 +1718,7 @@ const EditTileModal = ({
   );
 };
 
-const updateLayout = (newLayout: RGL.Layout[]) => {
+const updateLayout = (newLayout: Layout) => {
   return (dashboard: Dashboard) => {
     for (const chart of dashboard.tiles) {
       const newChartLayout = newLayout.find(layout => layout.i === chart.id);
@@ -1781,8 +1785,8 @@ function DashboardContainerRow({
   onRenameContainer: (newTitle: string) => void;
   onTabChange: (tabId: string) => void;
   dragHandleProps: DragHandleProps;
-  makeLayoutChangeHandler: (tiles: Tile[]) => (newLayout: RGL.Layout[]) => void;
-  tileToLayoutItem: (tile: Tile) => RGL.Layout;
+  makeLayoutChangeHandler: (tiles: Tile[]) => (newLayout: Layout) => void;
+  tileToLayoutItem: (tile: Tile) => LayoutItem;
   renderTileComponent: (tile: Tile) => React.ReactNode;
   readOnly: boolean;
 }) {
@@ -1982,12 +1986,21 @@ function DBDashboardPage({
   useEffect(() => {
     if (!dashboardReady || lastLoadedIdForBannerRef.current === dashboard?.id)
       return;
+    // A cached dashboard can be ready before nuqs catches up with navigation.
+    // Latch the warning only once its parsed filters match the current URL.
+    const urlFilters = new URLSearchParams(window.location.search).get(
+      'filters',
+    );
+    const parsedUrlFilters = urlFilters
+      ? dashboardFilterValuesParser.parse(urlFilters)
+      : null;
+    if (!isEqual(filterValueEntries ?? [], parsedUrlFilters ?? [])) return;
     setShouldShowIgnoredFiltersBanner(
       ignoredFilterExpressions.length > 0 || ignoredVariableNames.length > 0,
     );
     lastLoadedIdForBannerRef.current = dashboard?.id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dashboard?.id, dashboardReady]);
+  }, [dashboard?.id, dashboardReady, filterValueEntries]);
 
   const handleSaveFilter = (filter: DashboardFilter) => {
     if (!dashboard) return;
@@ -2546,7 +2559,7 @@ function DBDashboardPage({
   );
 
   const makeOnLayoutChange = useCallback(
-    (gridTiles: Tile[]) => (newLayout: RGL.Layout[]) => {
+    (gridTiles: Tile[]) => (newLayout: Layout) => {
       if (!dashboard || isKioskMode) return;
       const currentLayout = gridTiles.map(tileToLayoutItem);
       let hasDiff = false;
@@ -2802,7 +2815,7 @@ function DBDashboardPage({
         router.push('/dashboards/list');
       },
     });
-  }, [confirm, dashboard?.id, deleteDashboard, router]);
+  }, [confirm, dashboard, deleteDashboard, router]);
 
   const handleUpdateTags = useCallback(
     (newTags: string[]) => {
@@ -2862,7 +2875,8 @@ function DBDashboardPage({
       <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
         {dashboard.createdBy && (
           <span>
-            Created by {dashboard.createdBy.name || dashboard.createdBy.email}.{' '}
+            Created by {dashboard.createdBy.name || dashboard.createdBy.email}
+            .{' '}
           </span>
         )}
         {dashboard.updatedAt && (

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
@@ -6,15 +7,15 @@ import userEvent from '@testing-library/user-event';
 import api from '@/api';
 import McpServerSection from '@/components/TeamSettings/McpServerSection';
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
-    useMe: jest.fn(),
+    useMe: vi.fn(),
   },
-  hdxServer: jest.fn(),
+  hdxServer: vi.fn(),
 }));
 
-const mockUseMe = jest.mocked(api.useMe);
+const mockUseMe = vi.mocked(api.useMe);
 
 function setMe(accessKey: string | null, isLoading = false) {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
@@ -48,7 +49,7 @@ function renderSection() {
 
 describe('McpServerSection', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     setMe('k_test');
   });
 
@@ -174,14 +175,11 @@ describe('McpServerSection', () => {
     renderSection();
 
     await user.click(screen.getByText('Cursor'));
-    // The fallback JSON lives inside Mantine's `<Collapse>`, which
-    // keeps the child mounted and animates max-height + visibility
-    // for the open transition. JSDOM does not run CSS transitions,
-    // so the canonical "is the user seeing it" canary is the toggle
-    // label: it flips synchronously with React state.
+    // Collapse prerenders hidden children through Activity. Wait for that
+    // content before checking visibility; the toggle label tracks open state.
     expect(screen.getByText(/^Manual setup$/i)).toBeInTheDocument();
     expect(screen.queryByText(/^Hide manual setup$/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/"mcpServers":/)).not.toBeVisible();
+    expect(await screen.findByText(/"mcpServers":/)).not.toBeVisible();
 
     await user.click(screen.getByText(/^Manual setup$/i));
     expect(screen.getByText(/^Hide manual setup$/i)).toBeInTheDocument();

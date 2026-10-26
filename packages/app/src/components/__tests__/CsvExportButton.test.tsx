@@ -1,17 +1,20 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import { CsvExportButton } from '@/components/CsvExportButton';
 
-const downloadTextFile = jest.fn();
-jest.mock('@/utils/downloadFile', () => ({
+const downloadTextFile = vi.fn();
+vi.mock('@/utils/downloadFile', () => ({
   downloadTextFile: (...args: unknown[]) => downloadTextFile(...args),
 }));
 
 const DATA = [{ level: 'error', count: 2 }];
 
 describe('CsvExportButton', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('downloads CSV with the UTF-8 BOM and csv mime type', () => {
     render(

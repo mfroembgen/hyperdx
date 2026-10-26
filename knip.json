@@ -2,18 +2,38 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
-      "entry": ["scripts/__tests__/*.test.mjs"]
+      "entry": [
+        "scripts/__tests__/*.test.mjs",
+        "scripts/container-services.mjs",
+        "scripts/ci/smoke-production.mjs"
+      ],
+      "ignoreDependencies": ["mongodb"]
     },
     "packages/app": {
-      "entry": ["pages/**/*.{ts,tsx}", "scripts/*.js", "tests/e2e/**/*.ts"],
+      "entry": [
+        "pages/**/*.{ts,tsx}",
+        "scripts/*.js",
+        "tests/e2e/**/*.ts",
+        "src/instrumentation.ts"
+      ],
       "project": ["src/**/*.{ts,tsx}", "pages/**/*.{ts,tsx}"],
       "ignore": [".storybook/public/**"],
       "ignoreDependencies": [
-        "eslint-config-next",
         "@chromatic-com/storybook",
         "@storybook/addon-themes",
-        "react-is"
-      ]
+        "react-is",
+        "@fontsource-variable/inter",
+        "@fontsource-variable/roboto",
+        "@fontsource-variable/roboto-mono",
+        "@fontsource/ibm-plex-mono"
+      ],
+      "paths": {
+        "next": ["./node_modules/vinext/dist/shims/next-shims-public.d.ts"],
+        "next/*": ["./node_modules/vinext/dist/shims/*"],
+        "next/compat/router": [
+          "./node_modules/vinext/dist/shims/compat-router.js"
+        ]
+      }
     },
     "packages/api": {
       "entry": [
@@ -21,10 +41,11 @@
         "src/tasks/index.ts",
         "src/serverless.ts",
         "scripts/*.ts",
-        "src/fixtures.ts"
+        "src/fixtures.ts",
+        "src/tracing.ts"
       ],
       "project": ["src/**/*.ts"],
-      "ignoreDependencies": ["pino-pretty", "aws4"],
+      "ignoreDependencies": ["pino-pretty", "aws4", "tslib"],
       "ignore": ["src/opamp/**", "src/utils/logParser.ts"]
     },
     "packages/common-utils": {
@@ -35,7 +56,7 @@
     },
     "packages/hdx-eval": {
       "project": ["src/**/*.ts"],
-      "ignoreDependencies": ["tsx"],
+      "ignoreDependencies": ["tslib"],
       "ignoreBinaries": ["claude"]
     }
   },
@@ -51,7 +72,6 @@
     "@dotenvx/dotenvx",
     "concurrently",
     "dotenv",
-    "babel-plugin-react-compiler",
     "@stryker-mutator/core",
     "jscpd"
   ],

@@ -31,6 +31,7 @@ concurrency:
 
 jobs:
   alert:
+    if: github.repository == 'hyperdxio/hyperdx'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v9

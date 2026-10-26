@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { TSource } from '@hyperdx/common-utils/dist/types';
 import { renderHook } from '@testing-library/react';
 
@@ -5,8 +6,8 @@ import useFieldExpressionGenerator from '@/hooks/useFieldExpressionGenerator';
 import { useJsonColumns } from '@/hooks/useMetadata';
 
 // Mock dependencies
-jest.mock('../useMetadata', () => ({
-  useJsonColumns: jest.fn(),
+vi.mock('../useMetadata', () => ({
+  useJsonColumns: vi.fn(),
 }));
 
 describe('useFieldExpressionGenerator', () => {
@@ -19,11 +20,11 @@ describe('useFieldExpressionGenerator', () => {
   } as TSource;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should return undefined getFieldExpression when source is undefined', () => {
-    jest.mocked(useJsonColumns).mockReturnValue({
+    vi.mocked(useJsonColumns).mockReturnValue({
       data: undefined,
       isLoading: false,
     } as any);
@@ -35,7 +36,7 @@ describe('useFieldExpressionGenerator', () => {
   });
 
   it('should return isLoading true when data is loading', () => {
-    jest.mocked(useJsonColumns).mockReturnValue({
+    vi.mocked(useJsonColumns).mockReturnValue({
       data: undefined,
       isLoading: true,
     } as any);
@@ -49,7 +50,7 @@ describe('useFieldExpressionGenerator', () => {
   });
 
   it('should generate JSON column expression with default convertFn (toString)', () => {
-    jest.mocked(useJsonColumns).mockReturnValue({
+    vi.mocked(useJsonColumns).mockReturnValue({
       data: ['Body', 'Metadata'],
       isLoading: false,
     } as any);
@@ -69,7 +70,7 @@ describe('useFieldExpressionGenerator', () => {
   });
 
   it('should generate JSON column expression with custom convertFn', () => {
-    jest.mocked(useJsonColumns).mockReturnValue({
+    vi.mocked(useJsonColumns).mockReturnValue({
       data: ['Body', 'Metadata'],
       isLoading: false,
     } as any);
@@ -89,7 +90,7 @@ describe('useFieldExpressionGenerator', () => {
   });
 
   it('should generate Map column expression with bracket notation', () => {
-    jest.mocked(useJsonColumns).mockReturnValue({
+    vi.mocked(useJsonColumns).mockReturnValue({
       data: ['Body', 'Metadata'],
       isLoading: false,
     } as any);
@@ -108,7 +109,7 @@ describe('useFieldExpressionGenerator', () => {
   });
 
   it('should handle mixed JSON and Map columns correctly', () => {
-    jest.mocked(useJsonColumns).mockReturnValue({
+    vi.mocked(useJsonColumns).mockReturnValue({
       data: ['Body'],
       isLoading: false,
     } as any);
@@ -130,7 +131,7 @@ describe('useFieldExpressionGenerator', () => {
   });
 
   it('should handle empty jsonColumns array', () => {
-    jest.mocked(useJsonColumns).mockReturnValue({
+    vi.mocked(useJsonColumns).mockReturnValue({
       data: [],
       isLoading: false,
     } as any);
@@ -150,7 +151,7 @@ describe('useFieldExpressionGenerator', () => {
   });
 
   it('should pass correct tableConnection to useJsonColumns', () => {
-    jest.mocked(useJsonColumns).mockReturnValue({
+    vi.mocked(useJsonColumns).mockReturnValue({
       data: [],
       isLoading: false,
     } as any);
@@ -165,7 +166,7 @@ describe('useFieldExpressionGenerator', () => {
   });
 
   it('should handle special characters in keys correctly', () => {
-    jest.mocked(useJsonColumns).mockReturnValue({
+    vi.mocked(useJsonColumns).mockReturnValue({
       data: ['Body'],
       isLoading: false,
     } as any);

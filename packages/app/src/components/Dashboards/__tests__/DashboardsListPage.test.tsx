@@ -1,3 +1,4 @@
+import { type Mock, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 
 import DashboardsListPage from '@/components/Dashboards/DashboardsListPage';
@@ -5,7 +6,7 @@ import type { Dashboard } from '@/dashboard';
 import type { Favorite } from '@/favorites';
 
 const mockQueryState = new Map<string, unknown>();
-const mockSetQueryState = new Map<string, jest.Mock>();
+const mockSetQueryState = new Map<string, Mock>();
 let mockDashboards: Dashboard[] = [];
 let mockFavorites: Favorite[] = [];
 let mockMe: { email: string } | null = null;
@@ -14,21 +15,23 @@ let mockFavoritesPending = false;
 let mockFavoritesError = false;
 let mockTeamTags: string[] = [];
 
-jest.mock('next/head', () => ({
+vi.mock('next/head', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   __esModule: true,
-  default: { push: jest.fn() },
+  default: { push: vi.fn() },
 }));
-jest.mock('nuqs', () => {
-  const actual = jest.requireActual('nuqs');
+vi.mock('nuqs', async () => {
+  const actualModule0 = await vi.importActual<typeof import('nuqs')>('nuqs');
+
+  const actual = actualModule0;
   return {
     ...actual,
     useQueryState: (key: string, parser?: { defaultValue?: unknown }) => {
       if (!mockSetQueryState.has(key)) {
-        mockSetQueryState.set(key, jest.fn());
+        mockSetQueryState.set(key, vi.fn());
       }
       return [
         mockQueryState.get(key) ?? parser?.defaultValue ?? null,
@@ -37,46 +40,46 @@ jest.mock('nuqs', () => {
     },
   };
 });
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useMe: () => ({ data: mockMe, isPending: mockMePending }),
-    useTags: () => ({ data: { data: mockTeamTags }, refetch: jest.fn() }),
+    useTags: () => ({ data: { data: mockTeamTags }, refetch: vi.fn() }),
   },
 }));
-jest.mock('@/dashboard', () => ({
+vi.mock('@/dashboard', () => ({
   useDashboards: () => ({
     data: mockDashboards,
     isLoading: false,
     isError: false,
   }),
-  useCreateDashboard: () => ({ mutate: jest.fn(), isPending: false }),
-  useDeleteDashboard: () => ({ mutate: jest.fn() }),
+  useCreateDashboard: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteDashboard: () => ({ mutate: vi.fn() }),
 }));
-jest.mock('@/favorites', () => ({
+vi.mock('@/favorites', () => ({
   useFavorites: () => ({
     data: mockFavorites,
     isPending: mockFavoritesPending,
     isError: mockFavoritesError,
   }),
 }));
-jest.mock('@/layout', () => ({
+vi.mock('@/layout', () => ({
   withAppNav: (component: unknown) => component,
 }));
-jest.mock('@/theme/ThemeProvider', () => ({
+vi.mock('@/theme/ThemeProvider', () => ({
   useBrandDisplayName: () => 'HyperDX',
   usePageTitle: (page?: string) => (page ? `${page} - HyperDX` : 'HyperDX'),
 }));
-jest.mock('@/useConfirm', () => ({
-  useConfirm: () => jest.fn(),
+vi.mock('@/useConfirm', () => ({
+  useConfirm: () => vi.fn(),
 }));
-jest.mock('@/components/ListingCard', () => ({
+vi.mock('@/components/ListingCard', () => ({
   ListingCard: ({ name }: { name: string }) => <div>{name}</div>,
 }));
-jest.mock('@/components/AlertStatusIcon', () => ({
+vi.mock('@/components/AlertStatusIcon', () => ({
   AlertStatusIcon: () => null,
 }));
-jest.mock('@/config', () => ({
+vi.mock('@/config', () => ({
   IS_K8S_DASHBOARD_ENABLED: false,
 }));
 

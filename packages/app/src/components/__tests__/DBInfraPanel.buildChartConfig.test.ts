@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { Granularity } from '@hyperdx/common-utils/dist/core/utils';
 import {
   DisplayType,
@@ -8,11 +9,11 @@ import {
 import { buildChartConfig } from '@/components/DBInfraPanel';
 import { INFRA_CORRELATIONS } from '@/components/infraCorrelations';
 
-jest.mock('@/components/DBTimeChart', () => ({ DBTimeChart: () => null }));
-jest.mock('@/components/Sources/SourceForm', () => ({
+vi.mock('@/components/DBTimeChart', () => ({ DBTimeChart: () => null }));
+vi.mock('@/components/Sources/SourceForm', () => ({
   TableSourceForm: () => null,
 }));
-jest.mock('@/components/KubeComponents', () => ({ KubeTimeline: () => null }));
+vi.mock('@/components/KubeComponents', () => ({ KubeTimeline: () => null }));
 
 const METRIC_SOURCE = {
   id: 'metric-source-1',

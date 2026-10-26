@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { probeMcp } from '@/harness/preflight';
 import type { McpDefinition } from '@/harness/types';
 
@@ -11,7 +13,7 @@ const httpDef: McpDefinition = {
 
 /** Mock fetch so each queued value is returned as an SSE JSON-RPC response. */
 function mockFetch(...jsonRpc: unknown[]) {
-  const fn = jest.fn();
+  const fn = vi.fn();
   for (const payload of jsonRpc) {
     fn.mockResolvedValueOnce({
       status: 200,
@@ -48,7 +50,7 @@ describe('probeMcp', () => {
   });
 
   it('fails with an actionable message when the connection is refused', async () => {
-    global.fetch = jest
+    global.fetch = vi
       .fn()
       .mockRejectedValueOnce(
         new Error('fetch failed'),

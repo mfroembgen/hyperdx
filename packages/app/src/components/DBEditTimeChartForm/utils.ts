@@ -424,8 +424,7 @@ export function buildChartConfigForExplanations({
   activeTab,
   dbTimeChartConfig,
 }: BuildChartConfigForExplanationsParams):
-  | ChartConfigWithOptTimestamp
-  | undefined {
+  ChartConfigWithOptTimestamp | undefined {
   if (queriedConfig && isRawSqlChartConfig(queriedConfig))
     return { ...queriedConfig, dateRange };
 

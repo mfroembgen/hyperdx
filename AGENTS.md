@@ -13,8 +13,8 @@ schema-agnostic design, and correlation across all telemetry types in one place.
 
 This is a **monorepo** with six packages:
 
-- `packages/app` - Next.js frontend (TypeScript, Mantine UI, TanStack Query)
-- `packages/api` - Express backend (Node.js 22+, MongoDB for metadata,
+- `packages/app` - Vinext/Vite frontend (TypeScript, Mantine UI, TanStack Query)
+- `packages/api` - Express backend (Bun 1.4.4, MongoDB for metadata,
   ClickHouse for telemetry). Also hosts the **MCP server**, **External API v2**,
   and **OpAMP server** as sub-applications.
 - `packages/common-utils` - Shared TypeScript utilities for query parsing and
@@ -39,14 +39,15 @@ MongoDB (configuration/metadata)
 ## Development Setup (HOW)
 
 ```bash
-yarn setup          # Install dependencies
-yarn dev            # Start full stack with worktree-isolated ports
+bun run setup          # Install dependencies
+bun run dev            # Start full stack with worktree-isolated ports
 ```
 
-The project uses **Yarn 4.13.0** workspaces. Docker Compose manages ClickHouse,
-MongoDB, and the OTel Collector.
+The project pins **Bun 1.4.4** in `mise.toml` and uses Bun workspaces and
+`bun.lock`. Run `mise install` first. Service commands use Apple container on
+macOS and Docker Compose on Linux for ClickHouse, MongoDB, and the OTel Collector.
 
-**This repo is multi-agent friendly.** `yarn dev`, `make dev-int`, and
+**This repo is multi-agent friendly.** `bun run dev`, `make dev-int`, and
 `make dev-e2e` all use slot-based port isolation so multiple worktrees can run
 dev servers, integration tests, and E2E tests simultaneously without conflicts.
 A dev portal at http://localhost:9900 auto-starts and shows all running stacks.
@@ -82,9 +83,9 @@ directory:
   components, upgrade procedures, adding custom components
 - `MCP.md` - MCP server setup and available tools (user-facing)
 
-**After finishing all code edits**, run `yarn lint:fix` to auto-fix formatting
+**After finishing all code edits**, run `bun run lint:fix` to auto-fix formatting
 and lint issues across all packages. Pre-commit hooks handle this when
-committing, but if you finish edits without committing, run `yarn lint:fix`
+committing, but if you finish edits without committing, run `bun run lint:fix`
 before stopping.
 
 ## Key Principles
@@ -104,7 +105,7 @@ before stopping.
    `secondary`, `danger`), `useConfirm` for "are you sure?" dialogs rather than
    a hand-rolled `Modal`, and sentence case for all user-facing text - see
    `agent_docs/code_style.md` for required patterns
-6. **Testing**: Tests live in `__tests__/` directories; use Jest for
+6. **Testing**: Tests live in `__tests__/` directories; use Vitest for
    unit/integration tests
 7. **Observability**: This is an observability product - instrument new code as
    you write it. Every team-scoped operation must carry team/user context
@@ -153,15 +154,15 @@ Each package has different test commands available:
 
 ```bash
 cd packages/app
-yarn ci:unit           # Run unit tests
-yarn dev:unit          # Watch mode for unit tests
+bun run ci:unit           # Run unit tests
+bun run dev:unit          # Watch mode for unit tests
 ```
 
 **packages/api** (unit and integration tests):
 
 ```bash
 cd packages/api
-yarn ci:unit                        # Run unit tests (no services needed)
+bun run ci:unit                        # Run unit tests (no services needed)
 
 make dev-int-build                  # Build dependencies (run once before integration tests)
 make dev-int FILE=<TEST_FILE_NAME>  # Spins up Docker services and runs integration tests.
@@ -172,24 +173,24 @@ make dev-int FILE=<TEST_FILE_NAME>  # Spins up Docker services and runs integrat
 
 ```bash
 cd packages/common-utils
-yarn ci:unit           # Run unit tests
-yarn dev:unit          # Watch mode for unit tests
-yarn ci:int            # Run integration tests
-yarn dev:int           # Watch mode for integration tests
+bun run ci:unit           # Run unit tests
+bun run dev:unit          # Watch mode for unit tests
+bun run ci:int            # Run integration tests
+bun run dev:int           # Watch mode for integration tests
 ```
 
 To run a specific test file or pattern:
 
 ```bash
-yarn ci:unit <path/to/test.ts>                           # Run specific test file
-yarn ci:unit --testNamePattern="test name pattern"       # Run tests matching pattern
+bun run ci:unit <path/to/test.ts>                           # Run specific test file
+bun run ci:unit --testNamePattern="test name pattern"       # Run tests matching pattern
 ```
 
 **packages/cli** (type check only, no test suite):
 
 ```bash
 cd packages/cli
-npx tsc --noEmit        # Type check
+bun --bun x tsrs --noEmit        # Type check
 ```
 
 **Lint & type check across all packages:**
@@ -203,7 +204,7 @@ make ci-unit        # Unit tests across all packages
 
 ```bash
 # First-time setup (install Chromium browser):
-cd packages/app && yarn playwright install chromium
+cd packages/app && bun run playwright install chromium
 
 # Run all E2E tests:
 make e2e
@@ -260,9 +261,9 @@ efficient and accurate:
    template's "How to reproduce" section with numbered steps that show the
    problem on `main` and the fix on the branch. Start from
    [play.hyperdx.io](https://play.hyperdx.io) when the bug shows there, or from
-   `yarn app:dev:local` connected to the demo server (onboarding → "Connect to
+   `bun run app:dev:local` connected to the demo server (onboarding → "Connect to
    Demo Server"; the PR's Vercel preview runs the same local mode). Full-stack
-   `yarn dev` pre-provisions a local ClickHouse connection and never shows that
+   `bun run dev` pre-provisions a local ClickHouse connection and never shows that
    button, so use it only when the change needs the API. Name UI elements by
    visible text, and list any env vars,
    feature flags, schema, or seed data needed. When filing issues, apply the
@@ -272,7 +273,7 @@ efficient and accurate:
 7. **Ensure a changeset exists before pushing a PR.** Any change to a published
    package (`@hyperdx/app`, `@hyperdx/api`, `@hyperdx/otel-collector`, etc.) that
    is user-facing or affects behavior must include a changeset in `.changeset/`.
-   Add one with `yarn changeset` (or create the markdown file by hand following
+   Add one with `bun run changeset` (or create the markdown file by hand following
    the format of existing entries), choosing the appropriate semver bump, before
    pushing the branch. Skip only for changes that don't warrant a release (docs,
    internal tooling, tests, CI).
@@ -411,7 +412,7 @@ git config). Do not add `Co-Authored-By` trailers.
 
 **Pre-commit hooks must pass before committing.** Do not use `--no-verify` to
 skip hooks. If the pre-commit hook fails (e.g. due to husky not being set up in
-a worktree), run `npx lint-staged` manually before committing to ensure lint and
+a worktree), run `bun --bun x lint-staged` manually before committing to ensure lint and
 formatting checks pass. Fix any issues before creating the commit.
 
 ## Merge Conflict Resolution
@@ -437,22 +438,16 @@ formatting checks pass. Fix any issues before creating the commit.
 
 ## Cursor Cloud specific instructions
 
-### Docker requirement
+### Container runtime and development stack
 
-Docker must be installed and running before starting the dev stack or running
-integration/E2E tests. The VM update script handles `yarn install` and
-`yarn build:common-utils`, but Docker daemon startup is a prerequisite that must
-already be available.
-
-### Starting the dev stack
-
-`yarn dev` uses `sh -c` to source `scripts/dev-env.sh`, which contains
-bash-specific syntax (`BASH_SOURCE`). On systems where `/bin/sh` is `dash`
-(e.g. Ubuntu), this fails with "Bad substitution". Work around it by running
-with bash directly:
+Use Apple container on macOS and Docker Compose on Linux. Start the applicable
+runtime before integration/E2E tests. `bun run dev` sources its environment with
+Bash and starts the services through `scripts/services.sh`.
 
 ```bash
-bash -c 'export PATH="/workspace/node_modules/.bin:$PATH" && source ./scripts/dev-env.sh && yarn build:common-utils && dotenvx run --convention=nextjs -- docker compose -p "$HDX_DEV_PROJECT" -f docker-compose.dev.yml up -d && yarn app:dev'
+mise install
+bun run setup
+bun run dev
 ```
 
 Port isolation assigns a slot based on the worktree directory name. In the

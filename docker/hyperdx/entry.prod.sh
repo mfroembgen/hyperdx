@@ -12,7 +12,6 @@ echo ""
 echo "Visit the HyperDX UI at $FRONTEND_URL"
 echo ""
 
-node /etc/local/refresh-env.js
 
 # Optionally include the dashboard provisioner task
 EXTRA_NAMES=""
@@ -23,10 +22,10 @@ if [ -n "$DASHBOARD_PROVISIONER_DIR" ]; then
 fi
 
 # Use concurrently to run all services
-./node_modules/.bin/concurrently \
+bun ./packages/api/node_modules/.bin/concurrently \
   "--kill-others-on-fail" \
   "--names=API,APP,ALERT-TASK${EXTRA_NAMES}" \
   "PORT=${HYPERDX_API_PORT:-8000} HYPERDX_APP_PORT=${HYPERDX_APP_PORT:-8080} ./packages/api/bin/hyperdx api" \
-  "cd ./packages/app/packages/app && HOSTNAME='${HYPERDX_APP_LISTEN_HOSTNAME:-0.0.0.0}' HYPERDX_API_PORT=${HYPERDX_API_PORT:-8000} PORT=${HYPERDX_APP_PORT:-8080} node server.js" \
+  "cd ./packages/app && HOST='${HYPERDX_APP_LISTEN_HOSTNAME:-0.0.0.0}' HYPERDX_API_PORT=${HYPERDX_API_PORT:-8000} PORT=${HYPERDX_APP_PORT:-8080} bun server.mjs" \
   "./packages/api/bin/hyperdx task check-alerts" \
   ${EXTRA_CMDS:+"$EXTRA_CMDS"}

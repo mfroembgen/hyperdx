@@ -3,12 +3,7 @@ import { Granularity } from '@hyperdx/common-utils/dist/core/utils';
 export type JSONBlob = Record<string, Json>;
 
 export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | Json[]
-  | { [key: string]: Json };
+  string | number | boolean | null | Json[] | { [key: string]: Json };
 
 const useTry = <T>(fn: () => T): [null | Error | unknown, null | T] => {
   let output: null | T = null;
@@ -31,7 +26,9 @@ export function parseJSON<T = unknown>(raw: string, label: string): T {
   try {
     return JSON.parse(raw) as T;
   } catch (e) {
-    throw new Error(`${label} is not valid JSON: ${(e as Error).message}`);
+    throw new Error(`${label} is not valid JSON: ${(e as Error).message}`, {
+      cause: e,
+    });
   }
 }
 

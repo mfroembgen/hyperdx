@@ -1,3 +1,4 @@
+import { type Mock, vi } from 'vitest';
 import { DisplayType, PromqlReducer } from '@hyperdx/common-utils/dist/types';
 import { screen, within } from '@testing-library/react';
 
@@ -11,32 +12,32 @@ import {
 import { useMVOptimizationExplanation } from '@/hooks/useMVOptimizationExplanation';
 import { useSource } from '@/source';
 
-jest.mock('@/hooks/useChartConfig', () => ({
-  useQueriedChartConfig: jest.fn(),
-  getMinGranularitySeconds: jest.fn().mockReturnValue(undefined),
+vi.mock('@/hooks/useChartConfig', () => ({
+  useQueriedChartConfig: vi.fn(),
+  getMinGranularitySeconds: vi.fn().mockReturnValue(undefined),
 }));
 
-jest.mock('@/hooks/useMVOptimizationExplanation', () => ({
-  useMVOptimizationExplanation: jest.fn().mockReturnValue({
+vi.mock('@/hooks/useMVOptimizationExplanation', () => ({
+  useMVOptimizationExplanation: vi.fn().mockReturnValue({
     data: undefined,
     isLoading: false,
     isPlaceholderData: false,
   }),
 }));
 
-jest.mock('@/source', () => ({
-  useSource: jest.fn().mockReturnValue({ data: null }),
-  useSingleSeriesNumberFormat: jest.fn().mockReturnValue(undefined),
+vi.mock('@/source', () => ({
+  useSource: vi.fn().mockReturnValue({ data: null }),
+  useSingleSeriesNumberFormat: vi.fn().mockReturnValue(undefined),
 }));
 
-jest.mock('../MaterializedViews/MVOptimizationIndicator', () =>
-  jest.fn(() => null),
-);
+vi.mock('../MaterializedViews/MVOptimizationIndicator', () => ({
+  default: vi.fn(() => null),
+}));
 
-jest.mock('../charts/DateRangeIndicator', () => jest.fn(() => null));
+vi.mock('../charts/DateRangeIndicator', () => ({ default: vi.fn(() => null) }));
 
 describe('DBPieChart', () => {
-  const mockUseQueriedChartConfig = useQueriedChartConfig as jest.Mock;
+  const mockUseQueriedChartConfig = useQueriedChartConfig as Mock;
 
   const baseTestConfig = {
     dateRange: [new Date(), new Date()] as [Date, Date],
@@ -48,7 +49,7 @@ describe('DBPieChart', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     mockUseQueriedChartConfig.mockReturnValue({
       data: {
@@ -205,26 +206,26 @@ describe('DBPieChart', () => {
 
   it('passes the same config to useMVOptimizationExplanation, useQueriedChartConfig, and MVOptimizationIndicator', () => {
     // Mock useSource to return a source so MVOptimizationIndicator is rendered
-    jest.mocked(useSource).mockReturnValue({
+    vi.mocked(useSource).mockReturnValue({
       data: { id: 'test-source', name: 'Test Source' },
     } as any);
 
     renderWithMantine(<DBPieChart config={baseTestConfig} />);
 
     // Get the config that was passed to useMVOptimizationExplanation
-    expect(jest.mocked(useMVOptimizationExplanation)).toHaveBeenCalled();
-    const mvOptExplanationConfig = jest.mocked(useMVOptimizationExplanation)
-      .mock.calls[0][0];
+    expect(vi.mocked(useMVOptimizationExplanation)).toHaveBeenCalled();
+    const mvOptExplanationConfig = vi.mocked(useMVOptimizationExplanation).mock
+      .calls[0][0];
 
     // Get the config that was passed to useQueriedChartConfig
-    expect(jest.mocked(useQueriedChartConfig)).toHaveBeenCalled();
-    const queriedChartConfig = jest.mocked(useQueriedChartConfig).mock
+    expect(vi.mocked(useQueriedChartConfig)).toHaveBeenCalled();
+    const queriedChartConfig = vi.mocked(useQueriedChartConfig).mock
       .calls[0][0];
 
     // Get the config that was passed to MVOptimizationIndicator
-    expect(jest.mocked(MVOptimizationIndicator)).toHaveBeenCalled();
-    const indicatorConfig = jest.mocked(MVOptimizationIndicator).mock
-      .calls[0][0].config;
+    expect(vi.mocked(MVOptimizationIndicator)).toHaveBeenCalled();
+    const indicatorConfig = vi.mocked(MVOptimizationIndicator).mock.calls[0][0]
+      .config;
 
     // All three should receive the same config object reference
     expect(mvOptExplanationConfig).toBe(queriedChartConfig);
@@ -244,7 +245,7 @@ describe('DBPieChart', () => {
     };
 
     // Mock useMVOptimizationExplanation to return an optimized config with aligned date range
-    jest.mocked(useMVOptimizationExplanation).mockReturnValue({
+    vi.mocked(useMVOptimizationExplanation).mockReturnValue({
       data: {
         optimizedConfig: {
           ...config,
@@ -267,11 +268,11 @@ describe('DBPieChart', () => {
     renderWithMantine(<DBPieChart config={config} />);
 
     // Verify DateRangeIndicator was called
-    expect(jest.mocked(DateRangeIndicator)).toHaveBeenCalled();
+    expect(vi.mocked(DateRangeIndicator)).toHaveBeenCalled();
 
     // Verify it was called with the correct props
     const dateRangeIndicatorCall =
-      jest.mocked(DateRangeIndicator).mock.calls[0][0];
+      vi.mocked(DateRangeIndicator).mock.calls[0][0];
     expect(dateRangeIndicatorCall.originalDateRange).toEqual([
       originalStartDate,
       originalEndDate,
@@ -285,7 +286,7 @@ describe('DBPieChart', () => {
 
   it('does not render DateRangeIndicator when MV optimization has no optimized date range', () => {
     // Mock useMVOptimizationExplanation to return data without an optimized config
-    jest.mocked(useMVOptimizationExplanation).mockReturnValue({
+    vi.mocked(useMVOptimizationExplanation).mockReturnValue({
       data: {
         optimizedConfig: undefined,
         explanations: [],
@@ -297,7 +298,7 @@ describe('DBPieChart', () => {
     renderWithMantine(<DBPieChart config={baseTestConfig} />);
 
     // Verify DateRangeIndicator was not called
-    expect(jest.mocked(DateRangeIndicator)).not.toHaveBeenCalled();
+    expect(vi.mocked(DateRangeIndicator)).not.toHaveBeenCalled();
   });
 
   describe('PromQL', () => {
@@ -324,7 +325,7 @@ describe('DBPieChart', () => {
     });
 
     it("floors an auto granularity at the source's minimum", () => {
-      jest.mocked(getMinGranularitySeconds).mockReturnValueOnce(300);
+      vi.mocked(getMinGranularitySeconds).mockReturnValueOnce(300);
 
       renderWithMantine(<DBPieChart config={promqlConfig} />);
 

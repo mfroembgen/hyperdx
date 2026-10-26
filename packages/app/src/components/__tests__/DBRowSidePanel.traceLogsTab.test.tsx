@@ -1,4 +1,5 @@
 import React from 'react';
+import { type Mock, vi } from 'vitest';
 import {
   SourceKind,
   TLogSource,
@@ -9,12 +10,12 @@ import { MantineProvider } from '@mantine/core';
 import { act, render } from '@testing-library/react';
 
 // In-memory nuqs so the active tab can be seeded and the stack setters
-// inspected. Prefixed with `mock` so jest.mock factories may reference them.
+// inspected. Prefixed with `mock` so vi.mock factories may reference them.
 const mockQueryStore: Record<string, unknown> = {};
-const mockSetters: Record<string, jest.Mock> = {};
+const mockSetters: Record<string, Mock> = {};
 
 function setterFor(key: string) {
-  if (!mockSetters[key]) mockSetters[key] = jest.fn();
+  if (!mockSetters[key]) mockSetters[key] = vi.fn();
   return mockSetters[key];
 }
 function resetQueryState() {
@@ -22,8 +23,10 @@ function resetQueryState() {
   Object.keys(mockSetters).forEach(k => delete mockSetters[k]);
 }
 
-jest.mock('nuqs', () => {
-  const actual = jest.requireActual('nuqs');
+vi.mock('nuqs', async () => {
+  const actualModule0 = await vi.importActual<typeof import('nuqs')>('nuqs');
+
+  const actual = actualModule0;
   return {
     ...actual,
     useQueryState: (key: string, parser?: { defaultValue?: unknown }) => {
@@ -34,14 +37,14 @@ jest.mock('nuqs', () => {
       const fallback =
         parser && 'defaultValue' in parser ? parser.defaultValue : null;
       const value = hasValue ? mockQueryStore[key] : (fallback ?? null);
-      if (!mockSetters[key]) mockSetters[key] = jest.fn();
+      if (!mockSetters[key]) mockSetters[key] = vi.fn();
       return [value, mockSetters[key]];
     },
   };
 });
 
-const mockUseRowData = jest.fn();
-jest.mock('../DBRowDataPanel', () => ({
+const mockUseRowData = vi.fn();
+vi.mock('../DBRowDataPanel', () => ({
   __esModule: true,
   useRowData: (args: unknown) => mockUseRowData(args),
   ROW_DATA_ALIASES: {
@@ -89,7 +92,7 @@ const LOG_SOURCE: TLogSource = {
   resourceAttributesExpression: 'ResourceAttributes',
 };
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   __esModule: true,
   getEventBody: () => '__hdx_body',
   useSource: ({ id }: { id: string | null }) =>
@@ -106,7 +109,7 @@ type TabBarProps = {
   onClick?: (v: unknown) => void;
 };
 const mockTabBarProps: { current: TabBarProps } = { current: {} };
-jest.mock('@/TabBar', () => ({
+vi.mock('@/TabBar', () => ({
   __esModule: true,
   default: (props: TabBarProps) => {
     mockTabBarProps.current = props;
@@ -124,7 +127,7 @@ type TraceLogsPanelProps = {
   ) => void;
 };
 const mockTraceLogsProps: { current: TraceLogsPanelProps } = { current: {} };
-jest.mock('../TraceLogsPanel', () => ({
+vi.mock('../TraceLogsPanel', () => ({
   __esModule: true,
   default: (props: TraceLogsPanelProps) => {
     mockTraceLogsProps.current = props;
@@ -132,56 +135,56 @@ jest.mock('../TraceLogsPanel', () => ({
   },
 }));
 
-jest.mock('../DBSessionPanel', () => ({
+vi.mock('../DBSessionPanel', () => ({
   __esModule: true,
   useSessionId: () => ({ rumSessionId: undefined, rumServiceName: undefined }),
   DBSessionPanel: () => null,
 }));
-jest.mock('@/utils/highlightedAttributes', () => ({
+vi.mock('@/utils/highlightedAttributes', () => ({
   __esModule: true,
   getHighlightedAttributesFromData: () => [],
 }));
-jest.mock('../DBTracePanel', () => ({ __esModule: true, default: () => null }));
-jest.mock('../ContextSidePanel', () => ({
+vi.mock('../DBTracePanel', () => ({ __esModule: true, default: () => null }));
+vi.mock('../ContextSidePanel', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../DBInfraPanel', () => ({ __esModule: true, default: () => null }));
-jest.mock('../DBRowOverviewPanel', () => ({
+vi.mock('../DBInfraPanel', () => ({ __esModule: true, default: () => null }));
+vi.mock('../DBRowOverviewPanel', () => ({
   __esModule: true,
   RowOverviewPanel: () => null,
 }));
-jest.mock('../DBRowSidePanelErrorState', () => ({
+vi.mock('../DBRowSidePanelErrorState', () => ({
   __esModule: true,
   DBRowSidePanelErrorState: () => null,
 }));
-jest.mock('../DBRowSidePanelHeader', () => ({
+vi.mock('../DBRowSidePanelHeader', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../SidePanelBreadcrumbs', () => ({
+vi.mock('../SidePanelBreadcrumbs', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../LogLevel', () => ({ __esModule: true, default: () => null }));
-jest.mock('../ServiceMap/ServiceMapSidePanel', () => ({
+vi.mock('../LogLevel', () => ({ __esModule: true, default: () => null }));
+vi.mock('../ServiceMap/ServiceMapSidePanel', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../TimelineChart/utils', () => ({
+vi.mock('../TimelineChart/utils', () => ({
   __esModule: true,
   renderMs: () => '',
 }));
-jest.mock('../DrawerUtils', () => ({
+vi.mock('../DrawerUtils', () => ({
   __esModule: true,
   DrawerFullWidthToggle: () => null,
   INITIAL_DRAWER_WIDTH_PERCENT: 50,
 }));
-jest.mock('@/LogSidePanelElements', () => ({
+vi.mock('@/LogSidePanelElements', () => ({
   __esModule: true,
   KeyboardShortcutsModal: () => null,
 }));
-jest.mock('@/useFormatTime', () => ({
+vi.mock('@/useFormatTime', () => ({
   __esModule: true,
   FormatTime: () => null,
 }));
@@ -224,7 +227,7 @@ function renderPanel(source: TSource, { rowId = 'row-1' } = {}) {
         source={source}
         rowId={rowId}
         aliasWith={[]}
-        onClose={jest.fn()}
+        onClose={vi.fn()}
         sidePanelStack={sidePanelStack}
       />
     );

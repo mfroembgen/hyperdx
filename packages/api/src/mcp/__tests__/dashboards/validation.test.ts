@@ -1,3 +1,4 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import { DASHBOARD_VARIABLE_NAME_MAX_LENGTH } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
 
@@ -27,7 +28,7 @@ describe('metric tile schema', () => {
       {
         name: 'P95 Duration',
         config: {
-          displayType: 'line',
+          displayType: DisplayType.Line,
           sourceId,
           select: [
             {
@@ -42,7 +43,7 @@ describe('metric tile schema', () => {
     ]);
 
     const config = parsed[0].config;
-    expect(config).toMatchObject({ displayType: 'line' });
+    expect(config).toMatchObject({ displayType: DisplayType.Line });
     if (!('select' in config)) {
       throw new Error('Expected a builder tile');
     }
@@ -78,13 +79,13 @@ function makeSqlTile(overrides: {
 
 describe('tile-level where rejection (builder tiles)', () => {
   const builderTypes = [
-    { displayType: 'line' },
+    { displayType: DisplayType.Line },
     { displayType: 'stacked_bar' },
     { displayType: 'stacked_line' },
-    { displayType: 'table', extra: { groupBy: 'SpanName' } },
-    { displayType: 'number' },
-    { displayType: 'pie', extra: { groupBy: 'SpanName' } },
-    { displayType: 'bar', extra: { groupBy: 'SpanName' } },
+    { displayType: DisplayType.Table, extra: { groupBy: 'SpanName' } },
+    { displayType: DisplayType.Number },
+    { displayType: DisplayType.Pie, extra: { groupBy: 'SpanName' } },
+    { displayType: DisplayType.Bar, extra: { groupBy: 'SpanName' } },
   ];
 
   const baseConfig = (displayType: string, extra: object) => ({
@@ -254,7 +255,7 @@ describe('getRawSqlTilesMissingRequiredSource', () => {
       h: 4,
       name: 'Line',
       config: {
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId,
         select: [{ aggFn: 'count', valueExpression: '', where: '' }],
       },
@@ -350,7 +351,7 @@ describe('getRawSqlTileMacroHints', () => {
     const hints = getRawSqlTileMacroWarnings([
       makeSqlTile({
         name: 'Requests Over Time',
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId,
         sqlTemplate:
           'SELECT toStartOfMinute(Timestamp) AS ts, count() FROM $__sourceTable ' +
@@ -366,7 +367,7 @@ describe('getRawSqlTileMacroHints', () => {
     expect(
       getRawSqlTileMacroWarnings([
         makeSqlTile({
-          displayType: 'table',
+          displayType: DisplayType.Table,
           sourceId,
           sqlTemplate:
             'SELECT count() FROM $__sourceTable WHERE $__timeFilter(Timestamp) AND $__filters',
@@ -436,7 +437,7 @@ describe('getRawSqlTileMacroHints', () => {
       h: 4,
       name: 'Line',
       config: {
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId,
         select: [{ aggFn: 'count', valueExpression: '', where: '' }],
       },
@@ -504,7 +505,7 @@ function makeSeriesTile(overrides: {
     h: 4,
     name: overrides.name ?? 'Series Tile',
     config: {
-      displayType: 'line',
+      displayType: DisplayType.Line,
       sourceId,
       select: [
         {
@@ -533,7 +534,7 @@ function makeTableTile(overrides: {
     h: 4,
     name: overrides.name ?? 'Table Tile',
     config: {
-      displayType: 'table',
+      displayType: DisplayType.Table,
       sourceId,
       select: [
         {

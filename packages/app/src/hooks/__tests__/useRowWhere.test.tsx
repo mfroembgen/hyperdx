@@ -1,4 +1,5 @@
 import MD5 from 'crypto-js/md5';
+import { type Mock, vi } from 'vitest';
 import {
   ColumnMetaType,
   JSDataType,
@@ -8,30 +9,35 @@ import { renderHook } from '@testing-library/react';
 import useRowWhere, { processRowToWhereClause } from '@/hooks/useRowWhere';
 
 // Mock crypto-js/md5
-jest.mock('crypto-js/md5');
+vi.mock('crypto-js/md5');
 
 // Mock convertCHDataTypeToJSType
-jest.mock('@hyperdx/common-utils/dist/clickhouse', () => ({
-  ...jest.requireActual('@hyperdx/common-utils/dist/clickhouse'),
-  convertCHDataTypeToJSType: jest.fn((type: string) => {
-    const typeMap: Record<string, JSDataType> = {
-      String: JSDataType.String,
-      DateTime64: JSDataType.Date,
-      'Array(String)': JSDataType.Array,
-      'Map(String, String)': JSDataType.Map,
-      JSON: JSDataType.JSON,
-      Dynamic: JSDataType.Dynamic,
-      Int32: JSDataType.Number,
-      'Tuple(String, Int32)': JSDataType.Tuple,
-    };
-    return typeMap[type] || JSDataType.String;
-  }),
-}));
+vi.mock('@hyperdx/common-utils/dist/clickhouse', async () => {
+  const actualModule0 = await vi.importActual<
+    typeof import('@hyperdx/common-utils/dist/clickhouse')
+  >('@hyperdx/common-utils/dist/clickhouse');
+  return {
+    ...actualModule0,
+    convertCHDataTypeToJSType: vi.fn((type: string) => {
+      const typeMap: Record<string, JSDataType> = {
+        String: JSDataType.String,
+        DateTime64: JSDataType.Date,
+        'Array(String)': JSDataType.Array,
+        'Map(String, String)': JSDataType.Map,
+        JSON: JSDataType.JSON,
+        Dynamic: JSDataType.Dynamic,
+        Int32: JSDataType.Number,
+        'Tuple(String, Int32)': JSDataType.Tuple,
+      };
+      return typeMap[type] || JSDataType.String;
+    }),
+  };
+});
 
 describe('processRowToWhereClause', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (MD5 as jest.Mock).mockImplementation((value: string) => ({
+    vi.clearAllMocks();
+    (MD5 as Mock).mockImplementation((value: string) => ({
       toString: () => `md5_${value}`,
     }));
   });
@@ -447,8 +453,8 @@ describe('processRowToWhereClause', () => {
 
 describe('useRowWhere', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (MD5 as jest.Mock).mockImplementation((value: string) => ({
+    vi.clearAllMocks();
+    (MD5 as Mock).mockImplementation((value: string) => ({
       toString: () => `md5_${value}`,
     }));
   });

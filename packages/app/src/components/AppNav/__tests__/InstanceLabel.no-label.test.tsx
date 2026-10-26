@@ -1,6 +1,7 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-jest.mock('@/config', () => ({ INSTANCE_LABEL: '' }));
+vi.mock('@/config', () => ({ INSTANCE_LABEL: '' }));
 
 import { InstanceLabel } from '@/components/AppNav/InstanceLabel';
 

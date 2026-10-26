@@ -7,88 +7,82 @@
     "packages/*"
   ],
   "devDependencies": {
-    "@changesets/cli": "^2.26.2",
-    "@dotenvx/dotenvx": "^1.51.1",
-    "@eslint/js": "^9.39.1",
-    "@types/ungap__structured-clone": "^1.2.0",
-    "@ungap/structured-clone": "^1.3.0",
-    "babel-plugin-react-compiler": "^1.0.0",
-    "concurrently": "^9.1.2",
-    "dotenv": "^16.4.7",
-    "dotenv-cli": "^8.0.0",
-    "dotenv-expand": "^12.0.1",
-    "eslint": "^9.39.1",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-n": "^16.4.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "eslint-plugin-security": "^3.0.1",
-    "eslint-plugin-simple-import-sort": "^12.1.1",
-    "husky": "^8.0.3",
-    "jscpd": "5.1.2",
-    "knip": "^6.19.0",
-    "lint-staged": "^13.1.2",
-    "nx": "23.1.1",
-    "prettier": "3.3.3",
-    "tslib": "^2.6.0",
-    "typescript-eslint": "^8.46.0"
+    "@changesets/cli": "3.0.3",
+    "@dotenvx/dotenvx": "2.38.2",
+    "@eslint/js": "10.0.1",
+    "@types/ungap__structured-clone": "1.2.0",
+    "@ungap/structured-clone": "1.4.0",
+    "concurrently": "10.0.6",
+    "dotenv": "18.0.9",
+    "eslint": "10.13.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-n": "18.5.0",
+    "eslint-plugin-prettier": "5.5.7",
+    "eslint-plugin-security": "4.2.0",
+    "eslint-plugin-simple-import-sort": "14.0.0",
+    "husky": "9.1.7",
+    "jscpd": "5.4.2",
+    "knip": "6.43.0",
+    "lint-staged": "17.6.0",
+    "nx": "24.0.1",
+    "prettier": "3.9.10",
+    "tslib": "2.8.1",
+    "typescript-eslint": "8.72.0",
+    "tsrs": "0.18.0-ts7.1.0-dev.20260929",
+    "vitest": "5.0.5",
+    "vite": "8.3.5",
+    "@vitest/coverage-istanbul": "5.0.5",
+    "typescript": "6.0.3"
   },
   "scripts": {
-    "setup": "yarn install && husky install",
+    "setup": "bun install --frozen-lockfile && husky",
     "build:common-utils": "nx run @hyperdx/common-utils:dev:build",
     "app:dev": "concurrently -k -n 'API,APP,ALERTS-TASK,COMMON-UTILS' -c 'green.bold,blue.bold,yellow.bold,magenta' 'nx run @hyperdx/api:dev 2>&1 | tee ${HDX_DEV_LOGS_DIR:+\"$HDX_DEV_LOGS_DIR/api.log\"}' 'nx run @hyperdx/app:dev 2>&1 | tee ${HDX_DEV_LOGS_DIR:+\"$HDX_DEV_LOGS_DIR/app.log\"}' 'nx run @hyperdx/api:dev-task check-alerts 2>&1 | tee ${HDX_DEV_LOGS_DIR:+\"$HDX_DEV_LOGS_DIR/alerts.log\"}' 'nx run @hyperdx/common-utils:dev 2>&1 | tee ${HDX_DEV_LOGS_DIR:+\"$HDX_DEV_LOGS_DIR/common-utils.log\"}'",
-    "app:dev:local": "sh -c '. ./scripts/dev-env.sh && yarn build:common-utils && concurrently -k -n \"APP,COMMON-UTILS\" -c \"blue.bold,magenta\" \"nx run @hyperdx/app:dev:local 2>&1 | tee ${HDX_DEV_LOGS_DIR:+\\\"$HDX_DEV_LOGS_DIR/app.log\\\"}\" \"nx run @hyperdx/common-utils:dev 2>&1 | tee ${HDX_DEV_LOGS_DIR:+\\\"$HDX_DEV_LOGS_DIR/common-utils.log\\\"}\"'",
+    "app:dev:local": "bash -c '. ./scripts/dev-env.sh && bun --bun run build:common-utils && concurrently -k -n \"APP,COMMON-UTILS\" -c \"blue.bold,magenta\" \"nx run @hyperdx/app:dev:local 2>&1 | tee ${HDX_DEV_LOGS_DIR:+\\\"$HDX_DEV_LOGS_DIR/app.log\\\"}\" \"nx run @hyperdx/common-utils:dev 2>&1 | tee ${HDX_DEV_LOGS_DIR:+\\\"$HDX_DEV_LOGS_DIR/common-utils.log\\\"}\"'",
     "app:lint": "nx run @hyperdx/app:ci:lint",
     "app:storybook": "nx run @hyperdx/app:storybook",
     "build:clickhouse": "nx run @hyperdx/common-utils:build && nx run @hyperdx/app:build:clickhouse",
     "run:clickhouse": "nx run @hyperdx/app:run:clickhouse",
-    "dev": "sh -c '. ./scripts/dev-env.sh && yarn build:common-utils && dotenvx run --convention=nextjs -- docker compose -p \"$HDX_DEV_PROJECT\" -f docker-compose.dev.yml up -d --build && yarn app:dev; dotenvx run --convention=nextjs -- docker compose -p \"$HDX_DEV_PROJECT\" -f docker-compose.dev.yml down'",
-    "dev:local": "IS_LOCAL_APP_MODE='DANGEROUSLY_is_local_app_mode💀' yarn dev",
-    "cli:dev": "yarn workspace @hyperdx/cli dev",
-    "dev:down": "sh -c '. ./scripts/dev-env.sh && docker compose -p \"$HDX_DEV_PROJECT\" -f docker-compose.dev.yml down && sh ./scripts/dev-kill-ports.sh'",
-    "dev:compose": "sh -c '. ./scripts/dev-env.sh && docker compose -p \"$HDX_DEV_PROJECT\" -f docker-compose.dev.yml'",
+    "dev": "bash scripts/dev.sh",
+    "dev:local": "IS_LOCAL_APP_MODE='DANGEROUSLY_is_local_app_mode💀' bun --bun run dev",
+    "cli:dev": "bun --bun run --filter @hyperdx/cli dev",
+    "dev:down": "bash scripts/services.sh dev down && bash scripts/dev-kill-ports.sh",
+    "dev:compose": "bash scripts/services.sh dev",
     "knip": "knip",
     "knip:ci": "knip --reporter json",
-    "ratchet": "node scripts/ci/ratchet.mjs",
-    "ratchet:update": "node scripts/ci/ratchet.mjs --update",
-    "dupes": "node scripts/ci/dupes.mjs",
-    "dupes:all": "node scripts/ci/dupes.mjs --all",
-    "lint": "npx nx run-many -t ci:lint",
-    "lint:fix": "npx nx run-many -t lint:fix",
+    "ratchet": "bun scripts/ci/ratchet.mjs",
+    "ratchet:update": "bun scripts/ci/ratchet.mjs --update",
+    "dupes": "bun scripts/ci/dupes.mjs",
+    "dupes:all": "bun scripts/ci/dupes.mjs --all",
+    "lint": "bun --bun x nx run-many -t ci:lint",
+    "lint:fix": "bun --bun x nx run-many -t lint:fix",
     "version": "make version",
-    "release": "npx changeset publish --no-git-tag && npx changeset tag"
+    "release": "bun --bun x changeset publish --no-git-tag && bun --bun x changeset tag",
+    "prepare": "husky",
+    "precommit": "lint-staged && knip --no-config-hints"
   },
   "lint-staged": {
     "packages/api/src/{routers/external-api/**/*.ts,utils/swagger.ts}": [
       "prettier --write --ignore-unknown",
-      "eslint --flag v10_config_lookup_from_file --fix --quiet",
-      "sh -c 'cd packages/api && yarn run lint:openapi && git add openapi.json'"
-    ],
-    "**/*.{ts,tsx}": [
-      "prettier --write --ignore-unknown",
-      "eslint --flag v10_config_lookup_from_file --fix --quiet"
+      "eslint --fix --quiet",
+      "sh -c 'cd packages/api && bun --bun run lint:openapi && git add openapi.json'"
     ],
     "**/*.{mdx,json,yml}": [
       "prettier --write --ignore-unknown"
+    ],
+    "**/*.{ts,tsx,mts,cts}": [
+      "prettier --write --ignore-unknown",
+      "eslint --fix --quiet"
     ]
   },
-  "packageManager": "yarn@4.13.0",
-  "resolutions": {
-    "@types/react": "19.2.7",
-    "@types/react-dom": "19.2.3",
-    "@types/express": "4.17.21",
-    "@types/express-serve-static-core": "4.17.43",
-    "express": "^4.20.0",
-    "send": "^0.19.0",
-    "serve-static": "^1.16.0",
-    "cookie": "^0.7.0",
-    "@stryker-mutator/core/minimatch": "^9.0.5",
-    "diff": "^5.2.2",
-    "on-headers": "^1.1.0",
-    "fast-xml-parser": "^4.5.6",
-    "systeminformation": "^5.24.0",
-    "@asyncapi/specs": "6.11.1"
+  "packageManager": "bun@1.4.4",
+  "overrides": {
+    "typescript": "6.0.3",
+    "@types/express": "4.17.25",
+    "@types/express-serve-static-core": "4.19.9"
   },
-  "resolutionsNotes": {
-    "@stryker-mutator/core/minimatch": "Dev tooling, not a CVE override. Added when a blanket `brace-expansion` pin forced v2 (CJS) while minimatch v10 needs v5's named exports. That blanket pin is gone — it broke `nx affected` the same way — so brace-expansion now resolves per consumer and Stryker would most likely work on minimatch v10. The pin stays because no CI job runs `yarn dev:mutation`, so nothing would catch it if that guess is wrong. Drop it once someone has run the mutation suite on v10. See CONTRIBUTING.md#mutation-tests."
+  "patchedDependencies": {
+    "@hyperdx/passport-local-mongoose@9.0.1": "patches/hyperdx-passport-local-mongoose-9.0.1.patch",
+    "playwright@1.64.1": "patches/playwright-1.64.1.patch"
   }
 }
