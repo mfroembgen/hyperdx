@@ -83,3 +83,90 @@ To get started, spin up the local mode container:
 ```bash
 docker run -p 8080:8080 docker.hyperdx.io/hyperdx/hyperdx-local:2-beta
 ```
+
+## WorkOS AuthKit
+
+The maintained fork supports Google sign-in for the website and browser OAuth
+for remote MCP clients through [WorkOS AuthKit](https://workos.com/docs/authkit).
+Use the default hosted AuthKit domain and Google social login. Cloudflare,
+additional authentication proxies and DNS changes are not required.
+
+Set these API runtime variables together:
+
+```dotenv
+FRONTEND_URL=https://hyperdx.example.com
+WORKOS_ENABLED=true
+WORKOS_API_KEY=<application-api-key>
+WORKOS_CLIENT_ID=<application-client-id>
+WORKOS_AUTHKIT_DOMAIN=https://your-environment.authkit.app
+WORKOS_TEAM_ID=<existing-hyperdx-team-object-id>
+```
+
+Use a fixed HTTPS public frontend origin and AuthKit origin. Partial
+configuration, a missing shared session secret, and local mode combined with
+WorkOS fail at startup. `WORKOS_ENABLED=true` also fails closed when its secret
+is unavailable. To restore legacy authentication, remove the WorkOS credential
+variables and unset the flag or set it to `false`; stale credentials combined
+with `false` fail startup rather than silently changing authentication.
+
+Keep `EXPRESS_SESSION_SECRET` stable, private and at least 32 characters long
+across every replica and restart. The official WorkOS Node SDK encrypts its
+session data with this secret; HyperDX stores that data and short-lived login
+state in its existing shared MongoDB session store. Refresh tokens never reach
+frontend JavaScript. Expired access tokens refresh through the SDK; transient
+provider failures preserve the session for a later retry.
+
+### Configure each application
+
+1. Create an AuthKit application for each HyperDX environment. Use separate
+   WorkOS environments where identities must be isolated. Multiple applications
+   can share a user base, but each website must have its own client ID.
+2. Enable Google social login and configure its Google OAuth credentials and
+   WorkOS callback. Enable only the intended authentication methods. Existing
+   HyperDX users must already belong to the configured team; signing in never
+   creates a HyperDX account or grants membership.
+3. Set the application's redirect URI to
+   `https://hyperdx.example.com/api/auth/workos/callback`, initiate-login URI to
+   `https://hyperdx.example.com/api/auth/workos`, and default sign-out URI to
+   `https://hyperdx.example.com/login`.
+4. In Connect configuration, enable Client ID Metadata Documents and Dynamic
+   Client Registration for compatible clients. Register the exact MCP resource
+   indicator `https://hyperdx.example.com/api/mcp`. Do not use a shared audience
+   or wildcard across environments.
+5. Set `WORKOS_SESSION_ISSUER` when the application's session issuer differs
+   from `https://api.workos.com/user_management/<WORKOS_CLIENT_ID>`. Applications
+   in one WorkOS environment share the default application's issuer, so a
+   non-default application requires that environment's actual issuer. HyperDX
+   also verifies the current application's `client_id` for website sessions.
+
+The website uses the SDK's AuthKit sessions. MCP separately verifies Connect
+access tokens against the AuthKit domain's `/oauth2/jwks`, exact issuer and exact
+MCP resource audience. These token classes cannot substitute for one another.
+When first linking an identity, HyperDX verifies the WorkOS profile and binds
+its issuer/subject to an existing local team member. Later website and MCP
+requests resolve that stored binding and check current membership in MongoDB
+without fetching the profile again. Machine-to-machine tokens and personal API
+keys are rejected in this MCP mode. WorkOS handles OAuth registration, consent,
+authorization codes and refresh; HyperDX does not implement a second OAuth server.
+
+Password login, registration, invitation signup and password recovery are
+unavailable in WorkOS mode. The `hdx` CLI's password-session flow remains a
+legacy-mode feature. Removing local membership or deleting the configured team
+blocks the next protected website or MCP request.
+
+Logout submits a same-origin POST, destroys the HyperDX session and redirects
+to WorkOS to end the browser session. MCP clients retain separate OAuth grants;
+revoke a client grant in WorkOS when removing its access. Provider revocation
+of a JWT takes effect when its short access token expires or refresh fails;
+local team authorization is checked on every request.
+
+The external REST API keeps personal-key authentication, and collector and
+OpAMP listeners retain their existing contracts. Protect the deployment with
+TLS and its trusted ingress. Database proxy requests strip browser and OAuth
+credentials. API logs and telemetry redact authorization codes, state and
+credentials while preserving tracing and business context.
+
+Before rollout, verify [MCP setup](MCP.md), browser login and logout, unauthorized
+users, exact environment/resource isolation, OAuth refresh, and requests across
+multiple replicas and restarts. Provider setup and passing source checks do not
+deploy HyperDX.

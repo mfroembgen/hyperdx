@@ -35,7 +35,7 @@
     },
     "packages/api": {
       "name": "@hyperdx/api",
-      "version": "2.42.0-fork.1",
+      "version": "2.42.0-fork.2-rc.2",
       "dependencies": {
         "@ai-sdk/anthropic": "4.0.88",
         "@ai-sdk/openai": "4.0.102",
@@ -52,6 +52,7 @@
         "@opentelemetry/sdk-metrics": "3.0.0",
         "@slack/webhook": "8.0.2",
         "@types/node": "26.6.5",
+        "@workos-inc/node": "12.0.0",
         "ai": "7.0.153",
         "aws4": "1.13.2",
         "chrono-node": "2.10.3",
@@ -68,6 +69,7 @@
         "http-graceful-shutdown": "4.0.0",
         "http-proxy-middleware": "4.2.1",
         "ip-address": "10.7.5",
+        "jose": "6.2.13",
         "lodash": "4.18.1",
         "minimist": "1.2.8",
         "mongodb": "7.7.0",
@@ -116,7 +118,7 @@
     },
     "packages/app": {
       "name": "@hyperdx/app",
-      "version": "2.42.0-fork.1",
+      "version": "2.42.0-fork.2-rc.2",
       "dependencies": {
         "@clickhouse/click-ui": "0.15.0",
         "@codemirror/autocomplete": "6.20.4",
@@ -276,7 +278,7 @@
     },
     "packages/common-utils": {
       "name": "@hyperdx/common-utils",
-      "version": "0.32.0-fork.1",
+      "version": "0.32.0-fork.2-rc.2",
       "dependencies": {
         "@clickhouse/client": "1.24.1",
         "@clickhouse/client-common": "1.23.0",
@@ -1836,6 +1838,8 @@
     "@webcontainer/env": ["@webcontainer/env@1.1.1", "", {}, "sha512-6aN99yL695Hi9SuIk1oC88l9o0gmxL1nGWWQ/kNy81HigJ0FoaoTXpytCj6ItzgyCEwA9kF1wixsTuv5cjsgng=="],
 
     "@workflow/serde": ["@workflow/serde@4.1.0", "", {}, "sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ=="],
+
+    "@workos-inc/node": ["@workos-inc/node@12.0.0", "", {}, "sha512-ujB+xdaOHUrfHe5oMnNOrHV/g+AzZ+5VPCGayDLC4mHWTBHCZg6U5e9X8EDCmKSir8pSXAmJaJylTJNRZ+BSew=="],
 
     "@xstate/fsm": ["@xstate/fsm@1.6.5", "", {}, "sha512-b5o1I6aLNeYlU/3CPlj/Z91ybk1gUsKT+5NAJI+2W4UjvS5KLG28K9v5UvNoFVjHV8PajVZ00RH3vnjyQO7ZAw=="],
 

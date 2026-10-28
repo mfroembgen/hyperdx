@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 
+import { parseWorkosConfig } from './utils/workosConfig';
+
 const env = process.env;
 
 // DEFAULTS
@@ -29,6 +31,11 @@ export const EXPRESS_SESSION_SECRET =
     : crypto.randomBytes(32).toString('hex');
 export const FRONTEND_URL = (env.FRONTEND_URL ||
   DEFAULT_FRONTEND_URL) as string;
+export const WORKOS = parseWorkosConfig(env, IS_LOCAL_APP_MODE, FRONTEND_URL);
+export const SESSION_COOKIE_NAME =
+  NODE_ENV === 'development' && env.HDX_DEV_SLOT
+    ? `connect.sid.${env.HDX_DEV_SLOT}`
+    : 'connect.sid';
 const HYPERDX_IMAGE = env.HYPERDX_IMAGE;
 export const IS_APP_IMAGE = HYPERDX_IMAGE === 'hyperdx';
 export const IS_ALL_IN_ONE_IMAGE = HYPERDX_IMAGE === 'all-in-one-auth';

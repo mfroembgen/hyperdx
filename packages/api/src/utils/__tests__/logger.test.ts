@@ -79,6 +79,14 @@ describe('scrubUrlTokens', () => {
   it.each([
     ['/team/setup/tok-xyz', '/team/setup/[REDACTED]'],
     ['/api/team/setup/tok-xyz', '/api/team/setup/[REDACTED]'],
+    [
+      '/api/auth/workos/callback?code=secret-code&state=secret-state',
+      '/api/auth/workos/callback?code=[REDACTED]&state=[REDACTED]',
+    ],
+    [
+      '/callback?%63ode=secret&access_token=value&x=1',
+      '/callback?%63ode=[REDACTED]&access_token=[REDACTED]&x=1',
+    ],
     // Query strings and fragments must not be swallowed into the token.
     ['/team/setup/tok-xyz?x=1', '/team/setup/[REDACTED]?x=1'],
   ])('scrubs %s', (input, expected) => {
@@ -169,6 +177,24 @@ describe('production log line', () => {
     return out;
   }
 
+  it('omits credential-bearing parsed query and route parameters from the real production serializer', () => {
+    const req = new IncomingMessage(new Socket());
+    req.method = 'GET';
+    req.url =
+      '/api/auth/workos/callback?code=fixture-code-secret&state=fixture-state-secret';
+    Object.assign(req, {
+      query: { code: 'fixture-code-secret', state: 'fixture-state-secret' },
+      params: { token: 'fixture-route-secret' },
+    });
+    const out = captureRequestLog(req);
+    expect(out).not.toContain('fixture-code-secret');
+    expect(out).not.toContain('fixture-state-secret');
+    expect(out).not.toContain('fixture-route-secret');
+    expect(out).toContain(
+      '/api/auth/workos/callback?code=[REDACTED]&state=[REDACTED]',
+    );
+  });
+
   it('emits no plaintext credential and no URL token', () => {
     const socket = new Socket();
     Object.defineProperty(socket, 'remoteAddress', { value: '203.0.113.7' });
@@ -177,16 +203,22 @@ describe('production log line', () => {
     req.url = '/api/team/setup/super-secret-token';
     req.headers = {
       authorization: 'Bearer super-secret-key',
+      'proxy-authorization': 'Basic private-proxy-credential',
+      'x-clickhouse-key': 'incoming-clickhouse-credential',
       cookie: 'connect.sid=secret-session',
+      'x-hyperdx-api-key': 'separate-service-personal-key',
       'user-agent': 'vi',
     };
 
     const out = captureRequestLog(req);
 
     expect(out).not.toContain('super-secret-key');
+    expect(out).not.toContain('private-proxy-credential');
+    expect(out).not.toContain('incoming-clickhouse-credential');
     expect(out).not.toContain('secret-session');
     expect(out).not.toContain('rotated-session');
     expect(out).not.toContain('super-secret-token');
+    expect(out).not.toContain('separate-service-personal-key');
     expect(out).toContain('[REDACTED]');
     // Still a useful log line: the non-credential parts survive.
     expect(out).toContain('vi');

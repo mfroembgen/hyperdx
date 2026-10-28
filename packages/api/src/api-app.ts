@@ -31,9 +31,7 @@ const app: express.Application = express();
 const sess: session.SessionOptions & { cookie: session.CookieOptions } = {
   // Use a slot-specific cookie name in dev so multiple worktrees on localhost
   // don't overwrite each other's session cookies.
-  ...(config.IS_DEV && process.env.HDX_DEV_SLOT
-    ? { name: `connect.sid.${process.env.HDX_DEV_SLOT}` }
-    : {}),
+  name: config.SESSION_COOKIE_NAME,
   resave: false,
   saveUninitialized: false,
   secret: config.EXPRESS_SESSION_SECRET,

@@ -3,7 +3,7 @@ import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import express from 'express';
 
-import { validateUserAccessKey } from '@/middleware/auth';
+import { validateMcpUser } from '@/middleware/auth';
 import logger from '@/utils/logger';
 import rateLimiter, { rateLimiterKeyGenerator } from '@/utils/rateLimiter';
 
@@ -37,7 +37,7 @@ const methodNotAllowed = (_req: express.Request, res: express.Response) => {
 app.get('/', mcpRateLimiter, methodNotAllowed);
 app.delete('/', mcpRateLimiter, methodNotAllowed);
 
-app.post('/', mcpRateLimiter, validateUserAccessKey, async (req, res) => {
+app.post('/', mcpRateLimiter, validateMcpUser, async (req, res) => {
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined, // stateless
   });
