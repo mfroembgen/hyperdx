@@ -44,8 +44,7 @@ export default function WorkOSAuthPage() {
             <Stack>
               <Text fw={600}>Sign in to HyperDX</Text>
               <Text size="sm">
-                Use your Google account. Your administrator must have added this
-                account to your HyperDX team.
+                Sign in with your Google account to access your HyperDX team.
               </Text>
               {router.query.err && (
                 <Text size="sm" c="red" role="alert">

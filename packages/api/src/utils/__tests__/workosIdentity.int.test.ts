@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 import * as config from '@/config';
-import { deleteTeamMember } from '@/controllers/user';
+import { deleteTeamMember, findUsersByTeam } from '@/controllers/user';
 import { clearDBCollections, closeDB, connectDB } from '@/fixtures';
 import Team from '@/models/team';
 import User from '@/models/user';
@@ -149,6 +149,39 @@ describe('WorkOS existing Mongo member binding', () => {
     expect(fixture.getUser).not.toHaveBeenCalled();
   });
 
+  it('reports real password credentials without returning them in member metadata', async () => {
+    const email = 'pwd@example.com';
+    await User.schema.statics.register.call(
+      User,
+      { email, name: email, team: teamId },
+      'Fixture-password!234',
+    );
+    const passwordUser = await User.findOne({ email }).orFail();
+    expect(passwordUser.get('hash')).toBeUndefined();
+    expect(passwordUser.get('salt')).toBeUndefined();
+    fixture.settings.autoJoinDomain = 'example.com';
+    fixture.getUser.mockResolvedValue({
+      id: 'user_new',
+      email: 'new@example.com',
+      emailVerified: true,
+    });
+    await resolveWorkosUser('user_new');
+    await User.create({ email: 'foreign@example.com', team: otherTeam });
+    const members = await findUsersByTeam(teamId);
+    expect(await findUsersByTeam(new mongoose.Types.ObjectId(teamId))).toEqual(
+      members,
+    );
+    expect(members.map(({ _id, ...member }) => member)).toEqual([
+      { email: 'member@example.com', hasPasswordAuth: false },
+      { email, name: email, hasPasswordAuth: true },
+      {
+        email: 'new@example.com',
+        name: 'new@example.com',
+        hasPasswordAuth: false,
+      },
+    ]);
+  });
+
   it.each([
     ['new@other-example.com', true],
     ['new@example.com.attacker.com', true],
@@ -251,6 +284,7 @@ describe('WorkOS existing Mongo member binding', () => {
     });
     expect(await User.countDocuments()).toBe(2);
     expect(await User.countDocuments({ team: teamId })).toBe(0);
+    expect(await findUsersByTeam(teamId)).toEqual([]);
   });
 
   it('preserves physical member deletion when WorkOS is unset', async () => {

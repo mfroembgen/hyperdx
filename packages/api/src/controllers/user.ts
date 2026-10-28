@@ -1,4 +1,7 @@
-import type { OnboardingTaskId } from '@hyperdx/common-utils/dist/types';
+import type {
+  OnboardingTaskId,
+  TeamMember,
+} from '@hyperdx/common-utils/dist/types';
 import { isPersistableUserId as isPersistableUserIdHex } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
@@ -6,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as config from '@/config';
 import type { ObjectId } from '@/models';
 import Alert from '@/models/alert';
-import User from '@/models/user';
+import User, { type IUser } from '@/models/user';
 import { getCounter, setBusinessContext } from '@/utils/instrumentation';
 import logger from '@/utils/logger';
 
@@ -39,7 +42,27 @@ export function findUserByEmail(email: string) {
 }
 
 export function findUsersByTeam(team: string | ObjectId) {
-  return User.find({ team }).sort({ createdAt: 1 });
+  return User.aggregate<
+    Pick<TeamMember, 'email' | 'name' | 'hasPasswordAuth'> & Pick<IUser, '_id'>
+  >([
+    { $match: { team: new mongoose.Types.ObjectId(team) } },
+    { $sort: { createdAt: 1 } },
+    {
+      $project: {
+        _id: 1,
+        email: 1,
+        name: 1,
+        hasPasswordAuth: {
+          $and: [
+            { $eq: [{ $type: '$hash' }, 'string'] },
+            { $ne: ['$hash', ''] },
+            { $eq: [{ $type: '$salt' }, 'string'] },
+            { $ne: ['$salt', ''] },
+          ],
+        },
+      },
+    },
+  ]);
 }
 
 // Type-guard wrapper over the shared 24-hex check; rejects the synthetic

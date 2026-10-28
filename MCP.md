@@ -56,9 +56,12 @@ instance and complete the organization's Google login in the browser.
 WorkOS handles client registration, browser consent and token refresh. HyperDX
 advertises protected-resource metadata and validates each Connect access token
 against its fixed AuthKit issuer and this exact MCP URL as the audience. It
-verifies the WorkOS profile when first linking an existing HyperDX team member,
-then checks that stored identity and current local membership on each request.
-Google login does not create a HyperDX account or grant membership in another team.
+verifies the WorkOS profile when first linking an identity, then checks that
+stored identity and current local membership on each request. By default, only
+existing team members can sign in. If the administrator sets
+`WORKOS_AUTO_JOIN_DOMAIN`, first sign-in with a verified email in that exact
+domain creates a passwordless member in the configured existing team. The server
+grants access only to its configured team.
 Remove a previous static Authorization header or bearer-token environment binding
 when switching a client to OAuth; WorkOS mode does not accept personal keys for
 MCP. Keep legacy bindings until the administrator has deployed and verified the

@@ -24,7 +24,6 @@ export interface IUser {
 
 interface UserVirtuals {
   id: string;
-  hasPasswordAuth: boolean;
 }
 type UserModel = mongoose.Model<
   IUser,
@@ -75,10 +74,6 @@ const UserSchema = new Schema<
     timestamps: true,
   },
 );
-
-UserSchema.virtual('hasPasswordAuth').get(function (this: IUser) {
-  return true;
-});
 
 UserSchema.plugin(passportLocalMongoose, {
   usernameField: 'email',

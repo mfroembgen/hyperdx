@@ -166,7 +166,9 @@ website or MCP request.
 Using Remove Member in WorkOS mode clears local membership, revokes the old
 personal REST API key, and retains the email and identity binding so automatic
 join cannot restore access. Old website, MCP and legacy-session requests are
-denied. Restoring a removed member requires an explicit administrator action.
+denied. After verifying eligibility, an administrator can restore the retained
+user record's `team` to the configured `WORKOS_TEAM_ID`. Its identity binding is
+retained, and the previous personal API key remains invalid.
 Legacy mode retains physical member deletion.
 
 Logout submits a same-origin POST, destroys the HyperDX session and redirects
