@@ -35,7 +35,7 @@
     },
     "packages/api": {
       "name": "@hyperdx/api",
-      "version": "2.42.0-fork.2-rc.2",
+      "version": "2.42.0-fork.2-rc.3",
       "dependencies": {
         "@ai-sdk/anthropic": "4.0.88",
         "@ai-sdk/openai": "4.0.102",
@@ -118,7 +118,7 @@
     },
     "packages/app": {
       "name": "@hyperdx/app",
-      "version": "2.42.0-fork.2-rc.2",
+      "version": "2.42.0-fork.2-rc.3",
       "dependencies": {
         "@clickhouse/click-ui": "0.15.0",
         "@codemirror/autocomplete": "6.20.4",
