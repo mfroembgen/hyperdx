@@ -79,6 +79,42 @@ describe('WorkOS startup boundary', () => {
     });
   });
 
+  it('disables automatic membership by default and normalizes one exact domain', () => {
+    expect(
+      parseWorkosConfig(enabled, false, 'https://app.example.com'),
+    ).not.toHaveProperty('autoJoinDomain', expect.anything());
+    expect(
+      parseWorkosConfig(
+        { ...enabled, WORKOS_AUTO_JOIN_DOMAIN: 'EXAMPLE.COM' },
+        false,
+        'https://app.example.com',
+      )?.autoJoinDomain,
+    ).toBe('example.com');
+  });
+
+  it('keeps a preconfigured domain policy inert without WorkOS credentials', () => {
+    expect(
+      parseWorkosConfig({ WORKOS_AUTO_JOIN_DOMAIN: 'example.com' }, false, ''),
+    ).toBeUndefined();
+    expect(
+      parseWorkosConfig(
+        { WORKOS_ENABLED: 'false', WORKOS_AUTO_JOIN_DOMAIN: 'example.com' },
+        false,
+        '',
+      ),
+    ).toBeUndefined();
+  });
+
+  it('treats an empty automatic join domain as off when WorkOS is enabled', () => {
+    expect(
+      parseWorkosConfig(
+        { ...enabled, WORKOS_ENABLED: 'true', WORKOS_AUTO_JOIN_DOMAIN: '' },
+        false,
+        'https://app.example.com',
+      )?.autoJoinDomain,
+    ).toBeUndefined();
+  });
+
   it.each([
     { WORKOS_AUTHKIT_DOMAIN: 'http://identity.example.com' },
     { WORKOS_AUTHKIT_DOMAIN: 'https://identity.example.com/other' },
@@ -86,6 +122,13 @@ describe('WorkOS startup boundary', () => {
     { WORKOS_SESSION_ISSUER: 'https://identity.example.com/?code=secret' },
     { WORKOS_TEAM_ID: 'not-a-team' },
     { EXPRESS_SESSION_SECRET: 'short' },
+    { WORKOS_AUTO_JOIN_DOMAIN: ' example.com' },
+    { WORKOS_AUTO_JOIN_DOMAIN: '@example.com' },
+    { WORKOS_AUTO_JOIN_DOMAIN: '*.example.com' },
+    { WORKOS_AUTO_JOIN_DOMAIN: 'https://example.com' },
+    { WORKOS_AUTO_JOIN_DOMAIN: 'example.com,other.example.com' },
+    { WORKOS_AUTO_JOIN_DOMAIN: 'example.com.' },
+    { WORKOS_AUTO_JOIN_DOMAIN: '-example.com' },
   ])('rejects unsafe configuration %j', invalid => {
     expect(() =>
       parseWorkosConfig(

@@ -3,10 +3,17 @@ import { isPersistableUserId as isPersistableUserIdHex } from '@hyperdx/common-u
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
+import * as config from '@/config';
 import type { ObjectId } from '@/models';
 import Alert from '@/models/alert';
 import User from '@/models/user';
+import { getCounter, setBusinessContext } from '@/utils/instrumentation';
 import logger from '@/utils/logger';
+
+const memberRemovals = getCounter('hyperdx.team.member_removals', {
+  description: 'Team members removed from local membership',
+});
+
 export function findUserByAccessKey(accessKey: string) {
   return User.findOne({ accessKey });
 }
@@ -100,6 +107,12 @@ export async function deleteTeamMember(
   userIdToDelete: string,
   userIdRequestingDelete: string | ObjectId,
 ) {
+  setBusinessContext({
+    teamId: teamId.toString(),
+    userId: userIdRequestingDelete.toString(),
+    'hyperdx.team.removed_user_id': userIdToDelete,
+  });
+  const member = { team: teamId, _id: userIdToDelete };
   const [, deletedUser] = await Promise.all([
     Alert.updateMany(
       { createdBy: new mongoose.Types.ObjectId(userIdToDelete), team: teamId },
@@ -109,11 +122,20 @@ export async function deleteTeamMember(
         },
       },
     ),
-    User.findOneAndDelete({
-      team: teamId,
-      _id: userIdToDelete,
-    }),
+    config.WORKOS
+      ? User.findOneAndUpdate(
+          member,
+          {
+            $unset: { team: 1 },
+            // Keep email/binding reserved against automatic re-registration.
+            // Rotating also preserves the non-sparse unique access-key index.
+            $set: { accessKey: uuidv4() },
+          },
+          { returnDocument: 'before' },
+        )
+      : User.findOneAndDelete(member),
   ]);
 
+  if (deletedUser) memberRemovals.add(1);
   return deletedUser;
 }

@@ -104,7 +104,7 @@ export async function validateUserAccessKey(
   }
 
   const user = await findUserByAccessKey(key);
-  if (!user) {
+  if (!user?.team) {
     return res.sendStatus(401);
   }
 
@@ -164,7 +164,7 @@ export function isUserAuthenticated(
     return nextWithQueryAttribution(req, next);
   }
 
-  if (req.isAuthenticated()) {
+  if (req.isAuthenticated() && req.user?.team) {
     // Attach incident-remediation context to the trace and active span.
     setBusinessContext({
       teamId: req.user?.team?.toString(),

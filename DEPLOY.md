@@ -122,9 +122,8 @@ provider failures preserve the session for a later retry.
    WorkOS environments where identities must be isolated. Multiple applications
    can share a user base, but each website must have its own client ID.
 2. Enable Google social login and configure its Google OAuth credentials and
-   WorkOS callback. Enable only the intended authentication methods. Existing
-   HyperDX users must already belong to the configured team; signing in never
-   creates a HyperDX account or grants membership.
+   WorkOS callback. Enable only the intended authentication methods. By default,
+   HyperDX users must already belong to the configured team.
 3. Set the application's redirect URI to
    `https://hyperdx.example.com/api/auth/workos/callback`, initiate-login URI to
    `https://hyperdx.example.com/api/auth/workos`, and default sign-out URI to
@@ -149,16 +148,38 @@ without fetching the profile again. Machine-to-machine tokens and personal API
 keys are rejected in this MCP mode. WorkOS handles OAuth registration, consent,
 authorization codes and refresh; HyperDX does not implement a second OAuth server.
 
+To let new users join the configured existing team, optionally set
+`WORKOS_AUTO_JOIN_DOMAIN=example.com`. The default is off. The value accepts one
+exact domain, ignores case, and rejects URLs, wildcards, lists and whitespace.
+An empty value turns automatic join off; the policy alone does not enable WorkOS.
+Only a verified email from WorkOS's user profile can create a passwordless local
+account; email claims in tokens do not grant membership. Subdomains, suffixes
+and lookalike domains do not match. Existing members outside that domain can
+still link their accounts. Automatic join never moves an existing user to
+another team, replaces a conflicting identity, or restores an existing teamless
+account.
+
 Password login, registration, invitation signup and password recovery are
 unavailable in WorkOS mode. The `hdx` CLI's password-session flow remains a
-legacy-mode feature. Removing local membership or deleting the configured team
-blocks the next protected website or MCP request.
+legacy-mode feature. Deleting the configured team blocks the next protected
+website or MCP request.
+Using Remove Member in WorkOS mode clears local membership, revokes the old
+personal REST API key, and retains the email and identity binding so automatic
+join cannot restore access. Old website, MCP and legacy-session requests are
+denied. Restoring a removed member requires an explicit administrator action.
+Legacy mode retains physical member deletion.
 
 Logout submits a same-origin POST, destroys the HyperDX session and redirects
 to WorkOS to end the browser session. MCP clients retain separate OAuth grants;
 revoke a client grant in WorkOS when removing its access. Provider revocation
 of a JWT takes effect when its short access token expires or refresh fails;
 local team authorization is checked on every request.
+
+Automatic join provides onboarding only. Suspending a Google Workspace account
+blocks new Google authentication. Existing WorkOS website sessions and MCP
+grants may continue until their own expiry or revocation; suspension also does
+not revoke personal REST API keys. Use this setup when blocking fresh Google
+sign-ins is sufficient for offboarding.
 
 The external REST API keeps personal-key authentication, and collector and
 OpAMP listeners retain their existing contracts. Protect the deployment with

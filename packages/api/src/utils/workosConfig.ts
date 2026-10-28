@@ -7,6 +7,26 @@ const environmentSchema = z.object({
   WORKOS_AUTHKIT_DOMAIN: z.string().url(),
   WORKOS_TEAM_ID: z.string().refine(isPersistableUserId),
   WORKOS_SESSION_ISSUER: z.string().url().optional(),
+  WORKOS_AUTO_JOIN_DOMAIN: z
+    .string()
+    .max(253)
+    .toLowerCase()
+    .regex(/^[a-z0-9.-]+$/)
+    .refine(
+      domain =>
+        domain.includes('.') &&
+        domain
+          .split('.')
+          .every(
+            label =>
+              label.length > 0 &&
+              label.length <= 63 &&
+              !label.startsWith('-') &&
+              !label.endsWith('-'),
+          ),
+      'Expected one exact email domain',
+    )
+    .optional(),
   EXPRESS_SESSION_SECRET: z.string().min(32),
 });
 
@@ -35,7 +55,10 @@ export function parseWorkosConfig(
     );
   }
   if (!configured && env.WORKOS_ENABLED !== 'true') return;
-  const parsed = environmentSchema.safeParse(env);
+  const parsed = environmentSchema.safeParse({
+    ...env,
+    WORKOS_AUTO_JOIN_DOMAIN: env.WORKOS_AUTO_JOIN_DOMAIN || undefined,
+  });
   if (!parsed.success || isLocalAppMode) {
     throw new Error(
       'WorkOS requires complete configuration, a shared session secret of at least 32 characters, and authentication enabled',
@@ -78,6 +101,7 @@ export function parseWorkosConfig(
     issuer: issuer.origin,
     sessionIssuer: parsed.data.WORKOS_SESSION_ISSUER ?? sessionIssuer.href,
     teamId: parsed.data.WORKOS_TEAM_ID.toLowerCase(),
+    autoJoinDomain: parsed.data.WORKOS_AUTO_JOIN_DOMAIN,
     frontendOrigin: frontend.origin,
     redirectUri: `${frontend.origin}/api/auth/workos/callback`,
     resource: `${frontend.origin}/api/mcp`,

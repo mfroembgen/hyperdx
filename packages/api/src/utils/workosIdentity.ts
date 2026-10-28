@@ -4,8 +4,14 @@ import { z } from 'zod';
 import * as config from '@/config';
 import Team from '@/models/team';
 import User from '@/models/user';
+import { isDuplicateKeyError } from '@/utils/errors';
+import { getCounter, setBusinessContext } from '@/utils/instrumentation';
 
 import { workos } from './workosClient';
+
+const provisionedUsers = getCounter('hyperdx.auth.provisioned_users', {
+  description: 'Members created from verified WorkOS email-domain policy',
+});
 
 export class WorkosAuthenticationError extends Error {
   constructor(
@@ -23,7 +29,7 @@ const profileSchema = z.object({
   emailVerified: z.literal(true),
 });
 
-/** WorkOS authenticates identity; only existing HyperDX membership grants access. */
+/** Resolve local membership, optionally provisioning new verified-domain users. */
 export async function resolveWorkosUser(subject: string) {
   const settings = config.WORKOS;
   if (!settings || !workos)
@@ -53,12 +59,13 @@ export async function resolveWorkosUser(subject: string) {
     if (!parsed.success || parsed.data.id !== subject) {
       throw new WorkosAuthenticationError(403, 'unmapped_identity');
     }
-    // First binding is a compare-and-set on an existing, unbound member. The
-    // partial unique index prevents one identity linking two local accounts.
+    const email = parsed.data.email.toLowerCase();
+    // Bind existing members before considering the optional signup policy.
+    // Both unique indexes also protect concurrent first logins and tombstones.
     try {
       user = await User.findOneAndUpdate(
         {
-          email: parsed.data.email.toLowerCase(),
+          email,
           team: settings.teamId,
           workosIssuer: { $exists: false },
           workosSubject: { $exists: false },
@@ -66,14 +73,27 @@ export async function resolveWorkosUser(subject: string) {
         { $set: binding },
         { returnDocument: 'after' },
       );
+      if (
+        !user &&
+        settings.autoJoinDomain &&
+        settings.autoJoinDomain === email.split('@')[1]
+      ) {
+        user = await User.create({
+          email,
+          name: email,
+          team: settings.teamId,
+          ...binding,
+        });
+        setBusinessContext({
+          teamId: settings.teamId,
+          userId: user._id.toString(),
+          email,
+          'hyperdx.auth.provisioned': true,
+        });
+        provisionedUsers.add(1);
+      }
     } catch (error) {
-      if (!(
-        error &&
-        typeof error === 'object' &&
-        'code' in error &&
-        error.code === 11000
-      ))
-        throw error;
+      if (!isDuplicateKeyError(error)) throw error;
     }
     // A concurrent request may have completed the identical first binding.
     user ??= await User.findOne(binding);

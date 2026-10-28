@@ -1,17 +1,25 @@
 import mongoose from 'mongoose';
 
 import * as config from '@/config';
+import { deleteTeamMember } from '@/controllers/user';
 import { clearDBCollections, closeDB, connectDB } from '@/fixtures';
 import Team from '@/models/team';
 import User from '@/models/user';
 import { resolveWorkosUser } from '@/utils/workosIdentity';
 
-const fixture = vi.hoisted(() => ({ getUser: vi.fn() }));
-vi.mock('@/config', async () => ({
-  ...(await vi.importActual<typeof import('@/config')>('@/config')),
-  WORKOS: {
+const fixture = vi.hoisted(() => ({
+  getUser: vi.fn(),
+  enabled: true,
+  settings: {
     issuer: 'https://identity.example.com',
     teamId: '507f1f77bcf86cd799439011',
+    autoJoinDomain: undefined as string | undefined,
+  },
+}));
+vi.mock('@/config', async () => ({
+  ...(await vi.importActual<typeof import('@/config')>('@/config')),
+  get WORKOS() {
+    return fixture.enabled ? fixture.settings : undefined;
   },
 }));
 vi.mock('@/utils/workosClient', () => ({
@@ -26,6 +34,8 @@ describe('WorkOS existing Mongo member binding', () => {
     await User.init();
   });
   beforeEach(async () => {
+    fixture.enabled = true;
+    fixture.settings.autoJoinDomain = undefined;
     otherTeam = (
       await Team.create({ name: 'Other tenant', apiKey: 'other-ingestion-key' })
     )._id;
@@ -108,6 +118,148 @@ describe('WorkOS existing Mongo member binding', () => {
     await expect(resolveWorkosUser('user_member')).rejects.toMatchObject({
       status: 403,
     });
+    expect(await User.countDocuments()).toBe(0);
+  });
+
+  it('creates one passwordless member for concurrent first logins from the exact verified domain', async () => {
+    fixture.settings.autoJoinDomain = 'example.com';
+    fixture.getUser.mockResolvedValue({
+      id: 'user_new',
+      email: 'NEW@EXAMPLE.COM',
+      emailVerified: true,
+    });
+    const members = await Promise.all(
+      Array.from({ length: 8 }, () => resolveWorkosUser('user_new')),
+    );
+    expect(new Set(members.map(user => user._id.toString())).size).toBe(1);
+    const created = await User.findOne({ email: 'new@example.com' }).lean();
+    expect(created).toMatchObject({
+      name: 'new@example.com',
+      team: new mongoose.Types.ObjectId(teamId),
+      workosIssuer: config.WORKOS?.issuer,
+      workosSubject: 'user_new',
+    });
+    expect(created).not.toHaveProperty('hash');
+    expect(created).not.toHaveProperty('salt');
+    expect(await User.countDocuments()).toBe(2);
+    fixture.getUser.mockClear();
+    await expect(resolveWorkosUser('user_new')).resolves.toMatchObject({
+      email: 'new@example.com',
+    });
+    expect(fixture.getUser).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['new@other-example.com', true],
+    ['new@example.com.attacker.com', true],
+    ['new@sub.example.com', true],
+    ['new@example.com', false],
+  ])(
+    'refuses automatic membership for %s with verified=%s',
+    async (email, emailVerified) => {
+      fixture.settings.autoJoinDomain = 'example.com';
+      fixture.getUser.mockResolvedValue({
+        id: 'user_new',
+        email,
+        emailVerified,
+      });
+      await expect(resolveWorkosUser('user_new')).rejects.toMatchObject({
+        status: 403,
+      });
+      expect(await User.countDocuments()).toBe(1);
+    },
+  );
+
+  it('keeps existing members outside the automatic join domain eligible for binding', async () => {
+    fixture.settings.autoJoinDomain = 'example.com';
+    await User.updateOne(
+      { email: 'member@example.com' },
+      { email: 'member@other.example.com' },
+    );
+    fixture.getUser.mockResolvedValue({
+      id: 'user_member',
+      email: 'member@other.example.com',
+      emailVerified: true,
+    });
+    await expect(resolveWorkosUser('user_member')).resolves.toMatchObject({
+      email: 'member@other.example.com',
+    });
+    expect(await User.countDocuments()).toBe(1);
+  });
+
+  it.each(['foreign team', 'conflicting identity'])(
+    'never replaces a %s with automatic membership',
+    async conflict => {
+      fixture.settings.autoJoinDomain = 'example.com';
+      const changes =
+        conflict === 'foreign team'
+          ? { team: otherTeam }
+          : {
+              workosIssuer: config.WORKOS?.issuer,
+              workosSubject: 'user_other',
+            };
+      await User.updateOne({ email: 'member@example.com' }, changes);
+      await expect(resolveWorkosUser('user_member')).rejects.toMatchObject({
+        status: 403,
+      });
+      expect(await User.countDocuments()).toBe(1);
+      expect(await User.findOne({ email: 'member@example.com' })).toMatchObject(
+        changes,
+      );
+    },
+  );
+
+  it('retains removed bound and unbound members so automatic signup cannot restore them', async () => {
+    fixture.settings.autoJoinDomain = 'example.com';
+    const member = await resolveWorkosUser('user_member');
+    const unbound = await User.create({
+      email: 'unbound@example.com',
+      team: teamId,
+    });
+    for (const removed of [member, unbound]) {
+      expect(
+        await deleteTeamMember(
+          teamId,
+          removed.id,
+          new mongoose.Types.ObjectId(),
+        ),
+      ).toBeTruthy();
+      expect(await User.findById(removed._id)).not.toHaveProperty(
+        'team',
+        expect.anything(),
+      );
+      expect(await User.findOne({ accessKey: removed.accessKey })).toBeNull();
+    }
+    await expect(resolveWorkosUser('user_member')).rejects.toMatchObject({
+      status: 403,
+    });
+    fixture.getUser.mockResolvedValue({
+      id: 'user_recreated',
+      email: member.email,
+      emailVerified: true,
+    });
+    await expect(resolveWorkosUser('user_recreated')).rejects.toMatchObject({
+      status: 403,
+    });
+    fixture.getUser.mockResolvedValue({
+      id: 'user_unbound',
+      email: unbound.email,
+      emailVerified: true,
+    });
+    await expect(resolveWorkosUser('user_unbound')).rejects.toMatchObject({
+      status: 403,
+    });
+    expect(await User.countDocuments()).toBe(2);
+    expect(await User.countDocuments({ team: teamId })).toBe(0);
+  });
+
+  it('preserves physical member deletion when WorkOS is unset', async () => {
+    fixture.enabled = false;
+    const member = await User.findOne({ email: 'member@example.com' }).orFail();
+    expect(
+      await deleteTeamMember(teamId, member.id, new mongoose.Types.ObjectId()),
+    ).toBeTruthy();
+    expect(await User.findById(member._id)).toBeNull();
     expect(await User.countDocuments()).toBe(0);
   });
 });

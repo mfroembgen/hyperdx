@@ -3,7 +3,11 @@ import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import mongoose from 'mongoose';
 import request from 'supertest';
 
-import { isUserAuthenticated, validateMcpUser } from '@/middleware/auth';
+import {
+  isUserAuthenticated,
+  validateMcpUser,
+  validateUserAccessKey,
+} from '@/middleware/auth';
 import Team from '@/models/team';
 import User from '@/models/user';
 import type { WorkosConfig } from '@/utils/workosConfig';
@@ -16,18 +20,20 @@ const fixture = vi.hoisted(() => ({
     issuer: 'https://identity.example.com',
     sessionIssuer: 'https://api.workos.com/user_management/client_app',
     teamId: '507f1f77bcf86cd799439011',
+    autoJoinDomain: undefined,
     frontendOrigin: 'https://app.example.com',
     resource: 'https://app.example.com/api/mcp',
     redirectUri: 'https://app.example.com/api/auth/workos/callback',
     metadataUrl:
       'https://app.example.com/api/.well-known/oauth-protected-resource/mcp',
-  } as WorkosConfig | undefined,
+  } satisfies WorkosConfig,
+  enabled: true,
   getUser: vi.fn(),
 }));
 vi.mock('@/config', async () => ({
   ...(await vi.importActual<typeof import('@/config')>('@/config')),
   get WORKOS() {
-    return fixture.settings;
+    return fixture.enabled ? fixture.settings : undefined;
   },
 }));
 vi.mock('@/utils/workosClient', () => ({
@@ -85,6 +91,7 @@ describe('WorkOS identity and MCP boundary', () => {
     );
   });
   beforeEach(() => {
+    fixture.enabled = true;
     vi.clearAllMocks();
     find.mockReset().mockResolvedValue(user);
     bind.mockReset().mockResolvedValue(null);
@@ -201,16 +208,46 @@ describe('WorkOS identity and MCP boundary', () => {
   });
 
   it('preserves personal API keys when WorkOS is unset', async () => {
-    const previous = fixture.settings;
-    fixture.settings = undefined;
+    const previous = fixture.enabled;
+    fixture.enabled = false;
     try {
       await request(app)
         .post('/mcp')
         .set('Authorization', `Bearer ${user.accessKey}`)
         .expect(200);
       expect(find).toHaveBeenCalledWith({ accessKey: user.accessKey });
+      await request(app).get('/ui').expect(200);
     } finally {
-      fixture.settings = previous;
+      fixture.enabled = previous;
     }
   });
+
+  it.each(['cookie', 'key'])(
+    'rejects a teamless member with an old legacy %s',
+    async credential => {
+      const previous = fixture.enabled;
+      fixture.enabled = false;
+      const removed = new User({ email: user.email });
+      find.mockResolvedValue(removed);
+      const legacy = express();
+      legacy.use((req, _res, next) => {
+        req.user = removed;
+        Object.defineProperty(req, 'isAuthenticated', { value: () => true });
+        next();
+      });
+      legacy.get(
+        '/',
+        credential === 'cookie' ? isUserAuthenticated : validateUserAccessKey,
+        (_req, res) => res.sendStatus(200),
+      );
+      try {
+        await request(legacy)
+          .get('/')
+          .set('Authorization', `Bearer ${removed.accessKey}`)
+          .expect(401);
+      } finally {
+        fixture.enabled = previous;
+      }
+    },
+  );
 });
