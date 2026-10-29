@@ -65,6 +65,23 @@ COPY ./packages/common-utils ./packages/common-utils
 RUN bun run --cwd packages/common-utils build
 
 
+## Shared frontend build ##########################################################################
+FROM common-utils-builder AS frontend-builder
+
+COPY packages/app ./packages/app
+COPY CHANGELOG.md ./CHANGELOG.md
+
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_OUTPUT_STANDALONE=true
+ENV NEXT_PUBLIC_IS_LOCAL_MODE=false
+RUN bun run --cwd packages/app build && rm -rf packages/app/dist/standalone/node_modules
+
+# CI supplies this stage as a named context so all platforms use one build.
+# Ordinary Docker builds use the local frontend build above.
+FROM scratch AS frontend
+COPY --from=frontend-builder /app/packages/app/dist /dist
+
+
 ## API/APP Builder Image ##########################################################################
 FROM bun_base AS builder
 
@@ -75,12 +92,12 @@ COPY --from=common-utils-builder /app/packages/common-utils ./packages/common-ut
 
 COPY packages/api ./packages/api
 COPY packages/app ./packages/app
-COPY CHANGELOG.md ./CHANGELOG.md
+COPY --from=frontend /dist ./packages/app/dist
 
-ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_OUTPUT_STANDALONE=true
-ENV NEXT_PUBLIC_IS_LOCAL_MODE=false
-RUN bun run --cwd packages/api build && bun run --cwd packages/app build
+# Recreate standalone dependencies on the target platform, never copy them from
+# the shared frontend build platform.
+RUN bun run --cwd packages/api build && bun packages/app/scripts/prepare-standalone.mjs
 RUN rm -rf node_modules packages/*/node_modules && bun install --frozen-lockfile --production --filter @hyperdx/api && mkdir -p packages/api/node_modules packages/common-utils/node_modules
 
 
