@@ -23,6 +23,7 @@ import { registerAITelemetry } from './utils/aiTelemetry';
 import logger, { expressLogger } from './utils/logger';
 import passport from './utils/passport';
 import { captureProxyBody, preserveProxyCharset } from './utils/proxyBody';
+import { generateSessionId } from './utils/workosSessionStore';
 
 registerAITelemetry();
 
@@ -32,6 +33,7 @@ const sess: session.SessionOptions & { cookie: session.CookieOptions } = {
   // Use a slot-specific cookie name in dev so multiple worktrees on localhost
   // don't overwrite each other's session cookies.
   name: config.SESSION_COOKIE_NAME,
+  genid: generateSessionId,
   resave: false,
   saveUninitialized: false,
   secret: config.EXPRESS_SESSION_SECRET,

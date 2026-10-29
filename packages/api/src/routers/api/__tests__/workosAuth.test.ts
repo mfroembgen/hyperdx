@@ -6,6 +6,7 @@ import workosAuthRouter, {
   logoutWorkos,
   safeReturnTo,
 } from '@/routers/api/workosAuth';
+import { generateSessionId } from '@/utils/workosSessionStore';
 
 const fixture = vi.hoisted(() => ({
   authorize: vi.fn(),
@@ -48,11 +49,48 @@ vi.mock('@/utils/workosSession', async () => ({
   authenticateSealedWorkosSession: fixture.authenticate,
 }));
 
+// Sequential MemoryStore behavior only; Mongo tests prove atomicity.
+vi.mock('@/utils/workosSessionStore', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/utils/workosSessionStore')
+  >('@/utils/workosSessionStore');
+  const save = (req: express.Request) =>
+    new Promise<void>((resolve, reject) =>
+      req.session.save(error => (error ? reject(error) : resolve())),
+    );
+  return {
+    ...actual,
+    storeWorkosLogin: async (
+      req: express.Request,
+      login: NonNullable<session.SessionData['workosLogin']>,
+    ) => {
+      req.session.workosLogin = login;
+      await save(req);
+      return true;
+    },
+    consumeWorkosLogin: async (req: express.Request, state: string) => {
+      const login = req.session.workosLogin;
+      if (!login || login.state !== state || login.expiresAt <= Date.now())
+        return undefined;
+      delete req.session.workosLogin;
+      await save(req);
+      return login;
+    },
+    claimWorkosSession: (req: express.Request) =>
+      new Promise<boolean>((resolve, reject) =>
+        req.sessionStore.destroy(req.sessionID, error =>
+          error ? reject(error) : resolve(true),
+        ),
+      ),
+  };
+});
+
 describe('WorkOS browser login and logout', () => {
   const app = express();
   app.use(
     session({
       secret: 'fixture-shared-secret-at-least-32-characters',
+      genid: generateSessionId,
       resave: false,
       saveUninitialized: false,
     }),

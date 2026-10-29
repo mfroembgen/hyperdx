@@ -20,10 +20,36 @@ declare module 'express-session' {
   }
 }
 
-export const saveSession = (req: Request) =>
+const saveSession = (req: Request) =>
   new Promise<void>((resolve, reject) =>
     req.session.save(error => (error ? reject(error) : resolve())),
   );
+
+/** Complete the sole full write for a newly generated SID before responding. */
+export async function saveNewSession(req: Request) {
+  try {
+    await saveSession(req);
+  } catch (error) {
+    // destroy removes req.session immediately, preventing a cookie or implicit
+    // retry even when cleanup of a possibly partial new-SID write also fails.
+    await new Promise<void>(resolve =>
+      req.session.destroy(() => resolve()),
+    ).catch(() => undefined);
+    throw error;
+  }
+  const saved = req.session;
+  // Regeneration changes Express's original ID, so even an explicitly saved
+  // session otherwise gets a second upserting write while headers are emitted.
+  Object.defineProperty(saved, 'save', {
+    configurable: true,
+    enumerable: false,
+    writable: true,
+    value: (callback?: (error?: unknown) => void) => {
+      callback?.();
+      return saved;
+    },
+  });
+}
 
 const webClaims = z.object({
   sub: z.string().regex(/^user_[A-Za-z0-9]+$/),

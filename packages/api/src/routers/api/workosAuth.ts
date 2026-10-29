@@ -1,4 +1,3 @@
-import { timingSafeEqual } from 'crypto';
 import express from 'express';
 
 import * as config from '@/config';
@@ -10,8 +9,14 @@ import {
 } from '@/utils/workosIdentity';
 import {
   authenticateSealedWorkosSession,
-  saveSession,
+  saveNewSession,
 } from '@/utils/workosSession';
+import {
+  claimWorkosSession,
+  consumeWorkosLogin,
+  isNewSession,
+  storeWorkosLogin,
+} from '@/utils/workosSessionStore';
 
 const router = express.Router();
 const outcomes = getCounter('hyperdx.auth.login', {
@@ -44,7 +49,7 @@ export function safeReturnTo(value: unknown): string {
     : '/search';
 }
 
-router.get('/auth/workos', async (req, res, next) => {
+router.get('/auth/workos', async (req, res) => {
   if (!config.WORKOS || !workos) return res.sendStatus(404);
   try {
     const { url, state, codeVerifier } =
@@ -52,39 +57,41 @@ router.get('/auth/workos', async (req, res, next) => {
         provider: 'GoogleOAuth',
         redirectUri: config.WORKOS.redirectUri,
       });
-    req.session.workosLogin = {
+    const login = {
       state,
       codeVerifier,
       expiresAt: Date.now() + 10 * 60 * 1000,
       returnTo: safeReturnTo(req.query.returnTo),
     };
-    await saveSession(req);
-    res.set('Cache-Control', 'no-store').redirect(url);
-  } catch (error) {
-    next(error);
+    if (isNewSession(req)) {
+      req.session.workosLogin = login;
+      await saveNewSession(req);
+    } else if (!(await storeWorkosLogin(req, login))) {
+      return res.status(400).send('Invalid or expired sign-in attempt');
+    }
+    return res.set('Cache-Control', 'no-store').redirect(url);
+  } catch {
+    return res.sendStatus(503);
   }
 });
 
 router.get('/auth/workos/callback', async (req, res) => {
   if (!config.WORKOS || !workos) return res.sendStatus(404);
-  const attempt = req.session.workosLogin;
   try {
     const state = req.query.state;
     if (
-      !attempt ||
       typeof state !== 'string' ||
       !/^[A-Za-z0-9_-]+$/.test(state) ||
-      typeof req.query.code !== 'string' ||
-      attempt.expiresAt <= Date.now() ||
-      state.length !== attempt.state.length ||
-      !timingSafeEqual(Buffer.from(state), Buffer.from(attempt.state))
+      typeof req.query.code !== 'string'
     ) {
       outcomes.add(1, { outcome: 'invalid_state' });
       return res.status(400).send('Invalid or expired sign-in attempt');
     }
-    // Persist consumption before exchanging the single-use, PKCE-bound code.
-    delete req.session.workosLogin;
-    await saveSession(req);
+    const attempt = await consumeWorkosLogin(req, state);
+    if (!attempt) {
+      outcomes.add(1, { outcome: 'invalid_state' });
+      return res.status(400).send('Invalid or expired sign-in attempt');
+    }
     const response = await workos.userManagement.authenticateWithCode({
       code: req.query.code,
       codeVerifier: attempt.codeVerifier,
@@ -101,13 +108,15 @@ router.get('/auth/workos/callback', async (req, res) => {
       response.sealedSession,
     );
     const user = await resolveWorkosUser(identity.userId);
+    if (!(await claimWorkosSession(req)))
+      throw new WorkosAuthenticationError(401, 'invalid_token');
     await new Promise<void>((resolve, reject) =>
       req.session.regenerate(error => (error ? reject(error) : resolve())),
     );
     req.session.workosSession = response.sealedSession;
     req.session.workosSessionId = identity.sessionId;
     req.user = user;
-    await saveSession(req);
+    await saveNewSession(req);
     setBusinessContext({
       teamId: user.team.toString(),
       userId: user._id.toString(),
