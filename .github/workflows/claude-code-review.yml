@@ -64,7 +64,7 @@ jobs:
       # workflow_dispatch runs can checkout forked branches correctly.
       - name: Resolve PR metadata
         id: pr
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           DISPATCH_PR: ${{ inputs.pr_number }}
         with:
@@ -137,7 +137,7 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
-      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
         with:
           working_directory: .trusted
       # Same pattern as pr-triage.yml: the workflow that consumes a script runs its
@@ -212,7 +212,7 @@ jobs:
           fi
 
       - name: Find existing review summary
-        uses: peter-evans/find-comment@v4
+        uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad # v4.0.0
         id: find-comment
         with:
           issue-number: ${{ steps.pr.outputs.number }}
@@ -342,7 +342,7 @@ jobs:
       - name: Run Claude Code Review
         id: claude-review
         if: steps.gate.outputs.should_review == 'true'
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@d70510b174a1244958df0b03166a54912811f3e6 # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_bots: dependabot,dependabot[bot],kodiakhq,kodiakhq[bot],github-actions,github-actions[bot],cursor,cursor[bot],claude,claude[bot]
@@ -478,7 +478,7 @@ jobs:
       - name: Post inline review comments
         id: inline
         if: steps.health.outputs.healthy == 'true'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           # Compared against, never printed. Named canary so a stray log of the env block
           # does not read like the secret itself.
@@ -603,7 +603,7 @@ jobs:
         # !cancelled() rather than always(): on cancel-in-progress the superseding run is
         # already working, and a cancelled run's summary would race its sticky write.
         if: "!cancelled() && steps.gate.outputs.should_review == 'true'"
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const fs = require('fs');
@@ -647,7 +647,7 @@ jobs:
           steps.summary.outputs.body != '' && ((steps.health.outputs.healthy ==
           'true' && steps.inline.outcome == 'success')
            || steps.find-comment.outputs.comment-id == '')
-        uses: peter-evans/create-or-update-comment@v5
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
         with:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           issue-number: ${{ steps.pr.outputs.number }}

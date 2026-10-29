@@ -1164,10 +1164,10 @@ describe('Metadata Integration Tests', () => {
       await timeSeriesCommand(`DROP TABLE IF EXISTS default.${boundedTable}`);
       await timeSeriesCommand(`DROP TABLE IF EXISTS default.${unboundedTable}`);
       await timeSeriesCommand(
-        `CREATE TABLE default.${boundedTable} ENGINE = TimeSeries`,
+        `CREATE TABLE default.${boundedTable} ENGINE = TimeSeries SETTINGS version = 3`,
       );
       await timeSeriesCommand(
-        `CREATE TABLE default.${unboundedTable} ENGINE = TimeSeries SETTINGS store_min_time_and_max_time = 0`,
+        `CREATE TABLE default.${unboundedTable} ENGINE = TimeSeries SETTINGS version = 3, store_min_time_and_max_time = 0`,
       );
     });
 

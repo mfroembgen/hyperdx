@@ -1,10 +1,11 @@
 ## base #############################################################################################
-ARG OTEL_COLLECTOR_VERSION=0.155.0
-ARG OTEL_COLLECTOR_CORE_VERSION=1.61.0
+ARG OTEL_COLLECTOR_VERSION=0.164.0
+ARG OTEL_COLLECTOR_CONTRIB_VERSION=0.164.1
+ARG OTEL_COLLECTOR_CORE_VERSION=1.70.0
 
 FROM otel/opentelemetry-collector-opampsupervisor:${OTEL_COLLECTOR_VERSION} AS supervisor
-FROM hairyhenderson/gomplate:v4.3.3-alpine AS gomplate
-FROM kukymbr/goose-docker@sha256:0cd025636df126e7f66472861ca4db3683bc649be46cd1f6ef1a316209058e23 AS goose
+FROM hairyhenderson/gomplate:v5.3.1-alpine AS gomplate
+FROM kukymbr/goose-docker:3.28.0@sha256:0c6fdb39d4975746127dbfd4b3f4683acf93df987b30b980f877bdac5c6ea1b5 AS goose
 
 # Build the custom HyperDX collector binary using OCB (OpenTelemetry Collector Builder).
 # This replaces the pre-built otel/opentelemetry-collector-contrib image so we can
@@ -13,19 +14,20 @@ FROM kukymbr/goose-docker@sha256:0cd025636df126e7f66472861ca4db3683bc649be46cd1f
 # Note: The official OCB image may ship an older Go than the contrib modules require,
 # so we copy the ocb binary into a golang base with a newer toolchain.
 FROM otel/opentelemetry-collector-builder:${OTEL_COLLECTOR_VERSION} AS ocb-bin
-FROM golang:1.26-alpine AS ocb-builder
+FROM golang:1.27.3-alpine AS ocb-builder
 ARG OTEL_COLLECTOR_VERSION
+ARG OTEL_COLLECTOR_CONTRIB_VERSION
 ARG OTEL_COLLECTOR_CORE_VERSION
 COPY --from=ocb-bin /usr/local/bin/ocb /usr/local/bin/ocb
 WORKDIR /build
 COPY packages/otel-collector/builder-config.yaml .
 RUN --mount=type=cache,target=/go/pkg/mod,id=ocb-gomod \
     --mount=type=cache,target=/root/.cache/go-build,id=ocb-gobuild \
-    sed -i "s/__OTEL_COLLECTOR_VERSION__/${OTEL_COLLECTOR_VERSION}/g; s/__OTEL_COLLECTOR_CORE_VERSION__/${OTEL_COLLECTOR_CORE_VERSION}/g" builder-config.yaml && \
+    sed -i "s/__OTEL_COLLECTOR_VERSION__/${OTEL_COLLECTOR_VERSION}/g; s/__OTEL_COLLECTOR_CORE_VERSION__/${OTEL_COLLECTOR_CORE_VERSION}/g; s/__OTEL_COLLECTOR_CONTRIB_VERSION__/${OTEL_COLLECTOR_CONTRIB_VERSION}/g" builder-config.yaml && \
     CGO_ENABLED=0 ocb --config=builder-config.yaml
 
 # Build the Go migration tool with full TLS support for ClickHouse
-FROM golang:1.26-alpine AS migrate-builder
+FROM golang:1.27.3-alpine AS migrate-builder
 WORKDIR /build
 COPY packages/otel-collector/go.mod packages/otel-collector/go.sum ./
 RUN go mod download
@@ -33,7 +35,7 @@ COPY packages/otel-collector/ ./
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /migrate ./cmd/migrate
 
 # From: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/aa5c3aa4c7ec174361fcaf908de8eaca72263078/cmd/opampsupervisor/Dockerfile#L18
-FROM alpine:3.23@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659 AS base
+FROM alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS base
 
 ARG USER_UID=10001
 ARG USER_GID=10001

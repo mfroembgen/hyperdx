@@ -324,8 +324,10 @@ export const seedTimeSeriesTagsTable = async ({
 
   await dropTimeSeriesTable({ table, database });
   await executeTimeSeriesSqlCommand(
-    `CREATE TABLE ${database}.${table} ENGINE = TimeSeries${
-      storeTimeBounds ? '' : ' SETTINGS store_min_time_and_max_time = 0'
+    // These fixtures exercise the legacy tags-table bounds contract. Newer
+    // TimeSeries versions move the bounds into a separate target table.
+    `CREATE TABLE ${database}.${table} ENGINE = TimeSeries SETTINGS version = 3${
+      storeTimeBounds ? '' : ', store_min_time_and_max_time = 0'
     }`,
   );
 

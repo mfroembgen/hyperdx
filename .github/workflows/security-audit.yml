@@ -10,7 +10,7 @@ jobs:
     if: github.repository == 'hyperdxio/hyperdx'
     runs-on: ubuntu-latest
     steps:
-      - uses: kunalnagarco/action-cve@v1.14.23
+      - uses: kunalnagarco/action-cve@3efd8136c5417629168f6282d51a8295d2e0e54e # v1.17.5
         with:
           org: hyperdxio
           token: ${{ secrets.DEPENDABOT_NOTIF_PAT }}
