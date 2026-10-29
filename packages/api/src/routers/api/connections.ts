@@ -1,6 +1,5 @@
 import { ConnectionSchema } from '@hyperdx/common-utils/dist/types';
 import express from 'express';
-import { validateRequest } from 'zod-express-middleware';
 
 import {
   createConnection,
@@ -10,6 +9,7 @@ import {
   updateConnection,
 } from '@/controllers/connection';
 import { getNonNullUserWithTeam } from '@/middleware/auth';
+import { validateRequest } from '@/middleware/validation';
 
 const router = express.Router();
 

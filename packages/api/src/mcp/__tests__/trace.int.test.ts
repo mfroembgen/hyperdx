@@ -1,4 +1,4 @@
-import { ClickHouseError } from '@clickhouse/client-common';
+import { ClickHouseError } from '@clickhouse/client';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { vi } from 'vitest';

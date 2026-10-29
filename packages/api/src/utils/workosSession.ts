@@ -31,7 +31,7 @@ const webClaims = z.object({
   exp: z.number(),
   iat: z.number(),
   sub_profile: z.literal('user').optional(),
-  sub_type: z.undefined(),
+  sub_type: z.undefined().optional(),
 });
 
 export async function authenticateWorkosSession(req: Request) {

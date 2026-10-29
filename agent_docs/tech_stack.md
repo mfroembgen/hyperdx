@@ -2,7 +2,7 @@
 
 ## Frontend (`packages/app`)
 
-- **Framework**: Vinext 1.3 with Vite 8 and TypeScript
+- **Framework**: Vinext 1.4 with Vite 8 and TypeScript
 - **UI Components**: Mantine UI library (`@mantine/core`, `@mantine/dates`,
   `@mantine/hooks`)
 - **State Management**: Jotai (global client state), TanStack Query (server
@@ -32,13 +32,15 @@ Mantine primitives → Custom SCSS modules as last resort
 
 ## Fork toolchain
 
-`mise.toml` pins Bun; `bun.lock` pins dependencies. tsrs checks every TypeScript
-package and emits API/eval output. TypeScript 6.0.3 remains a compiler API
-library for typed ESLint and declaration bundling because current
-`typescript-eslint` requires TypeScript below 6.1. It is not the CI checker.
-Express 4 and Zod 3 remain at their latest compatible releases because
-`zod-express-middleware` requires those APIs. Upgrade that middleware contract
-before moving these majors.
+`mise.toml` pins Bun and Go; `bun.lock` pins dependencies. tsrs checks every
+TypeScript package and emits API/eval output and common-utils declarations.
+TypeScript 6.0.3 remains a compiler API library for typed ESLint because the
+latest `typescript-eslint` supports TypeScript below 6.1
+([supported versions](https://typescript-eslint.io/users/dependency-versions/)).
+It is not the CI checker. tsrs remains an explicit preview-only toolchain
+exception: its usable releases track the native TypeScript compiler preview.
+Express 5 and Zod 4 use the existing request-validation module, preserving
+parsed query transforms and the API error-issues envelope.
 
 Vitest 5 runs existing unit and integration tests with Istanbul coverage and the
 existing coverage floors. The app keeps its pre-migration ESLint recommendation

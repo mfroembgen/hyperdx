@@ -9,7 +9,7 @@ import {
   DataPointType,
   type ResourceMetrics,
 } from '@opentelemetry/sdk-metrics';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 
 // Capture the SDK's own exporters without adding test-only dependency pins.
 const sdkRequire = createRequire(

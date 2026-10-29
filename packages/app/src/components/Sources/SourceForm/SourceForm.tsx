@@ -373,7 +373,7 @@ export function TableSourceForm({
   ]);
 
   const handleError = useCallback(
-    ({ errors }: z.ZodError<TSource>, eventName: 'create' | 'save') => {
+    ({ issues: errors }: z.ZodError, eventName: 'create' | 'save') => {
       const notificationMsgs: string[] = [];
 
       // eslint-disable-next-line no-console

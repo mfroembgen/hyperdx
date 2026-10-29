@@ -1,5 +1,5 @@
 /**
- * Zod issues as zod-express-middleware reports them: one entry per request
+ * Zod issues as request validation reports them: one entry per request
  * part it rejected, each carrying that part's parse issues.
  */
 type ZodRequestErrors = {
@@ -38,7 +38,7 @@ const hasJsonResponse = (
  *   - `{ message }` — thrown by a route/controller (see the API's error
  *     middleware, which serializes an operational error's name).
  *   - `[{ errors: { issues: [...] } }]` — a schema rejection from
- *     zod-express-middleware, before the handler ran.
+ *     request validation, before the handler ran.
  *
  * Every issue is reported, not just the first: one save can violate two rules,
  * and showing one at a time turns a fix into several round trips.

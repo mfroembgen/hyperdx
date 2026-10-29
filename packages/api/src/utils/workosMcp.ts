@@ -11,7 +11,7 @@ const humanClaims = z.object({
   sid: z.string().min(1),
   client_id: z.string().min(1),
   sub_profile: z.literal('user').optional(),
-  sub_type: z.undefined(),
+  sub_type: z.undefined().optional(),
 });
 let jwks: ReturnType<typeof createRemoteJWKSet> | undefined;
 

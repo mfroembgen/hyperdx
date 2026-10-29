@@ -5,7 +5,6 @@ import {
 import { APICallError, generateText, Output } from 'ai';
 import express from 'express';
 import { z } from 'zod';
-import { validateRequest } from 'zod-express-middleware';
 
 import {
   getAIMetadata,
@@ -14,6 +13,7 @@ import {
 } from '@/controllers/ai';
 import { getSource } from '@/controllers/sources';
 import { getNonNullUserWithTeam } from '@/middleware/auth';
+import { validateRequest } from '@/middleware/validation';
 import { llmTelemetry } from '@/utils/aiTelemetry';
 import { Api404Error, Api500Error } from '@/utils/errors';
 import { withOperationMetrics } from '@/utils/instrumentation';

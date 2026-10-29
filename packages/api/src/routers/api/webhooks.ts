@@ -11,9 +11,9 @@ import { ObjectId } from 'mongodb';
 import mongoose from 'mongoose';
 import ms from 'ms';
 import { z } from 'zod';
-import { validateRequest } from 'zod-express-middleware';
 
 import { createWebhook, deleteWebhook } from '@/controllers/webhook';
+import { validateRequest } from '@/middleware/validation';
 import { AlertSource, AlertState } from '@/models/alert';
 import Webhook, { WebhookService } from '@/models/webhook';
 import {

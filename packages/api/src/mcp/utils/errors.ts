@@ -86,7 +86,7 @@ export function sanitizeFetchError(e: unknown): string {
 
 /** Render a Zod error as one `path: message` line per issue. */
 export function formatZodIssues(error: z.ZodError): string {
-  return error.errors
+  return error.issues
     .map(issue => {
       const path = issue.path
         .map((segment, index) =>
@@ -94,7 +94,7 @@ export function formatZodIssues(error: z.ZodError): string {
             ? `[${segment}]`
             : index === 0
               ? segment
-              : `.${segment}`,
+              : `.${String(segment)}`,
         )
         .join('');
       return path ? `${path}: ${issue.message}` : issue.message;
@@ -103,9 +103,9 @@ export function formatZodIssues(error: z.ZodError): string {
 }
 
 /** Preserve branch details when the MCP SDK renders only top-level issues. */
-export const mcpUnionErrorMap: z.ZodErrorMap = (issue, ctx) => ({
-  message:
-    issue.code === z.ZodIssueCode.invalid_union
-      ? issue.unionErrors.map(formatZodIssues).join('\n')
-      : ctx.defaultError,
-});
+export const mcpUnionErrorMap: z.ZodErrorMap = issue =>
+  issue.code === 'invalid_union'
+    ? issue.errors
+        .map(issues => formatZodIssues(new z.ZodError(issues)))
+        .join('\n')
+    : undefined;
