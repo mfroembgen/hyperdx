@@ -3,6 +3,7 @@ import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import mongoose from 'mongoose';
 import request from 'supertest';
 
+import mcpRouter from '@/mcp/app';
 import {
   isUserAuthenticated,
   validateMcpUser,
@@ -64,6 +65,9 @@ describe('WorkOS identity and MCP boundary', () => {
     res.json({ user: req.user?._id.toString() }),
   );
   app.get('/ui', isUserAuthenticated, (_req, res) => res.sendStatus(200));
+  const transportApp = express();
+  transportApp.use(express.json());
+  transportApp.use('/mcp', mcpRouter);
   const sign = (claims: Record<string, unknown> = {}, key = privateKey) =>
     new SignJWT({
       sub: 'user_member',
@@ -117,6 +121,38 @@ describe('WorkOS identity and MCP boundary', () => {
       workosSubject: 'user_member',
     });
     expect(bind).not.toHaveBeenCalled();
+  });
+
+  it('advertises OAuth discovery to anonymous MCP GET probes', async () => {
+    const res = await request(transportApp).get('/mcp').expect(401);
+    expect(res.headers['www-authenticate']).toBe(
+      `Bearer resource_metadata="${fixture.settings.metadataUrl}", error="invalid_token"`,
+    );
+    expect(find).not.toHaveBeenCalled();
+  });
+
+  it('keeps authenticated MCP GET unsupported and POST initialization available', async () => {
+    const token = await sign();
+    const res = await request(transportApp)
+      .get('/mcp')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(405);
+    expect(res.headers.allow).toBe('POST');
+    await request(transportApp)
+      .post('/mcp')
+      .set('Authorization', `Bearer ${token}`)
+      .set('Accept', 'application/json, text/event-stream')
+      .send({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2025-03-26',
+          capabilities: {},
+          clientInfo: { name: 'test-client', version: '1.0.0' },
+        },
+      })
+      .expect(200);
   });
 
   it.each([

@@ -3,6 +3,13 @@ import request from 'supertest';
 
 import mcpRouter from '@/mcp/app';
 
+vi.mock('@/middleware/auth', async () => ({
+  ...(await vi.importActual<typeof import('@/middleware/auth')>(
+    '@/middleware/auth',
+  )),
+  validateMcpUser: vi.fn((_req, _res, next) => next()),
+}));
+
 // The MCP transport is stateless, so GET (standalone SSE stream) and DELETE
 // (session termination) are not offered and must return 405 so spec-compliant
 // SDK clients continue connecting rather than aborting. See issue #2686.
@@ -10,7 +17,7 @@ describe('mcp app transport methods', () => {
   const app = express();
   app.use('/mcp', mcpRouter);
 
-  it('returns 405 with Allow: POST for GET', async () => {
+  it('returns 405 with Allow: POST for authenticated GET', async () => {
     const res = await request(app).get('/mcp');
     expect(res.status).toBe(405);
     expect(res.headers.allow).toBe('POST');

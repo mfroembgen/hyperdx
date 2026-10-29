@@ -34,7 +34,9 @@ const mcpRateLimiter = rateLimiter({
 const methodNotAllowed = (_req: express.Request, res: express.Response) => {
   res.set('Allow', 'POST').sendStatus(405);
 };
-app.get('/', mcpRateLimiter, methodNotAllowed);
+// Native OAuth login probes GET before it can discover the authorization server.
+// Authenticate first so anonymous probes receive the protected-resource challenge.
+app.get('/', mcpRateLimiter, validateMcpUser, methodNotAllowed);
 app.delete('/', mcpRateLimiter, methodNotAllowed);
 
 app.post('/', mcpRateLimiter, validateMcpUser, async (req, res) => {
