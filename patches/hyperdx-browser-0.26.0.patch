@@ -1,0 +1,1129 @@
+diff --git a/package.json b/package.json
+--- a/package.json
++++ b/package.json
+@@ -43,5 +43,6 @@
+     "ci:unit": "jest --coverage --ci",
+     "prettier": "prettier --config .prettierrc --write .",
+     "test:watch": "jest --watch"
+-  }
++  },
++  "module": "build/esm/index.js"
+ }
+diff --git a/build/esm/index.js b/build/esm/index.js
+new file mode 100644
+--- /dev/null
++++ b/build/esm/index.js
+@@ -0,0 +1,1113 @@
++/*
++ * Apache-2.0. Copyright 2023 DeploySentinel Inc. and The OpenTelemetry Authors.
++ * Unbundled @hyperdx/browser 0.26.0 entry point, generated from:
++ * https://github.com/hyperdxio/hyperdx-js/tree/566fc3bd2749f281670084a473cdc3d1bbba9aeb/packages/browser/src
++ * The package's UMD bundle embeds its recorder dependencies at publication time.
++ * This ESM entry lets the application lockfile select patched rrweb releases.
++ * SDK behavior and public types remain unchanged; see the package LICENSE.
++ * Includes @opentelemetry/api 1.9.1, matching the published SDK bundle.
++ * API source: https://github.com/open-telemetry/opentelemetry-js/tree/api/v1.9.1/api
++ */
++// browser-index.ts
++import Rum from "@hyperdx/otel-web";
++import SessionRecorder from "@hyperdx/otel-web-session-recorder";
++
++// @opentelemetry/api@1.9.1/build/esm/version.js
++var VERSION = "1.9.1";
++
++// @opentelemetry/api@1.9.1/build/esm/internal/semver.js
++var re = /^(\d+)\.(\d+)\.(\d+)(-(.+))?$/;
++function _makeCompatibilityCheck(ownVersion) {
++  const acceptedVersions = new Set([ownVersion]);
++  const rejectedVersions = new Set;
++  const myVersionMatch = ownVersion.match(re);
++  if (!myVersionMatch) {
++    return () => false;
++  }
++  const ownVersionParsed = {
++    major: +myVersionMatch[1],
++    minor: +myVersionMatch[2],
++    patch: +myVersionMatch[3],
++    prerelease: myVersionMatch[4]
++  };
++  if (ownVersionParsed.prerelease != null) {
++    return function isExactmatch(globalVersion) {
++      return globalVersion === ownVersion;
++    };
++  }
++  function _reject(v) {
++    rejectedVersions.add(v);
++    return false;
++  }
++  function _accept(v) {
++    acceptedVersions.add(v);
++    return true;
++  }
++  return function isCompatible(globalVersion) {
++    if (acceptedVersions.has(globalVersion)) {
++      return true;
++    }
++    if (rejectedVersions.has(globalVersion)) {
++      return false;
++    }
++    const globalVersionMatch = globalVersion.match(re);
++    if (!globalVersionMatch) {
++      return _reject(globalVersion);
++    }
++    const globalVersionParsed = {
++      major: +globalVersionMatch[1],
++      minor: +globalVersionMatch[2],
++      patch: +globalVersionMatch[3],
++      prerelease: globalVersionMatch[4]
++    };
++    if (globalVersionParsed.prerelease != null) {
++      return _reject(globalVersion);
++    }
++    if (ownVersionParsed.major !== globalVersionParsed.major) {
++      return _reject(globalVersion);
++    }
++    if (ownVersionParsed.major === 0) {
++      if (ownVersionParsed.minor === globalVersionParsed.minor && ownVersionParsed.patch <= globalVersionParsed.patch) {
++        return _accept(globalVersion);
++      }
++      return _reject(globalVersion);
++    }
++    if (ownVersionParsed.minor <= globalVersionParsed.minor) {
++      return _accept(globalVersion);
++    }
++    return _reject(globalVersion);
++  };
++}
++var isCompatible = _makeCompatibilityCheck(VERSION);
++
++// @opentelemetry/api@1.9.1/build/esm/internal/global-utils.js
++var major = VERSION.split(".")[0];
++var GLOBAL_OPENTELEMETRY_API_KEY = Symbol.for(`opentelemetry.js.api.${major}`);
++var _global = typeof globalThis === "object" ? globalThis : typeof self === "object" ? self : typeof window === "object" ? window : typeof global === "object" ? global : {};
++function registerGlobal(type, instance, diag, allowOverride = false) {
++  var _a;
++  const api = _global[GLOBAL_OPENTELEMETRY_API_KEY] = (_a = _global[GLOBAL_OPENTELEMETRY_API_KEY]) !== null && _a !== undefined ? _a : {
++    version: VERSION
++  };
++  if (!allowOverride && api[type]) {
++    const err = new Error(`@opentelemetry/api: Attempted duplicate registration of API: ${type}`);
++    diag.error(err.stack || err.message);
++    return false;
++  }
++  if (api.version !== VERSION) {
++    const err = new Error(`@opentelemetry/api: Registration of version v${api.version} for ${type} does not match previously registered API v${VERSION}`);
++    diag.error(err.stack || err.message);
++    return false;
++  }
++  api[type] = instance;
++  diag.debug(`@opentelemetry/api: Registered a global for ${type} v${VERSION}.`);
++  return true;
++}
++function getGlobal(type) {
++  var _a, _b;
++  const globalVersion = (_a = _global[GLOBAL_OPENTELEMETRY_API_KEY]) === null || _a === undefined ? undefined : _a.version;
++  if (!globalVersion || !isCompatible(globalVersion)) {
++    return;
++  }
++  return (_b = _global[GLOBAL_OPENTELEMETRY_API_KEY]) === null || _b === undefined ? undefined : _b[type];
++}
++function unregisterGlobal(type, diag) {
++  diag.debug(`@opentelemetry/api: Unregistering a global for ${type} v${VERSION}.`);
++  const api = _global[GLOBAL_OPENTELEMETRY_API_KEY];
++  if (api) {
++    delete api[type];
++  }
++}
++
++// @opentelemetry/api@1.9.1/build/esm/diag/ComponentLogger.js
++class DiagComponentLogger {
++  constructor(props) {
++    this._namespace = props.namespace || "DiagComponentLogger";
++  }
++  debug(...args) {
++    return logProxy("debug", this._namespace, args);
++  }
++  error(...args) {
++    return logProxy("error", this._namespace, args);
++  }
++  info(...args) {
++    return logProxy("info", this._namespace, args);
++  }
++  warn(...args) {
++    return logProxy("warn", this._namespace, args);
++  }
++  verbose(...args) {
++    return logProxy("verbose", this._namespace, args);
++  }
++}
++function logProxy(funcName, namespace, args) {
++  const logger = getGlobal("diag");
++  if (!logger) {
++    return;
++  }
++  return logger[funcName](namespace, ...args);
++}
++
++// @opentelemetry/api@1.9.1/build/esm/diag/types.js
++var DiagLogLevel;
++(function(DiagLogLevel) {
++  DiagLogLevel[DiagLogLevel["NONE"] = 0] = "NONE";
++  DiagLogLevel[DiagLogLevel["ERROR"] = 30] = "ERROR";
++  DiagLogLevel[DiagLogLevel["WARN"] = 50] = "WARN";
++  DiagLogLevel[DiagLogLevel["INFO"] = 60] = "INFO";
++  DiagLogLevel[DiagLogLevel["DEBUG"] = 70] = "DEBUG";
++  DiagLogLevel[DiagLogLevel["VERBOSE"] = 80] = "VERBOSE";
++  DiagLogLevel[DiagLogLevel["ALL"] = 9999] = "ALL";
++})(DiagLogLevel || (DiagLogLevel = {}));
++
++// @opentelemetry/api@1.9.1/build/esm/diag/internal/logLevelLogger.js
++function createLogLevelDiagLogger(maxLevel, logger) {
++  if (maxLevel < DiagLogLevel.NONE) {
++    maxLevel = DiagLogLevel.NONE;
++  } else if (maxLevel > DiagLogLevel.ALL) {
++    maxLevel = DiagLogLevel.ALL;
++  }
++  logger = logger || {};
++  function _filterFunc(funcName, theLevel) {
++    const theFunc = logger[funcName];
++    if (typeof theFunc === "function" && maxLevel >= theLevel) {
++      return theFunc.bind(logger);
++    }
++    return function() {};
++  }
++  return {
++    error: _filterFunc("error", DiagLogLevel.ERROR),
++    warn: _filterFunc("warn", DiagLogLevel.WARN),
++    info: _filterFunc("info", DiagLogLevel.INFO),
++    debug: _filterFunc("debug", DiagLogLevel.DEBUG),
++    verbose: _filterFunc("verbose", DiagLogLevel.VERBOSE)
++  };
++}
++
++// @opentelemetry/api@1.9.1/build/esm/api/diag.js
++var API_NAME = "diag";
++
++class DiagAPI {
++  static instance() {
++    if (!this._instance) {
++      this._instance = new DiagAPI;
++    }
++    return this._instance;
++  }
++  constructor() {
++    function _logProxy(funcName) {
++      return function(...args) {
++        const logger = getGlobal("diag");
++        if (!logger)
++          return;
++        return logger[funcName](...args);
++      };
++    }
++    const self2 = this;
++    const setLogger = (logger, optionsOrLogLevel = { logLevel: DiagLogLevel.INFO }) => {
++      var _a, _b, _c;
++      if (logger === self2) {
++        const err = new Error("Cannot use diag as the logger for itself. Please use a DiagLogger implementation like ConsoleDiagLogger or a custom implementation");
++        self2.error((_a = err.stack) !== null && _a !== undefined ? _a : err.message);
++        return false;
++      }
++      if (typeof optionsOrLogLevel === "number") {
++        optionsOrLogLevel = {
++          logLevel: optionsOrLogLevel
++        };
++      }
++      const oldLogger = getGlobal("diag");
++      const newLogger = createLogLevelDiagLogger((_b = optionsOrLogLevel.logLevel) !== null && _b !== undefined ? _b : DiagLogLevel.INFO, logger);
++      if (oldLogger && !optionsOrLogLevel.suppressOverrideMessage) {
++        const stack = (_c = new Error().stack) !== null && _c !== undefined ? _c : "<failed to generate stacktrace>";
++        oldLogger.warn(`Current logger will be overwritten from ${stack}`);
++        newLogger.warn(`Current logger will overwrite one already registered from ${stack}`);
++      }
++      return registerGlobal("diag", newLogger, self2, true);
++    };
++    self2.setLogger = setLogger;
++    self2.disable = () => {
++      unregisterGlobal(API_NAME, self2);
++    };
++    self2.createComponentLogger = (options) => {
++      return new DiagComponentLogger(options);
++    };
++    self2.verbose = _logProxy("verbose");
++    self2.debug = _logProxy("debug");
++    self2.info = _logProxy("info");
++    self2.warn = _logProxy("warn");
++    self2.error = _logProxy("error");
++  }
++}
++
++// @opentelemetry/api@1.9.1/build/esm/baggage/internal/baggage-impl.js
++class BaggageImpl {
++  constructor(entries) {
++    this._entries = entries ? new Map(entries) : new Map;
++  }
++  getEntry(key) {
++    const entry = this._entries.get(key);
++    if (!entry) {
++      return;
++    }
++    return Object.assign({}, entry);
++  }
++  getAllEntries() {
++    return Array.from(this._entries.entries());
++  }
++  setEntry(key, entry) {
++    const newBaggage = new BaggageImpl(this._entries);
++    newBaggage._entries.set(key, entry);
++    return newBaggage;
++  }
++  removeEntry(key) {
++    const newBaggage = new BaggageImpl(this._entries);
++    newBaggage._entries.delete(key);
++    return newBaggage;
++  }
++  removeEntries(...keys) {
++    const newBaggage = new BaggageImpl(this._entries);
++    for (const key of keys) {
++      newBaggage._entries.delete(key);
++    }
++    return newBaggage;
++  }
++  clear() {
++    return new BaggageImpl;
++  }
++}
++
++// @opentelemetry/api@1.9.1/build/esm/baggage/utils.js
++var diag = DiagAPI.instance();
++function createBaggage(entries = {}) {
++  return new BaggageImpl(new Map(Object.entries(entries)));
++}
++
++// @opentelemetry/api@1.9.1/build/esm/context/context.js
++function createContextKey(description) {
++  return Symbol.for(description);
++}
++
++class BaseContext {
++  constructor(parentContext) {
++    const self2 = this;
++    self2._currentContext = parentContext ? new Map(parentContext) : new Map;
++    self2.getValue = (key) => self2._currentContext.get(key);
++    self2.setValue = (key, value) => {
++      const context = new BaseContext(self2._currentContext);
++      context._currentContext.set(key, value);
++      return context;
++    };
++    self2.deleteValue = (key) => {
++      const context = new BaseContext(self2._currentContext);
++      context._currentContext.delete(key);
++      return context;
++    };
++  }
++}
++var ROOT_CONTEXT = new BaseContext;
++
++// @opentelemetry/api@1.9.1/build/esm/metrics/NoopMeter.js
++class NoopMeter {
++  constructor() {}
++  createGauge(_name, _options) {
++    return NOOP_GAUGE_METRIC;
++  }
++  createHistogram(_name, _options) {
++    return NOOP_HISTOGRAM_METRIC;
++  }
++  createCounter(_name, _options) {
++    return NOOP_COUNTER_METRIC;
++  }
++  createUpDownCounter(_name, _options) {
++    return NOOP_UP_DOWN_COUNTER_METRIC;
++  }
++  createObservableGauge(_name, _options) {
++    return NOOP_OBSERVABLE_GAUGE_METRIC;
++  }
++  createObservableCounter(_name, _options) {
++    return NOOP_OBSERVABLE_COUNTER_METRIC;
++  }
++  createObservableUpDownCounter(_name, _options) {
++    return NOOP_OBSERVABLE_UP_DOWN_COUNTER_METRIC;
++  }
++  addBatchObservableCallback(_callback, _observables) {}
++  removeBatchObservableCallback(_callback) {}
++}
++
++class NoopMetric {
++}
++
++class NoopCounterMetric extends NoopMetric {
++  add(_value, _attributes) {}
++}
++
++class NoopUpDownCounterMetric extends NoopMetric {
++  add(_value, _attributes) {}
++}
++
++class NoopGaugeMetric extends NoopMetric {
++  record(_value, _attributes) {}
++}
++
++class NoopHistogramMetric extends NoopMetric {
++  record(_value, _attributes) {}
++}
++
++class NoopObservableMetric {
++  addCallback(_callback) {}
++  removeCallback(_callback) {}
++}
++
++class NoopObservableCounterMetric extends NoopObservableMetric {
++}
++
++class NoopObservableGaugeMetric extends NoopObservableMetric {
++}
++
++class NoopObservableUpDownCounterMetric extends NoopObservableMetric {
++}
++var NOOP_METER = new NoopMeter;
++var NOOP_COUNTER_METRIC = new NoopCounterMetric;
++var NOOP_GAUGE_METRIC = new NoopGaugeMetric;
++var NOOP_HISTOGRAM_METRIC = new NoopHistogramMetric;
++var NOOP_UP_DOWN_COUNTER_METRIC = new NoopUpDownCounterMetric;
++var NOOP_OBSERVABLE_COUNTER_METRIC = new NoopObservableCounterMetric;
++var NOOP_OBSERVABLE_GAUGE_METRIC = new NoopObservableGaugeMetric;
++var NOOP_OBSERVABLE_UP_DOWN_COUNTER_METRIC = new NoopObservableUpDownCounterMetric;
++
++// @opentelemetry/api@1.9.1/build/esm/propagation/TextMapPropagator.js
++var defaultTextMapGetter = {
++  get(carrier, key) {
++    if (carrier == null) {
++      return;
++    }
++    return carrier[key];
++  },
++  keys(carrier) {
++    if (carrier == null) {
++      return [];
++    }
++    return Object.keys(carrier);
++  }
++};
++var defaultTextMapSetter = {
++  set(carrier, key, value) {
++    if (carrier == null) {
++      return;
++    }
++    carrier[key] = value;
++  }
++};
++
++// @opentelemetry/api@1.9.1/build/esm/context/NoopContextManager.js
++class NoopContextManager {
++  active() {
++    return ROOT_CONTEXT;
++  }
++  with(_context, fn, thisArg, ...args) {
++    return fn.call(thisArg, ...args);
++  }
++  bind(_context, target) {
++    return target;
++  }
++  enable() {
++    return this;
++  }
++  disable() {
++    return this;
++  }
++}
++
++// @opentelemetry/api@1.9.1/build/esm/api/context.js
++var API_NAME2 = "context";
++var NOOP_CONTEXT_MANAGER = new NoopContextManager;
++
++class ContextAPI {
++  constructor() {}
++  static getInstance() {
++    if (!this._instance) {
++      this._instance = new ContextAPI;
++    }
++    return this._instance;
++  }
++  setGlobalContextManager(contextManager) {
++    return registerGlobal(API_NAME2, contextManager, DiagAPI.instance());
++  }
++  active() {
++    return this._getContextManager().active();
++  }
++  with(context, fn, thisArg, ...args) {
++    return this._getContextManager().with(context, fn, thisArg, ...args);
++  }
++  bind(context, target) {
++    return this._getContextManager().bind(context, target);
++  }
++  _getContextManager() {
++    return getGlobal(API_NAME2) || NOOP_CONTEXT_MANAGER;
++  }
++  disable() {
++    this._getContextManager().disable();
++    unregisterGlobal(API_NAME2, DiagAPI.instance());
++  }
++}
++
++// @opentelemetry/api@1.9.1/build/esm/trace/trace_flags.js
++var TraceFlags;
++(function(TraceFlags) {
++  TraceFlags[TraceFlags["NONE"] = 0] = "NONE";
++  TraceFlags[TraceFlags["SAMPLED"] = 1] = "SAMPLED";
++})(TraceFlags || (TraceFlags = {}));
++
++// @opentelemetry/api@1.9.1/build/esm/trace/invalid-span-constants.js
++var INVALID_SPANID = "0000000000000000";
++var INVALID_TRACEID = "00000000000000000000000000000000";
++var INVALID_SPAN_CONTEXT = {
++  traceId: INVALID_TRACEID,
++  spanId: INVALID_SPANID,
++  traceFlags: TraceFlags.NONE
++};
++
++// @opentelemetry/api@1.9.1/build/esm/trace/NonRecordingSpan.js
++class NonRecordingSpan {
++  constructor(spanContext = INVALID_SPAN_CONTEXT) {
++    this._spanContext = spanContext;
++  }
++  spanContext() {
++    return this._spanContext;
++  }
++  setAttribute(_key, _value) {
++    return this;
++  }
++  setAttributes(_attributes) {
++    return this;
++  }
++  addEvent(_name, _attributes) {
++    return this;
++  }
++  addLink(_link) {
++    return this;
++  }
++  addLinks(_links) {
++    return this;
++  }
++  setStatus(_status) {
++    return this;
++  }
++  updateName(_name) {
++    return this;
++  }
++  end(_endTime) {}
++  isRecording() {
++    return false;
++  }
++  recordException(_exception, _time) {}
++}
++
++// @opentelemetry/api@1.9.1/build/esm/trace/context-utils.js
++var SPAN_KEY = createContextKey("OpenTelemetry Context Key SPAN");
++function getSpan(context) {
++  return context.getValue(SPAN_KEY) || undefined;
++}
++function getActiveSpan() {
++  return getSpan(ContextAPI.getInstance().active());
++}
++function setSpan(context, span) {
++  return context.setValue(SPAN_KEY, span);
++}
++function deleteSpan(context) {
++  return context.deleteValue(SPAN_KEY);
++}
++function setSpanContext(context, spanContext) {
++  return setSpan(context, new NonRecordingSpan(spanContext));
++}
++function getSpanContext(context) {
++  var _a;
++  return (_a = getSpan(context)) === null || _a === undefined ? undefined : _a.spanContext();
++}
++
++// @opentelemetry/api@1.9.1/build/esm/trace/spancontext-utils.js
++var isHex = new Uint8Array([
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  1,
++  1,
++  1,
++  1,
++  1,
++  1,
++  1,
++  1,
++  1,
++  1,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  1,
++  1,
++  1,
++  1,
++  1,
++  1,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  0,
++  1,
++  1,
++  1,
++  1,
++  1,
++  1
++]);
++function isValidHex(id, length) {
++  if (typeof id !== "string" || id.length !== length)
++    return false;
++  let r = 0;
++  for (let i = 0;i < id.length; i += 4) {
++    r += (isHex[id.charCodeAt(i)] | 0) + (isHex[id.charCodeAt(i + 1)] | 0) + (isHex[id.charCodeAt(i + 2)] | 0) + (isHex[id.charCodeAt(i + 3)] | 0);
++  }
++  return r === length;
++}
++function isValidTraceId(traceId) {
++  return isValidHex(traceId, 32) && traceId !== INVALID_TRACEID;
++}
++function isValidSpanId(spanId) {
++  return isValidHex(spanId, 16) && spanId !== INVALID_SPANID;
++}
++function isSpanContextValid(spanContext) {
++  return isValidTraceId(spanContext.traceId) && isValidSpanId(spanContext.spanId);
++}
++function wrapSpanContext(spanContext) {
++  return new NonRecordingSpan(spanContext);
++}
++
++// @opentelemetry/api@1.9.1/build/esm/trace/NoopTracer.js
++var contextApi = ContextAPI.getInstance();
++
++class NoopTracer {
++  startSpan(name, options, context = contextApi.active()) {
++    const root = Boolean(options === null || options === undefined ? undefined : options.root);
++    if (root) {
++      return new NonRecordingSpan;
++    }
++    const parentFromContext = context && getSpanContext(context);
++    if (isSpanContext(parentFromContext) && isSpanContextValid(parentFromContext)) {
++      return new NonRecordingSpan(parentFromContext);
++    } else {
++      return new NonRecordingSpan;
++    }
++  }
++  startActiveSpan(name, arg2, arg3, arg4) {
++    let opts;
++    let ctx;
++    let fn;
++    if (arguments.length < 2) {
++      return;
++    } else if (arguments.length === 2) {
++      fn = arg2;
++    } else if (arguments.length === 3) {
++      opts = arg2;
++      fn = arg3;
++    } else {
++      opts = arg2;
++      ctx = arg3;
++      fn = arg4;
++    }
++    const parentContext = ctx !== null && ctx !== undefined ? ctx : contextApi.active();
++    const span = this.startSpan(name, opts, parentContext);
++    const contextWithSpanSet = setSpan(parentContext, span);
++    return contextApi.with(contextWithSpanSet, fn, undefined, span);
++  }
++}
++function isSpanContext(spanContext) {
++  return spanContext !== null && typeof spanContext === "object" && "spanId" in spanContext && typeof spanContext["spanId"] === "string" && "traceId" in spanContext && typeof spanContext["traceId"] === "string" && "traceFlags" in spanContext && typeof spanContext["traceFlags"] === "number";
++}
++
++// @opentelemetry/api@1.9.1/build/esm/trace/ProxyTracer.js
++var NOOP_TRACER = new NoopTracer;
++
++class ProxyTracer {
++  constructor(provider, name, version, options) {
++    this._provider = provider;
++    this.name = name;
++    this.version = version;
++    this.options = options;
++  }
++  startSpan(name, options, context) {
++    return this._getTracer().startSpan(name, options, context);
++  }
++  startActiveSpan(_name, _options, _context, _fn) {
++    const tracer = this._getTracer();
++    return Reflect.apply(tracer.startActiveSpan, tracer, arguments);
++  }
++  _getTracer() {
++    if (this._delegate) {
++      return this._delegate;
++    }
++    const tracer = this._provider.getDelegateTracer(this.name, this.version, this.options);
++    if (!tracer) {
++      return NOOP_TRACER;
++    }
++    this._delegate = tracer;
++    return this._delegate;
++  }
++}
++
++// @opentelemetry/api@1.9.1/build/esm/trace/NoopTracerProvider.js
++class NoopTracerProvider {
++  getTracer(_name, _version, _options) {
++    return new NoopTracer;
++  }
++}
++
++// @opentelemetry/api@1.9.1/build/esm/trace/ProxyTracerProvider.js
++var NOOP_TRACER_PROVIDER = new NoopTracerProvider;
++
++class ProxyTracerProvider {
++  getTracer(name, version, options) {
++    var _a;
++    return (_a = this.getDelegateTracer(name, version, options)) !== null && _a !== undefined ? _a : new ProxyTracer(this, name, version, options);
++  }
++  getDelegate() {
++    var _a;
++    return (_a = this._delegate) !== null && _a !== undefined ? _a : NOOP_TRACER_PROVIDER;
++  }
++  setDelegate(delegate) {
++    this._delegate = delegate;
++  }
++  getDelegateTracer(name, version, options) {
++    var _a;
++    return (_a = this._delegate) === null || _a === undefined ? undefined : _a.getTracer(name, version, options);
++  }
++}
++
++// @opentelemetry/api@1.9.1/build/esm/context-api.js
++var context = ContextAPI.getInstance();
++
++// @opentelemetry/api@1.9.1/build/esm/diag-api.js
++var diag2 = DiagAPI.instance();
++
++// @opentelemetry/api@1.9.1/build/esm/metrics/NoopMeterProvider.js
++class NoopMeterProvider {
++  getMeter(_name, _version, _options) {
++    return NOOP_METER;
++  }
++}
++var NOOP_METER_PROVIDER = new NoopMeterProvider;
++
++// @opentelemetry/api@1.9.1/build/esm/api/metrics.js
++var API_NAME3 = "metrics";
++
++class MetricsAPI {
++  constructor() {}
++  static getInstance() {
++    if (!this._instance) {
++      this._instance = new MetricsAPI;
++    }
++    return this._instance;
++  }
++  setGlobalMeterProvider(provider) {
++    return registerGlobal(API_NAME3, provider, DiagAPI.instance());
++  }
++  getMeterProvider() {
++    return getGlobal(API_NAME3) || NOOP_METER_PROVIDER;
++  }
++  getMeter(name, version, options) {
++    return this.getMeterProvider().getMeter(name, version, options);
++  }
++  disable() {
++    unregisterGlobal(API_NAME3, DiagAPI.instance());
++  }
++}
++
++// @opentelemetry/api@1.9.1/build/esm/metrics-api.js
++var metrics = MetricsAPI.getInstance();
++
++// @opentelemetry/api@1.9.1/build/esm/propagation/NoopTextMapPropagator.js
++class NoopTextMapPropagator {
++  inject(_context, _carrier) {}
++  extract(context, _carrier) {
++    return context;
++  }
++  fields() {
++    return [];
++  }
++}
++
++// @opentelemetry/api@1.9.1/build/esm/baggage/context-helpers.js
++var BAGGAGE_KEY = createContextKey("OpenTelemetry Baggage Key");
++function getBaggage(context) {
++  return context.getValue(BAGGAGE_KEY) || undefined;
++}
++function getActiveBaggage() {
++  return getBaggage(ContextAPI.getInstance().active());
++}
++function setBaggage(context, baggage) {
++  return context.setValue(BAGGAGE_KEY, baggage);
++}
++function deleteBaggage(context) {
++  return context.deleteValue(BAGGAGE_KEY);
++}
++
++// @opentelemetry/api@1.9.1/build/esm/api/propagation.js
++var API_NAME4 = "propagation";
++var NOOP_TEXT_MAP_PROPAGATOR = new NoopTextMapPropagator;
++
++class PropagationAPI {
++  constructor() {
++    this.createBaggage = createBaggage;
++    this.getBaggage = getBaggage;
++    this.getActiveBaggage = getActiveBaggage;
++    this.setBaggage = setBaggage;
++    this.deleteBaggage = deleteBaggage;
++  }
++  static getInstance() {
++    if (!this._instance) {
++      this._instance = new PropagationAPI;
++    }
++    return this._instance;
++  }
++  setGlobalPropagator(propagator) {
++    return registerGlobal(API_NAME4, propagator, DiagAPI.instance());
++  }
++  inject(context, carrier, setter = defaultTextMapSetter) {
++    return this._getGlobalPropagator().inject(context, carrier, setter);
++  }
++  extract(context, carrier, getter = defaultTextMapGetter) {
++    return this._getGlobalPropagator().extract(context, carrier, getter);
++  }
++  fields() {
++    return this._getGlobalPropagator().fields();
++  }
++  disable() {
++    unregisterGlobal(API_NAME4, DiagAPI.instance());
++  }
++  _getGlobalPropagator() {
++    return getGlobal(API_NAME4) || NOOP_TEXT_MAP_PROPAGATOR;
++  }
++}
++
++// @opentelemetry/api@1.9.1/build/esm/propagation-api.js
++var propagation = PropagationAPI.getInstance();
++
++// @opentelemetry/api@1.9.1/build/esm/api/trace.js
++var API_NAME5 = "trace";
++
++class TraceAPI {
++  constructor() {
++    this._proxyTracerProvider = new ProxyTracerProvider;
++    this.wrapSpanContext = wrapSpanContext;
++    this.isSpanContextValid = isSpanContextValid;
++    this.deleteSpan = deleteSpan;
++    this.getSpan = getSpan;
++    this.getActiveSpan = getActiveSpan;
++    this.getSpanContext = getSpanContext;
++    this.setSpan = setSpan;
++    this.setSpanContext = setSpanContext;
++  }
++  static getInstance() {
++    if (!this._instance) {
++      this._instance = new TraceAPI;
++    }
++    return this._instance;
++  }
++  setGlobalTracerProvider(provider) {
++    const success = registerGlobal(API_NAME5, this._proxyTracerProvider, DiagAPI.instance());
++    if (success) {
++      this._proxyTracerProvider.setDelegate(provider);
++    }
++    return success;
++  }
++  getTracerProvider() {
++    return getGlobal(API_NAME5) || this._proxyTracerProvider;
++  }
++  getTracer(name, version) {
++    return this.getTracerProvider().getTracer(name, version);
++  }
++  disable() {
++    unregisterGlobal(API_NAME5, DiagAPI.instance());
++    this._proxyTracerProvider = new ProxyTracerProvider;
++  }
++}
++
++// @opentelemetry/api@1.9.1/build/esm/trace-api.js
++var trace = TraceAPI.getInstance();
++
++// opentelemetry-api/build/esm/index.js
++var esm_default = {
++  context,
++  diag: diag2,
++  metrics,
++  propagation,
++  trace
++};
++
++// browser-utils.ts
++function resolveAsyncGlobal(name) {
++  return new Promise((resolve, reject) => {
++    let retries = 0;
++    const interval = setInterval(() => {
++      if (retries > 20) {
++        clearInterval(interval);
++        reject(new Error(`Global ${name} not found`));
++      }
++      if (window[name]) {
++        clearInterval(interval);
++        resolve(window[name]);
++      }
++      retries++;
++    }, 100);
++  });
++}
++
++// browser-index.ts
++var URL_BASE = "https://in-otel.hyperdx.io";
++var UI_BASE = "https://www.hyperdx.io";
++function hasWindow() {
++  return typeof window !== "undefined";
++}
++
++class Browser {
++  _advancedNetworkCapture = false;
++  init({
++    advancedNetworkCapture = false,
++    apiKey,
++    blockClass,
++    blockSelector,
++    captureConsole,
++    consoleCapture,
++    debug = false,
++    disableIntercom = false,
++    disableReplay = false,
++    ignoreClass,
++    ignoreUrls,
++    instrumentations = {},
++    maskAllInputs = true,
++    maskAllText = false,
++    maskClass,
++    recordCanvas = false,
++    replay,
++    sampling,
++    service,
++    tracePropagationTargets,
++    url,
++    tracesUrl,
++    logsUrl,
++    otelResourceAttributes
++  }) {
++    if (!hasWindow()) {
++      return;
++    }
++    if (apiKey == null) {
++      console.warn("HyperDX: Missing apiKey, telemetry will not be saved.");
++    } else if (apiKey === "") {
++      console.warn("HyperDX: apiKey is empty string, telemetry will not be saved.");
++    } else if (typeof apiKey !== "string") {
++      console.warn("HyperDX: apiKey must be a string, telemetry will not be saved.");
++    }
++    const urlBase = url ?? URL_BASE;
++    const resolvedTracesUrl = tracesUrl ?? `${urlBase}/v1/traces`;
++    const resolvedLogsUrl = logsUrl ?? `${urlBase}/v1/logs`;
++    this._advancedNetworkCapture = advancedNetworkCapture;
++    Rum.init({
++      debug,
++      url: resolvedTracesUrl,
++      allowInsecureUrl: true,
++      apiKey,
++      applicationName: service,
++      ignoreUrls,
++      resourceAttributes: otelResourceAttributes,
++      instrumentations: {
++        visibility: true,
++        console: captureConsole ?? consoleCapture ?? false,
++        fetch: {
++          ...tracePropagationTargets != null ? {
++            propagateTraceHeaderCorsUrls: tracePropagationTargets
++          } : {},
++          advancedNetworkCapture: () => this._advancedNetworkCapture
++        },
++        xhr: {
++          ...tracePropagationTargets != null ? {
++            propagateTraceHeaderCorsUrls: tracePropagationTargets
++          } : {},
++          advancedNetworkCapture: () => this._advancedNetworkCapture
++        },
++        ...instrumentations
++      }
++    });
++    if (disableReplay !== true) {
++      SessionRecorder.init({
++        ...replay,
++        apiKey,
++        blockClass,
++        blockSelector,
++        debug,
++        ignoreClass,
++        maskAllInputs,
++        maskTextClass: maskClass,
++        maskTextSelector: maskAllText ? "*" : undefined,
++        recordCanvas,
++        sampling,
++        url: resolvedLogsUrl
++      });
++    }
++    const tracer = esm_default.trace.getTracer("@hyperdx/browser");
++    if (disableIntercom !== true) {
++      resolveAsyncGlobal("Intercom").then(() => {
++        window.Intercom("onShow", () => {
++          const sessionUrl = this.getSessionUrl();
++          if (sessionUrl != null) {
++            const metadata = {
++              hyperdxSessionUrl: sessionUrl
++            };
++            window.Intercom("update", metadata);
++            window.Intercom("trackEvent", "HyperDX", metadata);
++            const now = Date.now();
++            const span = tracer.startSpan("intercom.onShow", {
++              startTime: now
++            });
++            span.setAttribute("component", "intercom");
++            span.end(now);
++          }
++        });
++      }).catch(() => {});
++    }
++  }
++  stopSessionRecorder() {
++    if (!hasWindow()) {
++      return;
++    }
++    SessionRecorder.stop();
++  }
++  resumeSessionRecorder() {
++    if (!hasWindow()) {
++      return;
++    }
++    SessionRecorder.resume();
++  }
++  addAction(name, attributes) {
++    if (!hasWindow()) {
++      return;
++    }
++    Rum.addAction(name, attributes);
++  }
++  recordException(error, attributes) {
++    if (!hasWindow()) {
++      return;
++    }
++    Rum.recordException(error, attributes);
++  }
++  enableAdvancedNetworkCapture() {
++    this._advancedNetworkCapture = true;
++  }
++  disableAdvancedNetworkCapture() {
++    this._advancedNetworkCapture = false;
++  }
++  setGlobalAttributes(attributes) {
++    if (!hasWindow()) {
++      return;
++    }
++    Rum.setGlobalAttributes(attributes);
++  }
++  getSessionId() {
++    return Rum.getSessionId();
++  }
++  getSessionUrl() {
++    const now = Date.now();
++    const FOUR_HOURS = 1000 * 60 * 60 * 4;
++    const start = now - FOUR_HOURS;
++    const end = now + FOUR_HOURS;
++    return Rum.inited ? `${UI_BASE}/sessions?q=process.tag.rum.sessionId%3A"${Rum.getSessionId()}"&sid=${Rum.getSessionId()}&sfrom=${start}&sto=${end}&ts=${now}` : undefined;
++  }
++  attachToReactErrorBoundary(errorBoundary) {
++    if (!errorBoundary) {
++      return console.warn("Attempted to attach to an ErrorBoundary that does not exist.");
++    }
++    const recordException = this.recordException;
++    const originalComponentDidCatch = errorBoundary.prototype.componentDidCatch;
++    errorBoundary.prototype.componentDidCatch = function(error, errorInfo) {
++      const componentStack = errorInfo?.componentStack;
++      recordException(error, {
++        componentStack
++      });
++      originalComponentDidCatch.call(this, error, errorInfo);
++    };
++  }
++}
++var browser_index_default = new Browser;
++export {
++  browser_index_default as default
++};

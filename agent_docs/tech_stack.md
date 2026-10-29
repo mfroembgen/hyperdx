@@ -68,3 +68,12 @@ commands select their env files explicitly; Vite selects build-mode env files.
 The production start command reads the usual production dotenv files. API
 integration tests overload inherited values with their explicit test env file,
 preserving isolation of the disposable test database.
+
+The browser SDK's npm release embeds its recorder dependencies. The
+`@hyperdx/browser@0.26.0` Bun patch adds an ESM entry generated from the exact
+upstream release source, leaving its UMD entry and public types intact. The ESM
+entry imports the installed RUM and session-recorder packages so `bun.lock`'s
+rrweb 2.2.0 observer and mutation-buffer cleanup fixes reach the browser. It keeps
+the published SDK's OpenTelemetry API 1.9.1 bundled to avoid adding an undeclared
+dependency. The patch records its source revision and license. Remove it when an
+upstream SDK release provides a modular entry or includes the recorder fixes.
