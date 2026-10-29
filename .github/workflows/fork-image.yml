@@ -99,7 +99,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=fork-prod-${{ matrix.arch }}
       - name: Verify shared frontend and native dependencies
         run: |
-          docker run --rm --entrypoint bun \
+          docker run --rm --user 0:0 --entrypoint bun \
             -v "$RUNNER_TEMP/frontend:/frontend:ro" \
             -v "$PWD/scripts/ci/verify-frontend-build.mjs:/verify.mjs:ro" \
             hyperdx-fork:check /verify.mjs /frontend/dist/standalone/dist /app/packages/app/dist /app
@@ -205,7 +205,7 @@ jobs:
         env:
           DIGEST: ${{ steps.image.outputs.digest }}
         run: |
-          docker run --rm --entrypoint bun \
+          docker run --rm --user 0:0 --entrypoint bun \
             -v "$RUNNER_TEMP/frontend:/frontend:ro" \
             -v "$PWD/scripts/ci/verify-frontend-build.mjs:/verify.mjs:ro" \
             "$IMAGE@$DIGEST" /verify.mjs /frontend/dist/standalone/dist /app/packages/app/dist /app
