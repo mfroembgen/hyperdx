@@ -51,6 +51,14 @@ docker compose up -d
 This will start the HyperDX stack and open a port for the UI, API, and OTel
 collector.
 
+The Compose database stays on MongoDB 5.0.32 to preserve existing `.volumes/db`
+data. MongoDB 5 is end of life; plan a separate backed-up database upgrade using
+[MongoDB's supported upgrade paths](https://www.mongodb.com/docs/manual/release-notes/9.0-upgrade-standalone/).
+Do not point MongoDB 9 directly at a MongoDB 5 data directory: upgrade through
+each supported major version and complete its feature compatibility version
+steps before continuing. Development and disposable test stacks use fresh
+MongoDB 9 data directories.
+
 When deploying into production, you'll want to disable any extra ports outside
 of the otel collector and api container. Beware that exposing any port in Docker
 Compose will make it publicly accessible even when using iptable-based firewalls

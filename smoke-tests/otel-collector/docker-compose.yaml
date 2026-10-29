@@ -163,10 +163,10 @@ services:
     networks:
       - internal
 
-  # Older ClickHouse (< 26.2) to test the compatibility schema (bloom filters
-  # instead of full text indexes)
+  # Keep this compatibility fixture on 25.12 (< 26.2) to exercise bloom/tokenbf
+  # schemas instead of full text indexes; the primary fixture tracks stable.
   ch-server-compat:
-    image: clickhouse/clickhouse-server:26.10.2.103-alpine
+    image: clickhouse/clickhouse-server:25.12-alpine
     environment:
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
     volumes:

@@ -15,7 +15,8 @@ services:
   #   depends_on:
   #     - app
   db:
-    image: mongo:9.0.4
+    # Preserve existing data directories; see DEPLOY.md before upgrading MongoDB.
+    image: mongo:5.0.32-focal
     volumes:
       - .volumes/db:/data/db
     # WARNING: Exposing the database port will make it accessible from outside the container,
