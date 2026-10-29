@@ -8,7 +8,10 @@ import {
   resolveWorkosUser,
   WorkosAuthenticationError,
 } from '@/utils/workosIdentity';
-import { authenticateWorkosSession, saveSession } from '@/utils/workosSession';
+import {
+  authenticateSealedWorkosSession,
+  saveSession,
+} from '@/utils/workosSession';
 
 const router = express.Router();
 const outcomes = getCounter('hyperdx.auth.login', {
@@ -94,14 +97,9 @@ router.get('/auth/workos/callback', async (req, res) => {
       throw new WorkosAuthenticationError(401, 'invalid_token');
     // Authenticate the SDK's sealed response and application identity before
     // linking a local account or replacing the browser's session identifier.
-    const previous = req.session.workosSession;
-    req.session.workosSession = response.sealedSession;
-    let identity;
-    try {
-      identity = await authenticateWorkosSession(req);
-    } finally {
-      req.session.workosSession = previous;
-    }
+    const identity = await authenticateSealedWorkosSession(
+      response.sealedSession,
+    );
     const user = await resolveWorkosUser(identity.userId);
     await new Promise<void>((resolve, reject) =>
       req.session.regenerate(error => (error ? reject(error) : resolve())),

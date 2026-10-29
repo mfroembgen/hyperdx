@@ -16,6 +16,32 @@ vi.mock('@/config', async () => ({
   EXPRESS_SESSION_SECRET: 'fixture-shared-secret-at-least-32-characters',
 }));
 
+// Persistence is mocked here; the Mongo integration suite tests atomicity.
+vi.mock('@/utils/workosSessionStore', () => ({
+  replaceStoredWorkosSession: async (
+    req: express.Request,
+    expected: string,
+    replacement: string | undefined,
+  ) => {
+    const stored = await new Promise<session.SessionData | null | undefined>(
+      (resolve, reject) =>
+        req.sessionStore.get(req.sessionID, (error, value) =>
+          error ? reject(error) : resolve(value),
+        ),
+    );
+    if (!stored?.workosSession) return undefined;
+    if (stored.workosSession !== expected) return stored.workosSession;
+    if (replacement === undefined) delete stored.workosSession;
+    else stored.workosSession = replacement;
+    await new Promise<void>((resolve, reject) =>
+      req.sessionStore.set(req.sessionID, stored, error =>
+        error ? reject(error) : resolve(),
+      ),
+    );
+    return replacement;
+  },
+}));
+
 describe('Native WorkOS SDK session verification and rotation', () => {
   let key: CryptoKey;
   let accessToken: string;

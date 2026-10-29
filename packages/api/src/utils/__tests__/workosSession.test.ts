@@ -2,12 +2,17 @@ import express from 'express';
 import session from 'express-session';
 import request from 'supertest';
 
-import { authenticateWorkosSession } from '@/utils/workosSession';
+import {
+  authenticateSealedWorkosSession,
+  authenticateWorkosSession,
+} from '@/utils/workosSession';
+import { replaceStoredWorkosSession } from '@/utils/workosSessionStore';
 
 const fixture = vi.hoisted(() => ({
   authenticate: vi.fn(),
   refresh: vi.fn(),
   verify: vi.fn(),
+  load: vi.fn(),
 }));
 vi.mock('@/config', async () => ({
   ...(await vi.importActual<typeof import('@/config')>('@/config')),
@@ -17,13 +22,38 @@ vi.mock('@/config', async () => ({
 vi.mock('@/utils/workosClient', () => ({
   workos: {
     userManagement: {
-      loadSealedSession: () => ({
-        authenticate: fixture.authenticate,
-        refresh: fixture.refresh,
-      }),
+      loadSealedSession: fixture.load,
       verifyAccessToken: fixture.verify,
     },
   },
+}));
+
+// Persistence is mocked here; the Mongo integration suite tests atomicity.
+vi.mock('@/utils/workosSessionStore', () => ({
+  replaceStoredWorkosSession: vi.fn(
+    async (
+      req: express.Request,
+      expected: string,
+      replacement: string | undefined,
+    ) => {
+      const stored = await new Promise<session.SessionData | null | undefined>(
+        (resolve, reject) =>
+          req.sessionStore.get(req.sessionID, (error, value) =>
+            error ? reject(error) : resolve(value),
+          ),
+      );
+      if (!stored?.workosSession) return undefined;
+      if (stored.workosSession !== expected) return stored.workosSession;
+      if (replacement === undefined) delete stored.workosSession;
+      else stored.workosSession = replacement;
+      await new Promise<void>((resolve, reject) =>
+        req.sessionStore.set(req.sessionID, stored, error =>
+          error ? reject(error) : resolve(),
+        ),
+      );
+      return replacement;
+    },
+  ),
 }));
 
 describe('WorkOS sealed server session', () => {
@@ -68,6 +98,10 @@ describe('WorkOS sealed server session', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     store.clear();
+    fixture.load.mockReturnValue({
+      authenticate: fixture.authenticate,
+      refresh: fixture.refresh,
+    });
     fixture.authenticate.mockResolvedValue(auth);
     fixture.verify.mockResolvedValue({
       sub: 'user_example',
@@ -91,7 +125,7 @@ describe('WorkOS sealed server session', () => {
       sealedSession: 'rotated-sealed-session',
     });
     const refreshed = await agent.get('/protected').expect(200);
-    expect(refreshed.body.sealed).toBe('rotated-sealed-session');
+    expect(refreshed.body.sealed).toBe('old-sealed-session');
     const another = await request(replica())
       .get('/protected')
       .set('Cookie', cookie)
@@ -146,5 +180,71 @@ describe('WorkOS sealed server session', () => {
       iat: 1,
     });
     await agent.get('/protected').expect(401);
+  });
+
+  it.each([
+    { client_id: 'client_other' },
+    { sub: 'user_other' },
+    { sid: 'session_other' },
+    { sub_profile: 'service' },
+    { sub_type: 'machine' },
+  ])(
+    'fully verifies a winning replica seal with claims %j',
+    async overrides => {
+      const agent = request.agent(app);
+      await agent.post('/seed').expect(200);
+      fixture.authenticate.mockResolvedValueOnce({
+        authenticated: false,
+        reason: 'invalid_jwt',
+      });
+      fixture.refresh.mockResolvedValueOnce({
+        authenticated: false,
+        retryable: false,
+        reason: 'invalid_grant',
+      });
+      vi.mocked(replaceStoredWorkosSession).mockResolvedValueOnce(
+        'winning-seal',
+      );
+      fixture.verify.mockResolvedValueOnce({
+        sub: 'user_example',
+        sid: 'session_example',
+        client_id: 'client_app',
+        exp: 123,
+        iat: 1,
+        ...overrides,
+      });
+      await agent.get('/protected').expect(401);
+      expect(fixture.verify).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('bounds repeated canonical refresh conflicts', async () => {
+    const agent = request.agent(app);
+    await agent.post('/seed').expect(200);
+    fixture.authenticate.mockResolvedValue({
+      authenticated: false,
+      reason: 'invalid_jwt',
+    });
+    fixture.refresh.mockResolvedValue({
+      authenticated: false,
+      retryable: false,
+      reason: 'invalid_grant',
+    });
+    vi.mocked(replaceStoredWorkosSession).mockResolvedValue('another-seal');
+    await agent.get('/protected').expect(503);
+    expect(fixture.refresh).toHaveBeenCalledTimes(3);
+    expect(replaceStoredWorkosSession).toHaveBeenCalledTimes(3);
+  });
+
+  it('validates provisional login seals without refresh or canonical fallback', async () => {
+    fixture.authenticate.mockResolvedValue({
+      authenticated: false,
+      reason: 'invalid_jwt',
+    });
+    await expect(
+      authenticateSealedWorkosSession('invalid-new-login'),
+    ).rejects.toMatchObject({ status: 401 });
+    expect(fixture.refresh).not.toHaveBeenCalled();
+    expect(replaceStoredWorkosSession).not.toHaveBeenCalled();
   });
 });

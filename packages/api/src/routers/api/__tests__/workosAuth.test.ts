@@ -13,6 +13,7 @@ const fixture = vi.hoisted(() => ({
   authenticate: vi.fn(),
   resolve: vi.fn(),
   logout: vi.fn(),
+  load: vi.fn(),
 }));
 vi.mock('@/config', async () => ({
   ...(await vi.importActual<typeof import('@/config')>('@/config')),
@@ -30,6 +31,7 @@ vi.mock('@/utils/workosClient', () => ({
       getAuthorizationUrlWithPKCE: fixture.authorize,
       authenticateWithCode: fixture.exchange,
       getLogoutUrl: fixture.logout,
+      loadSealedSession: fixture.load,
     },
   },
 }));
@@ -43,7 +45,7 @@ vi.mock('@/utils/workosSession', async () => ({
   ...(await vi.importActual<typeof import('@/utils/workosSession')>(
     '@/utils/workosSession',
   )),
-  authenticateWorkosSession: fixture.authenticate,
+  authenticateSealedWorkosSession: fixture.authenticate,
 }));
 
 describe('WorkOS browser login and logout', () => {
@@ -57,6 +59,13 @@ describe('WorkOS browser login and logout', () => {
   );
   app.use(workosAuthRouter);
   app.post('/logout', logoutWorkos);
+  app.post('/seed-old-login', (req, res) => {
+    req.session.workosSession = 'existing-valid-login';
+    res.sendStatus(200);
+  });
+  app.get('/session-seal', (req, res) =>
+    res.json({ seal: req.session.workosSession }),
+  );
   beforeEach(() => {
     vi.resetAllMocks();
     fixture.authorize.mockResolvedValue({
@@ -113,6 +122,7 @@ describe('WorkOS browser login and logout', () => {
     expect(callback.headers['set-cookie'][0].split(';')[0]).not.toBe(
       originalCookie,
     );
+    expect(fixture.authenticate).toHaveBeenCalledWith('fixture-sealed-session');
     expect(fixture.exchange).toHaveBeenCalledWith(
       expect.objectContaining({
         code: 'fixture-code',
@@ -127,6 +137,36 @@ describe('WorkOS browser login and logout', () => {
       .set('Cookie', originalCookie)
       .expect(400);
     expect(fixture.exchange).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects an invalid new code-exchange seal even with an existing login', async () => {
+    const { authenticateSealedWorkosSession } = await vi.importActual<
+      typeof import('@/utils/workosSession')
+    >('@/utils/workosSession');
+    fixture.authenticate.mockImplementation(authenticateSealedWorkosSession);
+    fixture.exchange.mockResolvedValue({ sealedSession: 'invalid-new-login' });
+    fixture.load.mockReturnValue({
+      authenticate: async () => ({
+        authenticated: false,
+        reason: 'invalid_jwt',
+      }),
+    });
+    const agent = request.agent(app);
+    await agent.post('/seed-old-login').expect(200);
+    await agent.get('/auth/workos').expect(302);
+    const denied = await agent
+      .get('/auth/workos/callback?state=fixture-state&code=fixture-code')
+      .expect(303);
+    expect(denied.headers.location).toBe(
+      'https://app.example.com/login?err=workosDenied',
+    );
+    expect(fixture.load).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ sessionData: 'invalid-new-login' }),
+    );
+    expect(fixture.resolve).not.toHaveBeenCalled();
+    expect((await agent.get('/session-seal').expect(200)).body.seal).toBe(
+      'existing-valid-login',
+    );
   });
 
   it('rejects mismatched, expired and unbound state before the code exchange', async () => {

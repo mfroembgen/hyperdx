@@ -5,6 +5,7 @@ import * as config from '@/config';
 
 import { workos } from './workosClient';
 import { WorkosAuthenticationError } from './workosIdentity';
+import { replaceStoredWorkosSession } from './workosSessionStore';
 
 declare module 'express-session' {
   interface SessionData {
@@ -34,46 +35,92 @@ const webClaims = z.object({
   sub_type: z.undefined().optional(),
 });
 
-export async function authenticateWorkosSession(req: Request) {
-  if (!config.WORKOS || !workos || !req.session?.workosSession) {
+function loadSession(sealedSession: string) {
+  if (!config.WORKOS || !workos)
+    throw new WorkosAuthenticationError(401, 'invalid_token');
+  return workos.userManagement.loadSealedSession({
+    sessionData: sealedSession,
+    cookiePassword: config.EXPRESS_SESSION_SECRET,
+  });
+}
+
+async function verifyIdentity(
+  accessToken: string,
+  userId: string,
+  sessionId: string,
+) {
+  if (!config.WORKOS || !workos)
+    throw new WorkosAuthenticationError(401, 'invalid_token');
+  const claims = webClaims.safeParse(
+    await workos.userManagement.verifyAccessToken(accessToken),
+  );
+  if (
+    !claims.success ||
+    claims.data.client_id !== config.WORKOS.clientId ||
+    claims.data.sub !== userId ||
+    claims.data.sid !== sessionId
+  ) {
     throw new WorkosAuthenticationError(401, 'invalid_token');
   }
+  return { userId: claims.data.sub, sessionId };
+}
+
+async function verifySession(session: ReturnType<typeof loadSession>) {
+  const result = await session.authenticate();
+  if (!result.authenticated)
+    throw new WorkosAuthenticationError(401, 'invalid_token');
+  return verifyIdentity(result.accessToken, result.user.id, result.sessionId);
+}
+
+/** Validate a provisional login without reading or changing a browser session. */
+export async function authenticateSealedWorkosSession(sealedSession: string) {
   try {
-    const session = workos.userManagement.loadSealedSession({
-      sessionData: req.session.workosSession,
-      cookiePassword: config.EXPRESS_SESSION_SECRET,
-    });
-    let result = await session.authenticate();
-    if (!result.authenticated) {
-      if (result.reason !== 'invalid_jwt') {
+    return await verifySession(loadSession(sealedSession));
+  } catch (error) {
+    if (error instanceof WorkosAuthenticationError) throw error;
+    throw new WorkosAuthenticationError(503, 'upstream_unavailable');
+  }
+}
+
+export async function authenticateWorkosSession(req: Request) {
+  let sealedSession = req.session?.workosSession;
+  if (!sealedSession) throw new WorkosAuthenticationError(401, 'invalid_token');
+  try {
+    // Never mutate or reload req.session: Express would save its stale payload
+    // at response end, overwriting a competing refresh or resurrecting logout.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const session = loadSession(sealedSession);
+      const result = await session.authenticate();
+      if (result.authenticated)
+        return await verifyIdentity(
+          result.accessToken,
+          result.user.id,
+          result.sessionId,
+        );
+      if (result.reason !== 'invalid_jwt')
         throw new WorkosAuthenticationError(401, 'invalid_token');
-      }
       const refreshed = await session.refresh();
-      if (!refreshed.authenticated) {
-        if (refreshed.retryable)
-          throw new WorkosAuthenticationError(503, 'upstream_unavailable');
-        delete req.session.workosSession;
-        await saveSession(req);
-        throw new WorkosAuthenticationError(401, 'invalid_token');
-      }
-      req.session.workosSession = refreshed.sealedSession;
-      await saveSession(req);
-      result = await session.authenticate();
+      if (!refreshed.authenticated && refreshed.retryable)
+        throw new WorkosAuthenticationError(503, 'upstream_unavailable');
+      // refresh updates the SDK's own state. Verify it before persisting a seal.
+      const identity = refreshed.authenticated
+        ? await verifySession(session)
+        : undefined;
+      const replacement = refreshed.authenticated
+        ? refreshed.sealedSession
+        : undefined;
+      const canonical = await replaceStoredWorkosSession(
+        req,
+        sealedSession,
+        replacement,
+      );
+      if (!canonical) throw new WorkosAuthenticationError(401, 'invalid_token');
+      if (canonical === replacement && identity) return identity;
+      // Another replica won. Authenticate its complete identity, never reuse
+      // claims or a successful refresh result from the losing request.
+      sealedSession = canonical;
     }
-    if (!result.authenticated)
-      throw new WorkosAuthenticationError(401, 'invalid_token');
-    const claims = webClaims.safeParse(
-      await workos.userManagement.verifyAccessToken(result.accessToken),
-    );
-    if (
-      !claims.success ||
-      claims.data.client_id !== config.WORKOS.clientId ||
-      claims.data.sub !== result.user.id ||
-      claims.data.sid !== result.sessionId
-    ) {
-      throw new WorkosAuthenticationError(401, 'invalid_token');
-    }
-    return { userId: claims.data.sub, sessionId: result.sessionId };
+    throw new WorkosAuthenticationError(503, 'upstream_unavailable');
   } catch (error) {
     if (error instanceof WorkosAuthenticationError) throw error;
     throw new WorkosAuthenticationError(503, 'upstream_unavailable');
