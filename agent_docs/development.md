@@ -36,9 +36,13 @@ bun run dev        # or equivalently: make dev
   MongoDB, and the OTel Collector. The macOS helper uses a 4 CPU, 8 GB builder
   for OCB and TypeScript declaration builds; changing its resources recreates
   the build cache.
-- MongoDB development and test fixtures use MongoDB 9. Do not attach older
-  MongoDB data volumes directly: use fresh disposable test data or follow
-  MongoDB's supported sequential major-version upgrade procedure first.
+- MongoDB development and test fixtures use MongoDB 9. Development uses
+  `.volumes/db_dev_mongo9_<slot>` and starts with fresh metadata, including
+  users, dashboards and saved searches. The old `.volumes/db_dev_<slot>`
+  directory is retained unchanged. To keep its metadata, follow
+  [MongoDB's supported sequential upgrades](https://www.mongodb.com/docs/manual/release-notes/9.0-upgrade-standalone/),
+  including each version's feature compatibility steps, before using it with
+  MongoDB 9. Never attach an older MongoDB data directory directly.
 - Hot reload enabled for all services in development
 
 ## Worktree Isolation (Multi-Agent / Multi-Developer)
