@@ -30,7 +30,9 @@ export async function verifyFrontendBuild(expected, actual) {
           .digest('hex'),
       );
     }
-    assert.ok(result.has('BUILD_ID'), 'frontend BUILD_ID is required');
+    for (const name of ['server/BUILD_ID', 'server/RSC_BUILD_ID']) {
+      assert.ok(result.has(name), `frontend ${name} is required`);
+    }
     return result;
   }
   const [source, image] = await Promise.all([

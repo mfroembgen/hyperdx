@@ -14,7 +14,9 @@ test('accepts one shared build while allowing runtime configuration to differ', 
   t.after(() => rm(root, { recursive: true, force: true }));
   for (const name of ['expected', 'actual']) {
     await mkdir(join(root, name, 'client'), { recursive: true });
-    await writeFile(join(root, name, 'BUILD_ID'), 'same-build');
+    await mkdir(join(root, name, 'server'), { recursive: true });
+    await writeFile(join(root, name, 'server/BUILD_ID'), 'same-build');
+    await writeFile(join(root, name, 'server/RSC_BUILD_ID'), 'same-rsc-build');
     await writeFile(join(root, name, 'client/app.js'), 'same bundle');
     await writeFile(join(root, name, 'client/__ENV.js'), name);
   }
@@ -25,8 +27,9 @@ test('rejects the same-index images when their frontend build differs', async t 
   const root = await mkdtemp(join(tmpdir(), 'frontend-build-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   for (const name of ['expected', 'actual']) {
-    await mkdir(join(root, name), { recursive: true });
-    await writeFile(join(root, name, 'BUILD_ID'), name);
+    await mkdir(join(root, name, 'server'), { recursive: true });
+    await writeFile(join(root, name, 'server/BUILD_ID'), name);
+    await writeFile(join(root, name, 'server/RSC_BUILD_ID'), 'same-rsc-build');
   }
   await assert.rejects(
     verifyFrontendBuild(join(root, 'expected'), join(root, 'actual')),
