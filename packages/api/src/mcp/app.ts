@@ -3,7 +3,7 @@ import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import express from 'express';
 
-import { validateUserAccessKey } from '@/middleware/auth';
+import { validateMcpUser } from '@/middleware/auth';
 import logger from '@/utils/logger';
 import rateLimiter, { rateLimiterKeyGenerator } from '@/utils/rateLimiter';
 
@@ -34,10 +34,12 @@ const mcpRateLimiter = rateLimiter({
 const methodNotAllowed = (_req: express.Request, res: express.Response) => {
   res.set('Allow', 'POST').sendStatus(405);
 };
-app.get('/', mcpRateLimiter, methodNotAllowed);
+// Native OAuth login probes GET before it can discover the authorization server.
+// Authenticate first so anonymous probes receive the protected-resource challenge.
+app.get('/', mcpRateLimiter, validateMcpUser, methodNotAllowed);
 app.delete('/', mcpRateLimiter, methodNotAllowed);
 
-app.post('/', mcpRateLimiter, validateUserAccessKey, async (req, res) => {
+app.post('/', mcpRateLimiter, validateMcpUser, async (req, res) => {
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined, // stateless
   });

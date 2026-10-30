@@ -10,11 +10,13 @@ jest.mock('@/api', () => ({
   __esModule: true,
   default: {
     useMe: jest.fn(),
+    useInstallation: jest.fn(),
   },
   hdxServer: jest.fn(),
 }));
 
 const mockUseMe = jest.mocked(api.useMe);
+const mockUseInstallation = jest.mocked(api.useInstallation);
 
 function setMe(accessKey: string | null, isLoading = false) {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
@@ -50,6 +52,26 @@ describe('McpServerSection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setMe('k_test');
+    mockUseInstallation.mockReturnValue({
+      data: { isTeamExisting: true, workosEnabled: false },
+      isLoading: false,
+    } as ReturnType<typeof api.useInstallation>);
+  });
+
+  it('connects OAuth clients without distributing the personal access key', () => {
+    mockUseInstallation.mockReturnValue({
+      data: { isTeamExisting: true, workosEnabled: true },
+      isLoading: false,
+    } as ReturnType<typeof api.useInstallation>);
+
+    renderSection();
+
+    expect(screen.getByText(/codex mcp login clickstack/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/claude mcp add --transport http clickstack/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Authorization|bearer-token-env-var/)).toBeNull();
+    expect(screen.queryByText(/k_test/)).toBeNull();
   });
 
   it('renders the section header and the install panel', () => {
@@ -174,11 +196,6 @@ describe('McpServerSection', () => {
     renderSection();
 
     await user.click(screen.getByText('Cursor'));
-    // The fallback JSON lives inside Mantine's `<Collapse>`, which
-    // keeps the child mounted and animates max-height + visibility
-    // for the open transition. JSDOM does not run CSS transitions,
-    // so the canonical "is the user seeing it" canary is the toggle
-    // label: it flips synchronously with React state.
     expect(screen.getByText(/^Manual setup$/i)).toBeInTheDocument();
     expect(screen.queryByText(/^Hide manual setup$/i)).not.toBeInTheDocument();
     expect(screen.getByText(/"mcpServers":/)).not.toBeVisible();

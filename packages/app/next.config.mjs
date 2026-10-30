@@ -153,6 +153,20 @@ const nextConfig = {
     }
     return config;
   },
+  async rewrites() {
+    if (process.env.NEXT_PUBLIC_CLICKHOUSE_BUILD) return [];
+    // URL-only OAuth clients discover these before receiving an MCP challenge.
+    return [
+      {
+        source: '/.well-known/oauth-protected-resource/api/mcp',
+        destination: '/api/.well-known/oauth-protected-resource/mcp',
+      },
+      {
+        source: '/.well-known/oauth-protected-resource',
+        destination: '/api/.well-known/oauth-protected-resource/mcp',
+      },
+    ];
+  },
   async headers() {
     return [
       {

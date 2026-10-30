@@ -101,6 +101,41 @@ describe('clickhouse-proxy forwarding', () => {
     expect(captured[0].headers['x-clickhouse-user']).toBe('default');
   });
 
+  it('keeps browser and OAuth credentials out of upstream requests', async () => {
+    const { agent, team } = await getLoggedInAgent(server);
+    const connection = await Connection.create({
+      team: team._id,
+      name: 'Credential boundary',
+      host: upstreamUrl,
+      username: 'database-user',
+      password: 'database-password',
+    });
+    const credentials = {
+      authorization: 'Bearer browser-oauth-token',
+      'proxy-authorization': 'Basic browser-proxy-credential',
+      'x-hyperdx-api-key': 'hyperdx-personal-key',
+      cookie: 'connect.sid=browser-session-fixture',
+    };
+    const sql = 'SELECT 1 FORMAT JSON';
+
+    await agent
+      .post('/clickhouse-proxy/?query_id=credential-boundary')
+      .set('x-hyperdx-connection-id', connection._id.toString())
+      .set(credentials)
+      .set('Content-Type', 'text/plain')
+      .send(sql)
+      .expect(200);
+
+    expect(captured).toHaveLength(1);
+    for (const name of Object.keys(credentials)) {
+      expect(captured[0].headers).not.toHaveProperty(name);
+    }
+    expect(captured[0].headers['x-clickhouse-user']).toBe('database-user');
+    expect(captured[0].headers['x-clickhouse-key']).toBe('database-password');
+    expect(captured[0].body.toString()).toBe(sql);
+    expect(captured[0].url).toBe('/?query_id=credential-boundary');
+  });
+
   it.each(['application/json', 'application/json; charset=utf-8'])(
     'preserves %s bytes and Content-Length',
     async contentType => {
