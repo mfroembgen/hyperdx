@@ -168,15 +168,16 @@ export const AppNavUserMenu = ({
         {logoutUrl && (
           <>
             <Menu.Divider />
-            <Menu.Item
-              data-testid="logout-menu-item"
-              color="red"
-              leftSection={<IconLogout size={16} />}
-              component={Link}
-              href={logoutUrl}
-            >
-              Logout
-            </Menu.Item>
+            <form action={logoutUrl} method="post">
+              <Menu.Item
+                data-testid="logout-menu-item"
+                color="red"
+                leftSection={<IconLogout size={16} />}
+                type="submit"
+              >
+                Logout
+              </Menu.Item>
+            </form>
           </>
         )}
       </Menu.Dropdown>

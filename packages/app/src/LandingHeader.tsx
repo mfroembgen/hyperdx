@@ -83,6 +83,7 @@ export default function LandingHeader({
               )}
               {!isLoggedIn &&
                 activeKey !== '/register' &&
+                !installation?.workosEnabled &&
                 installation?.isTeamExisting === false && (
                   <Link href="/register">
                     <Button variant="primary" size="sm">
@@ -128,6 +129,7 @@ export default function LandingHeader({
               )}
               {!isLoggedIn &&
                 activeKey !== '/register' &&
+                !installation?.workosEnabled &&
                 installation?.isTeamExisting === false && (
                   <Link href="/register">
                     <Button variant="primary" size="sm" fullWidth>
