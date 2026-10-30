@@ -71,6 +71,7 @@ router.get('/auth/workos', async (req, res) => {
     }
     return res.set('Cache-Control', 'no-store').redirect(url);
   } catch {
+    outcomes.add(1, { outcome: 'init_failed' });
     return res.sendStatus(503);
   }
 });
