@@ -37,7 +37,11 @@ export const ErrorBoundary = ({
         >
           {(showErrorMessage || showRetry) && (
             <Stack align="flex-start" gap="xs">
-              {showErrorMessage && <Text size="xs">{error.message}</Text>}
+              {showErrorMessage && (
+                <Text size="xs">
+                  {error instanceof Error ? error.message : String(error)}
+                </Text>
+              )}
               {showRetry && (
                 <Button
                   onClick={onRetry || resetErrorBoundary}

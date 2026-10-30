@@ -15,7 +15,7 @@ export default [
       'coverage/**',
       '**/*.config.mjs',
       '**/*.config.js',
-      'jest.config.js',
+      'vitest.config.ts',
       'scripts/viewer/**',
     ],
   },

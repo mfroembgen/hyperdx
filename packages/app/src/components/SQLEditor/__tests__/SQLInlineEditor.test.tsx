@@ -1,13 +1,14 @@
+import { vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import { fireEvent, render } from '@testing-library/react';
 
 import SQLInlineEditor from '@/components/SQLEditor/SQLInlineEditor';
 
-jest.mock('@/hooks/useMetadata', () => ({
-  useMultipleAllFields: jest.fn().mockReturnValue({ data: [] }),
+vi.mock('@/hooks/useMetadata', () => ({
+  useMultipleAllFields: vi.fn().mockReturnValue({ data: [] }),
 }));
-jest.mock('@/source', () => ({
-  useSource: jest.fn().mockReturnValue({ data: undefined }),
+vi.mock('@/source', () => ({
+  useSource: vi.fn().mockReturnValue({ data: undefined }),
 }));
 
 const noop = () => {};
@@ -18,8 +19,8 @@ const countCssRules = () =>
 
 describe('SQLInlineEditor', () => {
   it('submits with the latest onSubmit without reconfiguring the editor', () => {
-    const first = jest.fn();
-    const second = jest.fn();
+    const first = vi.fn();
+    const second = vi.fn();
     const editor = (onSubmit: () => void) => (
       <SQLInlineEditor
         tableConnection={connection}

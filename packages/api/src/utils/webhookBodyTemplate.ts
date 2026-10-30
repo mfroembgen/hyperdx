@@ -29,9 +29,7 @@ export const WEBHOOK_BODY_HELPERS = new Set([
 ]);
 
 type HelperCall =
-  | hbs.AST.MustacheStatement
-  | hbs.AST.BlockStatement
-  | hbs.AST.SubExpression;
+  hbs.AST.MustacheStatement | hbs.AST.BlockStatement | hbs.AST.SubExpression;
 
 const toError = (
   message: string,

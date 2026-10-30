@@ -1,18 +1,19 @@
+import { type Mock, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 
 import { SourceFrame, Tab } from '@/components/DBRowSidePanel.types';
 
 // In-memory nuqs so each side-panel param can be seeded and its setter
 // inspected. Values are the already-parsed shapes the hook consumes (arrays /
-// strings), not URL strings. Prefixed `mock` so jest.mock's factory can use it.
+// strings), not URL strings. Prefixed `mock` so vi.mock's factory can use it.
 const mockQueryStore: Record<string, unknown> = {};
-const mockSetters: Record<string, jest.Mock> = {};
+const mockSetters: Record<string, Mock> = {};
 
 function seedParam(key: string, value: unknown) {
   mockQueryStore[key] = value;
 }
 function setterFor(key: string) {
-  if (!mockSetters[key]) mockSetters[key] = jest.fn();
+  if (!mockSetters[key]) mockSetters[key] = vi.fn();
   return mockSetters[key];
 }
 function resetQueryState() {
@@ -20,8 +21,10 @@ function resetQueryState() {
   Object.keys(mockSetters).forEach(k => delete mockSetters[k]);
 }
 
-jest.mock('nuqs', () => {
-  const actual = jest.requireActual('nuqs');
+vi.mock('nuqs', async () => {
+  const actualModule0 = await vi.importActual<typeof import('nuqs')>('nuqs');
+
+  const actual = actualModule0;
   return {
     ...actual,
 
@@ -33,7 +36,7 @@ jest.mock('nuqs', () => {
       const fallback =
         parser && 'defaultValue' in parser ? parser.defaultValue : null;
       const value = hasValue ? mockQueryStore[key] : (fallback ?? null);
-      if (!mockSetters[key]) mockSetters[key] = jest.fn();
+      if (!mockSetters[key]) mockSetters[key] = vi.fn();
       return [value, mockSetters[key]];
     },
   };
@@ -384,7 +387,9 @@ describe('useSidePanelStack', () => {
       return raw == null ? null : JSON.parse(raw);
     }
 
-    beforeEach(() => localStorage.clear());
+    beforeEach(() => {
+      localStorage.clear();
+    });
 
     it('setTab remembers the tab for the next open', () => {
       const { result } = renderHook(() =>

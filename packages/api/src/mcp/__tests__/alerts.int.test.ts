@@ -1,3 +1,5 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
+import { AlertThresholdType } from '@hyperdx/common-utils/dist/types';
 import {
   MAX_ALERT_CHANNELS,
   SourceKind,
@@ -49,7 +51,7 @@ describe('MCP Alert Tools', () => {
     });
 
     traceSource = await Source.create({
-      kind: SourceKind.Trace,
+      kind: SourceKind.Trace as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -95,7 +97,7 @@ describe('MCP Alert Tools', () => {
           id: 'tile-1',
           config: {
             name: 'Error Count',
-            displayType: 'number',
+            displayType: DisplayType.Number,
             source: traceSource._id.toString(),
             series: [{ type: 'time', aggFn: 'count' }],
           },
@@ -120,7 +122,7 @@ describe('MCP Alert Tools', () => {
       source: 'saved_search',
       savedSearch: savedSearch._id,
       threshold: 100,
-      thresholdType: 'above',
+      thresholdType: AlertThresholdType.ABOVE,
       interval: '5m',
       channel: { type: 'webhook', webhookId: 'fake-webhook-id' },
       state: AlertState.OK,
@@ -173,7 +175,7 @@ describe('MCP Alert Tools', () => {
         await createTestAlert({ name: 'Disabled', state: AlertState.DISABLED });
 
         const result = await callTool(client, 'clickstack_get_alert', {
-          state: 'ALERT',
+          state: AlertState.ALERT,
         });
 
         expect(result.isError).toBeFalsy();
@@ -187,7 +189,7 @@ describe('MCP Alert Tools', () => {
         await createTestAlert({ name: 'All Good', state: AlertState.OK });
 
         const result = await callTool(client, 'clickstack_get_alert', {
-          state: 'ALERT',
+          state: AlertState.ALERT,
         });
 
         expect(result.isError).toBeFalsy();
@@ -219,7 +221,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearch: savedSearch._id,
           threshold: 100,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: { type: 'webhook', webhookId: 'fake-webhook-id' },
           state: AlertState.OK,
@@ -246,7 +248,7 @@ describe('MCP Alert Tools', () => {
           dashboard: dashboard._id,
           tileId: 'tile-1',
           threshold: 100,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: { type: 'webhook', webhookId: 'fake-webhook-id' },
           state: AlertState.OK,
@@ -335,7 +337,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 50,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: {
             type: 'webhook',
@@ -361,7 +363,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 50,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: { type: 'webhook', webhookId: webhook._id.toString() },
           displayName: 'Checkout errors',
@@ -387,7 +389,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 50,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: { type: 'webhook', webhookId: webhook._id.toString() },
         });
@@ -407,7 +409,7 @@ describe('MCP Alert Tools', () => {
           dashboardId: dashboard._id.toString(),
           tileId: 'tile-1',
           threshold: 200,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '1h',
           channel: {
             type: 'webhook',
@@ -431,7 +433,7 @@ describe('MCP Alert Tools', () => {
           source: 'tile',
           tileId: 'tile-1',
           threshold: 100,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: {
             type: 'webhook',
@@ -451,7 +453,7 @@ describe('MCP Alert Tools', () => {
           source: 'tile',
           dashboardId: dashboard._id.toString(),
           threshold: 100,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: {
             type: 'webhook',
@@ -469,7 +471,7 @@ describe('MCP Alert Tools', () => {
         const result = await callTool(client, 'clickstack_save_alert', {
           source: 'saved_search',
           threshold: 100,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: {
             type: 'webhook',
@@ -489,7 +491,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: fakeId,
           threshold: 100,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: {
             type: 'webhook',
@@ -508,7 +510,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 100,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: {
             type: 'webhook',
@@ -547,7 +549,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 75,
-          thresholdType: 'below',
+          thresholdType: AlertThresholdType.BELOW,
           interval: '15m',
           channel: {
             type: 'webhook',
@@ -569,7 +571,7 @@ describe('MCP Alert Tools', () => {
     describe('inline alerts', () => {
       // External tile-config dialect, same as the dashboard tools.
       const makeChartConfig = (overrides: Record<string, unknown> = {}) => ({
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId: traceSource._id.toString(),
         select: [
           {
@@ -588,7 +590,7 @@ describe('MCP Alert Tools', () => {
         source: 'inline',
         chartConfig: makeChartConfig(),
         threshold: 10,
-        thresholdType: 'above',
+        thresholdType: AlertThresholdType.ABOVE,
         interval: '5m',
         channel: { type: 'webhook', webhookId },
         name: 'Inline MCP Alert',
@@ -610,7 +612,7 @@ describe('MCP Alert Tools', () => {
         expect(output.savedSearchId).toBeUndefined();
         expect(output.dashboardId).toBeUndefined();
         expect(output.chartConfig).toMatchObject({
-          displayType: 'line',
+          displayType: DisplayType.Line,
           sourceId: traceSource._id.toString(),
           select: [
             {
@@ -686,7 +688,7 @@ describe('MCP Alert Tools', () => {
           savedSearchId: savedSearch._id.toString(),
           chartConfig: makeChartConfig(),
           threshold: 10,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: { type: 'webhook', webhookId: webhook._id.toString() },
         });
@@ -743,7 +745,7 @@ describe('MCP Alert Tools', () => {
           makeInlineInput(webhook._id.toString(), {
             chartConfig: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId: connection._id.toString(),
               sqlTemplate: RAW_SQL_ALERT_TEMPLATE,
             },
@@ -758,7 +760,7 @@ describe('MCP Alert Tools', () => {
           makeInlineInput(webhook._id.toString(), {
             chartConfig: {
               configType: 'sql',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               connectionId: connection._id.toString(),
               sqlTemplate: RAW_SQL_ALERT_TEMPLATE,
             },
@@ -769,7 +771,7 @@ describe('MCP Alert Tools', () => {
         const output = JSON.parse(getFirstText(result));
         expect(output.chartConfig).toMatchObject({
           configType: 'sql',
-          displayType: 'line',
+          displayType: DisplayType.Line,
           connectionId: connection._id.toString(),
           sqlTemplate: RAW_SQL_ALERT_TEMPLATE,
         });
@@ -909,7 +911,7 @@ describe('MCP Alert Tools', () => {
         expect(detail.isError).toBeFalsy();
         const output = JSON.parse(getFirstText(detail));
         expect(output.chartConfig).toMatchObject({
-          displayType: 'line',
+          displayType: DisplayType.Line,
           sourceId: traceSource._id.toString(),
         });
         // `name` stays the (unset) title template; the chart config name
@@ -1013,7 +1015,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 50,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channels: [
             { type: 'webhook', webhookId: w1._id.toString() },
@@ -1045,7 +1047,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 50,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: { type: 'webhook', webhookId: w1._id.toString() },
           channels: [{ type: 'webhook', webhookId: w2._id.toString() }],
@@ -1064,7 +1066,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 50,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channels: [ch, ch],
         });
@@ -1080,7 +1082,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 50,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
         });
 
@@ -1104,7 +1106,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 50,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channels: many,
         });
@@ -1127,7 +1129,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearch: savedSearch._id,
           threshold: 100,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: {
             type: 'webhook',
@@ -1143,7 +1145,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 200,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '15m',
           channel: {
             type: 'webhook',
@@ -1195,7 +1197,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 50,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channels: [
             { type: 'webhook', webhookId: w1._id.toString() },
@@ -1215,7 +1217,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 50,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channels: newChannels,
           name: 'Multi Channel Alert For Update',
@@ -1248,7 +1250,7 @@ describe('MCP Alert Tools', () => {
           savedSearchId: savedSearch._id.toString(),
           groupBy: 'http.route',
           threshold: 200,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '15m',
           channel: {
             type: 'webhook',
@@ -1277,7 +1279,7 @@ describe('MCP Alert Tools', () => {
             dashboardId: dashboard._id.toString(),
             tileId: 'tile-1',
             threshold: 300,
-            thresholdType: 'above',
+            thresholdType: AlertThresholdType.ABOVE,
             interval: '30m',
             channel: {
               type: 'webhook',
@@ -1307,7 +1309,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 100,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: {
             type: 'webhook',
@@ -1328,7 +1330,7 @@ describe('MCP Alert Tools', () => {
           source: 'saved_search',
           savedSearchId: savedSearch._id.toString(),
           threshold: 100,
-          thresholdType: 'above',
+          thresholdType: AlertThresholdType.ABOVE,
           interval: '5m',
           channel: {
             type: 'webhook',

@@ -1,4 +1,5 @@
 import React from 'react';
+import { type Mocked, vi } from 'vitest';
 import { ResponseJSON } from '@hyperdx/common-utils/dist/clickhouse';
 import { ClickhouseClient } from '@hyperdx/common-utils/dist/clickhouse/browser';
 import { DEFAULT_PROMQL_REDUCER } from '@hyperdx/common-utils/dist/core/promql';
@@ -27,8 +28,12 @@ import {
 import { useMVOptimizationExplanation } from '@/hooks/useMVOptimizationExplanation';
 
 // Mock DEFAULT_TIME_WINDOWS_SECONDS to remove the 15m window
-jest.mock('@/utils/searchWindows', () => {
-  const original = jest.requireActual('@/utils/searchWindows');
+vi.mock('@/utils/searchWindows', async () => {
+  const actualModule0 = await vi.importActual<
+    typeof import('@/utils/searchWindows')
+  >('@/utils/searchWindows');
+
+  const original = actualModule0;
   const mockWindows = [
     6 * 60 * 60, // 6h
     6 * 60 * 60, // 6h
@@ -52,26 +57,27 @@ jest.mock('@/utils/searchWindows', () => {
 });
 
 // Mock the clickhouse module
-jest.mock('@/clickhouse', () => ({
-  useClickhouseClient: jest.fn(),
+vi.mock('@/clickhouse', () => ({
+  useClickhouseClient: vi.fn(),
 }));
 
 // Mock the metadata module
-jest.mock('@/metadata', () => ({
-  getMetadata: jest.fn(() => ({
+vi.mock('@/metadata', () => ({
+  getMetadata: vi.fn(() => ({
     sources: [],
     connections: {},
   })),
 }));
 
 // Mock the config module
-jest.mock('@/config', () => ({
+vi.mock('@/config', () => ({
   IS_MTVIEWS_ENABLED: false,
+  IS_LOCAL_MODE: false,
 }));
 
 // Mock the MV optimization module
-jest.mock('../useMVOptimizationExplanation', () => ({
-  useMVOptimizationExplanation: jest.fn().mockReturnValue({
+vi.mock('../useMVOptimizationExplanation', () => ({
+  useMVOptimizationExplanation: vi.fn().mockReturnValue({
     data: undefined,
     isLoading: false,
   }),
@@ -79,14 +85,17 @@ jest.mock('../useMVOptimizationExplanation', () => ({
 
 // Mock prometheusApi for the PromQL query path, keeping the rest of the
 // module (useMetadata calls api.useMe at render time).
-jest.mock('@/api', () => ({
-  __esModule: true,
-  ...jest.requireActual('@/api'),
-  prometheusApi: {
-    query: jest.fn(),
-    queryRange: jest.fn(),
-  },
-}));
+vi.mock('@/api', async () => {
+  const actualModule1 = await vi.importActual<typeof import('@/api')>('@/api');
+  return {
+    __esModule: true,
+    ...actualModule1,
+    prometheusApi: {
+      query: vi.fn(),
+      queryRange: vi.fn(),
+    },
+  };
+});
 
 // Create a mock ChartConfig
 const createMockChartConfig = (
@@ -371,10 +380,10 @@ describe('useChartConfig', () => {
   describe('useQueriedChartConfig', () => {
     let queryClient: QueryClient;
     let wrapper: React.ComponentType<{ children: any }>;
-    let mockClickhouseClient: jest.Mocked<ClickhouseClient>;
+    let mockClickhouseClient: Mocked<ClickhouseClient>;
 
     beforeEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
 
       queryClient = new QueryClient({
         defaultOptions: {
@@ -391,10 +400,10 @@ describe('useChartConfig', () => {
       );
 
       mockClickhouseClient = {
-        queryChartConfig: jest.fn(),
-      } as unknown as jest.Mocked<ClickhouseClient>;
+        queryChartConfig: vi.fn(),
+      } as unknown as Mocked<ClickhouseClient>;
 
-      jest.mocked(useClickhouseClient).mockReturnValue(mockClickhouseClient);
+      vi.mocked(useClickhouseClient).mockReturnValue(mockClickhouseClient);
     });
 
     describe('promql configs', () => {
@@ -439,7 +448,7 @@ describe('useChartConfig', () => {
       };
 
       it('renders series names from the legend template', async () => {
-        jest.mocked(prometheusApi.queryRange).mockResolvedValue(matrixResponse);
+        vi.mocked(prometheusApi.queryRange).mockResolvedValue(matrixResponse);
 
         const config = createPromqlConfig({
           legendTemplate: 'svc:{{service}}',
@@ -455,7 +464,7 @@ describe('useChartConfig', () => {
       });
 
       it('uses the default label-set name without a legend template', async () => {
-        jest.mocked(prometheusApi.queryRange).mockResolvedValue(matrixResponse);
+        vi.mocked(prometheusApi.queryRange).mockResolvedValue(matrixResponse);
 
         const { result } = renderHook(
           () => useQueriedChartConfig(createPromqlConfig()),
@@ -485,8 +494,7 @@ describe('useChartConfig', () => {
       });
 
       it('queries every expression of a time series chart', async () => {
-        jest
-          .mocked(prometheusApi.queryRange)
+        vi.mocked(prometheusApi.queryRange)
           .mockResolvedValueOnce(matrixResponse)
           .mockResolvedValueOnce(singleSeriesResponse('e2e_requests_total'));
 
@@ -504,9 +512,7 @@ describe('useChartConfig', () => {
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
         expect(prometheusApi.queryRange).toHaveBeenCalledTimes(2);
         expect(
-          jest
-            .mocked(prometheusApi.queryRange)
-            .mock.calls.map(([a]) => a.query),
+          vi.mocked(prometheusApi.queryRange).mock.calls.map(([a]) => a.query),
         ).toEqual(['e2e_service_up', 'e2e_requests_total']);
         // The alias covers two series here, so it keeps their label sets
         // behind it. service distinguishes series chart-wide, so the unaliased
@@ -521,8 +527,7 @@ describe('useChartConfig', () => {
       });
 
       it('names one-series expressions after their aliases alone', async () => {
-        jest
-          .mocked(prometheusApi.queryRange)
+        vi.mocked(prometheusApi.queryRange)
           .mockResolvedValueOnce(singleSeriesResponse('e2e_service_up'))
           .mockResolvedValueOnce(singleSeriesResponse('e2e_requests_total'));
 
@@ -544,9 +549,9 @@ describe('useChartConfig', () => {
       });
 
       it('shows the legend template behind the alias', async () => {
-        jest
-          .mocked(prometheusApi.queryRange)
-          .mockResolvedValueOnce(singleSeriesResponse('e2e_service_up'));
+        vi.mocked(prometheusApi.queryRange).mockResolvedValueOnce(
+          singleSeriesResponse('e2e_service_up'),
+        );
 
         const config = createPromqlConfig({
           displayType: DisplayType.Line,
@@ -564,7 +569,7 @@ describe('useChartConfig', () => {
       });
 
       it('queries only the first expression of a non-time-series chart', async () => {
-        jest.mocked(prometheusApi.queryRange).mockResolvedValue(matrixResponse);
+        vi.mocked(prometheusApi.queryRange).mockResolvedValue(matrixResponse);
 
         const config = createPromqlConfig({
           displayType: DisplayType.Number,
@@ -579,13 +584,13 @@ describe('useChartConfig', () => {
 
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
         expect(prometheusApi.queryRange).toHaveBeenCalledTimes(1);
-        expect(
-          jest.mocked(prometheusApi.queryRange).mock.calls[0][0].query,
-        ).toBe('e2e_service_up');
+        expect(vi.mocked(prometheusApi.queryRange).mock.calls[0][0].query).toBe(
+          'e2e_service_up',
+        );
       });
 
       it("forwards the query's abort signal to every request", async () => {
-        jest.mocked(prometheusApi.queryRange).mockResolvedValue(matrixResponse);
+        vi.mocked(prometheusApi.queryRange).mockResolvedValue(matrixResponse);
 
         const config = createPromqlConfig({
           displayType: DisplayType.Line,
@@ -599,7 +604,7 @@ describe('useChartConfig', () => {
         });
 
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
-        const { calls } = jest.mocked(prometheusApi.queryRange).mock;
+        const { calls } = vi.mocked(prometheusApi.queryRange).mock;
         expect(calls).toHaveLength(2);
         for (const [params] of calls) {
           expect(params.signal).toBeInstanceOf(AbortSignal);
@@ -607,7 +612,7 @@ describe('useChartConfig', () => {
       });
 
       it('skips the blank row the editor holds for an unfinished expression', async () => {
-        jest.mocked(prometheusApi.queryRange).mockResolvedValue(matrixResponse);
+        vi.mocked(prometheusApi.queryRange).mockResolvedValue(matrixResponse);
 
         const config = createPromqlConfig({
           displayType: DisplayType.Line,
@@ -641,8 +646,7 @@ describe('useChartConfig', () => {
         });
 
         it('names them after their expression', async () => {
-          jest
-            .mocked(prometheusApi.queryRange)
+          vi.mocked(prometheusApi.queryRange)
             .mockResolvedValueOnce(unnamedResponse())
             .mockResolvedValueOnce(unnamedResponse());
 
@@ -667,9 +671,9 @@ describe('useChartConfig', () => {
         });
 
         it('names a single aliased series after its alias alone', async () => {
-          jest
-            .mocked(prometheusApi.queryRange)
-            .mockResolvedValueOnce(unnamedResponse());
+          vi.mocked(prometheusApi.queryRange).mockResolvedValueOnce(
+            unnamedResponse(),
+          );
 
           const config = createPromqlConfig({
             displayType: DisplayType.Line,
@@ -688,8 +692,7 @@ describe('useChartConfig', () => {
         });
 
         it('names them after their alias when the template renders nothing', async () => {
-          jest
-            .mocked(prometheusApi.queryRange)
+          vi.mocked(prometheusApi.queryRange)
             .mockResolvedValueOnce(unnamedResponse())
             .mockResolvedValueOnce(unnamedResponse());
 
@@ -715,7 +718,7 @@ describe('useChartConfig', () => {
         });
 
         it('still prefers a distinguishing label set', async () => {
-          jest.mocked(prometheusApi.queryRange).mockResolvedValueOnce({
+          vi.mocked(prometheusApi.queryRange).mockResolvedValueOnce({
             status: 'success' as const,
             data: {
               resultType: 'matrix' as const,
@@ -764,7 +767,7 @@ describe('useChartConfig', () => {
         };
 
         it('sends an instant expression to the instant endpoint', async () => {
-          jest.mocked(prometheusApi.query).mockResolvedValue(instantResponse);
+          vi.mocked(prometheusApi.query).mockResolvedValue(instantResponse);
 
           const config = createPromqlConfig({
             displayType: DisplayType.Number,
@@ -779,11 +782,11 @@ describe('useChartConfig', () => {
           await waitFor(() => expect(result.current.isSuccess).toBe(true));
           expect(prometheusApi.queryRange).not.toHaveBeenCalled();
           expectOnlySourceNamed(
-            jest.mocked(prometheusApi.query).mock.calls[0][0],
+            vi.mocked(prometheusApi.query).mock.calls[0][0],
           );
           // Evaluated at the end of the window, and timeless: a Date column
           // here would be read back as a time series.
-          expect(jest.mocked(prometheusApi.query).mock.calls[0][0].time).toBe(
+          expect(vi.mocked(prometheusApi.query).mock.calls[0][0].time).toBe(
             new Date('2023-01-10 01:00:00').getTime() / 1000,
           );
           expect(result.current.data?.data).toEqual([
@@ -796,9 +799,7 @@ describe('useChartConfig', () => {
         });
 
         it('sends a range expression to the range endpoint', async () => {
-          jest
-            .mocked(prometheusApi.queryRange)
-            .mockResolvedValue(matrixResponse);
+          vi.mocked(prometheusApi.queryRange).mockResolvedValue(matrixResponse);
 
           const config = createPromqlConfig({
             displayType: DisplayType.Number,
@@ -815,12 +816,12 @@ describe('useChartConfig', () => {
           expect(prometheusApi.query).not.toHaveBeenCalled();
           expect(prometheusApi.queryRange).toHaveBeenCalledTimes(1);
           expectOnlySourceNamed(
-            jest.mocked(prometheusApi.queryRange).mock.calls[0][0],
+            vi.mocked(prometheusApi.queryRange).mock.calls[0][0],
           );
         });
 
         it('reports an expression that evaluates to a string', async () => {
-          jest.mocked(prometheusApi.query).mockResolvedValue({
+          vi.mocked(prometheusApi.query).mockResolvedValue({
             status: 'success',
             data: { resultType: 'string', result: [1673312400, 'up'] },
           });
@@ -839,7 +840,7 @@ describe('useChartConfig', () => {
         });
 
         it('shows a scalar result as one unlabelled row', async () => {
-          jest.mocked(prometheusApi.query).mockResolvedValue({
+          vi.mocked(prometheusApi.query).mockResolvedValue({
             status: 'success',
             data: { resultType: 'scalar', result: [1673312400, '42'] },
           });
@@ -868,7 +869,7 @@ describe('useChartConfig', () => {
         it('keeps the buckets of a matrix the instant endpoint answers with', async () => {
           // A range-vector selector evaluates to a matrix even at the instant
           // endpoint, so the rows span time and carry a bucket column.
-          jest.mocked(prometheusApi.query).mockResolvedValue({
+          vi.mocked(prometheusApi.query).mockResolvedValue({
             status: 'success',
             data: {
               resultType: 'matrix',
@@ -915,9 +916,7 @@ describe('useChartConfig', () => {
         });
 
         it('ranges a time series chart whatever its expressions ask for', async () => {
-          jest
-            .mocked(prometheusApi.queryRange)
-            .mockResolvedValue(matrixResponse);
+          vi.mocked(prometheusApi.queryRange).mockResolvedValue(matrixResponse);
 
           const config = createPromqlConfig({
             displayType: DisplayType.Line,
@@ -978,7 +977,7 @@ describe('useChartConfig', () => {
           });
 
         beforeEach(() => {
-          jest.mocked(prometheusApi.queryRange).mockResolvedValue(rangeSamples);
+          vi.mocked(prometheusApi.queryRange).mockResolvedValue(rangeSamples);
         });
 
         it('collapses the buckets to one row per series', async () => {
@@ -1121,7 +1120,7 @@ describe('useChartConfig', () => {
         });
 
         it('reduces the matrix an instant range selector returns', async () => {
-          jest.mocked(prometheusApi.query).mockResolvedValue(rangeSamples);
+          vi.mocked(prometheusApi.query).mockResolvedValue(rangeSamples);
 
           const config = createPromqlConfig({
             displayType: DisplayType.Pie,
@@ -1146,7 +1145,7 @@ describe('useChartConfig', () => {
         });
 
         it('passes an instant vector through any reducer unchanged', async () => {
-          jest.mocked(prometheusApi.query).mockResolvedValue({
+          vi.mocked(prometheusApi.query).mockResolvedValue({
             status: 'success',
             data: {
               resultType: 'vector',
@@ -1774,7 +1773,7 @@ describe('useChartConfig', () => {
       mockClickhouseClient.queryChartConfig
         .mockResolvedValueOnce(mockResponse1)
         .mockResolvedValueOnce(mockResponse2)
-        .mockResolvedValueOnce(mockResponse3);
+        .mockReturnValueOnce(mockResponse3);
 
       const { result } = renderHook(
         () => useQueriedChartConfig(config, { enableQueryChunking: true }),
@@ -1835,7 +1834,7 @@ describe('useChartConfig', () => {
         resolveMockResponse1 = resolve;
       });
 
-      mockClickhouseClient.queryChartConfig.mockResolvedValueOnce(
+      mockClickhouseClient.queryChartConfig.mockReturnValueOnce(
         mockResponse1Promise,
       );
 
@@ -1876,7 +1875,7 @@ describe('useChartConfig', () => {
       const mockError = new Error('Query failed');
       mockClickhouseClient.queryChartConfig.mockRejectedValue(mockError);
 
-      const onError = jest.fn();
+      const onError = vi.fn();
       const config = createMockChartConfig({
         dateRange: [
           new Date('2025-10-01 00:00:00Z'),
@@ -1916,7 +1915,7 @@ describe('useChartConfig', () => {
         .mockResolvedValueOnce(mockSuccess)
         .mockRejectedValueOnce(mockError);
 
-      const onError = jest.fn();
+      const onError = vi.fn();
       const config = createMockChartConfig({
         dateRange: [
           new Date('2025-10-01 00:00:00Z'),
@@ -2326,7 +2325,7 @@ describe('useChartConfig', () => {
       });
 
       // Mock useMVOptimizationExplanation to be in loading state
-      jest.mocked(useMVOptimizationExplanation).mockReturnValue({
+      vi.mocked(useMVOptimizationExplanation).mockReturnValue({
         data: undefined,
         isLoading: true, // MV optimization is still loading
       } as any);
@@ -2345,7 +2344,7 @@ describe('useChartConfig', () => {
       expect(mockClickhouseClient.queryChartConfig).not.toHaveBeenCalled();
 
       // Now mock the MV optimization to finish loading with an optimized config
-      jest.mocked(useMVOptimizationExplanation).mockReturnValue({
+      vi.mocked(useMVOptimizationExplanation).mockReturnValue({
         data: {
           optimizedConfig: optimizedConfig,
           explanations: [

@@ -14,18 +14,19 @@ import {
 } from '@tabler/icons-react';
 import {
   flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
   Getter,
   Row,
   Row as TableRow,
-  SortingFnOption,
+  SortFnOption,
   SortingState,
   TableOptions,
-  useReactTable,
+  useTable,
 } from '@tanstack/react-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
+
+import type { AppTableFeatures } from '@/tableFeatures';
+import { tableFeatures } from '@/tableFeatures';
 
 import { CsvExportButton } from './components/CsvExportButton';
 import DBRowTableFieldWithPopover, {
@@ -75,7 +76,7 @@ export const Table = ({
     numberFormat?: NumberFormat;
     columnWidthPercent?: number;
     visible?: boolean;
-    sortingFn?: SortingFnOption<any>;
+    sortFn?: SortFnOption<AppTableFeatures, any>;
     // Per-column static palette-token color (table tiles). Applied to the
     // cell text; falls back through `colorRules` then the default color.
     color?: ChartPaletteToken;
@@ -145,7 +146,7 @@ export const Table = ({
     75,
   );
 
-  const reactTableColumns: ColumnDef<any>[] = [
+  const reactTableColumns: ColumnDef<AppTableFeatures, any>[] = [
     // DB table charts dont have a default column, we should stop using
     // this across the app
     ...(groupColumnName != null
@@ -170,7 +171,7 @@ export const Table = ({
             displayName,
             numberFormat,
             columnWidthPercent,
-            sortingFn,
+            sortFn,
             color,
             colorRules,
             filterKey,
@@ -182,13 +183,13 @@ export const Table = ({
             accessorKey: dataKey,
             header: displayName,
             accessorFn: (row: any) => row[dataKey],
-            sortingFn,
+            sortFn,
             cell: ({
               getValue,
               row,
             }: {
               getValue: Getter<number>;
-              row: Row<any>;
+              row: Row<AppTableFeatures, any>;
             }) => {
               const value = getValue();
               let formattedValue: string | number | null = value ?? null;
@@ -370,37 +371,37 @@ export const Table = ({
                     ? tableWidth / numColumns
                     : 200,
             enableResizing: i !== numColumns - 2,
-          }) satisfies ColumnDef<any>,
+          }) satisfies ColumnDef<AppTableFeatures, any>,
       ),
   ];
 
-  const sortingParams: Partial<TableOptions<any>> = useMemo(() => {
-    return enableClientSideSorting
-      ? {
-          enableSorting: true,
-          getSortedRowModel: getSortedRowModel(),
-        }
-      : {
-          enableSorting: true,
-          manualSorting: true,
-          onSortingChange: v => {
-            if (typeof v === 'function') {
-              const newSortVal = v(sorting);
-              onSortingChange?.(newSortVal ?? null);
-            } else {
-              onSortingChange?.(v ?? null);
-            }
-          },
-          state: {
-            sorting,
-          },
-        };
-  }, [enableClientSideSorting, onSortingChange, sorting]);
+  const sortingParams: Partial<TableOptions<AppTableFeatures, any>> =
+    useMemo(() => {
+      return enableClientSideSorting
+        ? {
+            enableSorting: true,
+          }
+        : {
+            enableSorting: true,
+            manualSorting: true,
+            onSortingChange: v => {
+              if (typeof v === 'function') {
+                const newSortVal = v(sorting);
+                onSortingChange?.(newSortVal ?? null);
+              } else {
+                onSortingChange?.(v ?? null);
+              }
+            },
+            state: {
+              sorting,
+            },
+          };
+    }, [enableClientSideSorting, onSortingChange, sorting]);
 
-  const table = useReactTable({
+  const table = useTable({
     data: truncatedData,
     columns: reactTableColumns,
-    getCoreRowModel: getCoreRowModel(),
+    features: tableFeatures,
     enableColumnResizing: true,
     columnResizeMode: 'onChange',
     ...sortingParams,
@@ -512,7 +513,10 @@ export const Table = ({
             </tr>
           )}
           {items.map(virtualRow => {
-            const row = rows[virtualRow.index] as TableRow<any>;
+            const row = rows[virtualRow.index] as TableRow<
+              AppTableFeatures,
+              any
+            >;
             // Compute the action once per row so the trailing-icon hint
             // shares the memoized result from useOnClickLinkBuilder with
             // the per-cell renders. The hook keys its cache off the row

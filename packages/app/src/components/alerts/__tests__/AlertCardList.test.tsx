@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   AlertState,
   AlertThresholdType,
@@ -10,7 +11,7 @@ import type { AlertsPageItem } from '@/types';
 // jsdom reports every element as zero-height, so the real virtualizer would
 // window the list down to an arbitrary slice. Rendering every item keeps this
 // about which rows the component lists, and in what order.
-jest.mock('@/hooks/useVirtualList', () => ({
+vi.mock('@/hooks/useVirtualList', () => ({
   useVirtualList: (count: number) => ({
     rowVirtualizer: { measureElement: () => {} },
     virtualItems: Array.from({ length: count }, (_, index) => ({
@@ -24,12 +25,16 @@ jest.mock('@/hooks/useVirtualList', () => ({
 
 // Controls whether the infinite-scroll sentinel reports itself as visible.
 let mockInViewport = false;
-jest.mock('@mantine/hooks', () => ({
-  ...jest.requireActual('@mantine/hooks'),
-  useInViewport: () => ({ ref: jest.fn(), inViewport: mockInViewport }),
-}));
+vi.mock('@mantine/hooks', async () => {
+  const actualModule0 =
+    await vi.importActual<typeof import('@mantine/hooks')>('@mantine/hooks');
+  return {
+    ...actualModule0,
+    useInViewport: () => ({ ref: vi.fn(), inViewport: mockInViewport }),
+  };
+});
 
-jest.mock('@/components/alerts/AlertDetails', () => ({
+vi.mock('@/components/alerts/AlertDetails', () => ({
   AlertDetails: ({ alert }: { alert: AlertsPageItem }) => (
     <div data-testid={`alert-card-${alert._id}`} />
   ),
@@ -115,7 +120,7 @@ describe('AlertCardList', () => {
 
   it('fetches the next page when the sentinel scrolls into view', () => {
     mockInViewport = true;
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
 
     renderWithMantine(
       <AlertCardList
@@ -132,7 +137,7 @@ describe('AlertCardList', () => {
 
   it('swaps the sentinel for a retry button when a page fetch fails', () => {
     mockInViewport = true;
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
 
     renderWithMantine(
       <AlertCardList

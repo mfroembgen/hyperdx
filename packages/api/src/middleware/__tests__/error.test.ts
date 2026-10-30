@@ -1,22 +1,27 @@
 import type { Request, Response } from 'express';
+import { vi } from 'vitest';
 
 // --- mocks (hoisted; names must be prefixed with `mock`) ---
-const mockCounterAdd = jest.fn();
-const mockRecordException = jest.fn();
-const mockSetAttribute = jest.fn();
-const mockLogger = { warn: jest.fn(), error: jest.fn(), debug: jest.fn() };
+const mockCounterAdd = vi.hoisted(() => vi.fn());
+const mockRecordException = vi.hoisted(() => vi.fn());
+const mockSetAttribute = vi.hoisted(() => vi.fn());
+const mockLogger = vi.hoisted(() => ({
+  warn: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+}));
 
-jest.mock('@hyperdx/node-opentelemetry', () => ({
+vi.mock('@hyperdx/node-opentelemetry', () => ({
   recordException: (...args: unknown[]) => mockRecordException(...args),
 }));
-jest.mock('@opentelemetry/api', () => ({
+vi.mock('@opentelemetry/api', () => ({
   trace: { getActiveSpan: () => ({ setAttribute: mockSetAttribute }) },
 }));
-jest.mock('@/config', () => ({ IS_PROD: false }));
-jest.mock('@/utils/instrumentation', () => ({
+vi.mock('@/config', () => ({ IS_PROD: false }));
+vi.mock('@/utils/instrumentation', () => ({
   getCounter: () => ({ add: (...args: unknown[]) => mockCounterAdd(...args) }),
 }));
-jest.mock('@/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   __esModule: true,
   default: mockLogger,
 }));
@@ -27,10 +32,10 @@ import { Api404Error } from '@/utils/errors';
 const invoke = (err: unknown): Response => {
   const res = {
     headersSent: false,
-    status: jest.fn().mockReturnThis(),
-    json: jest.fn(),
+    status: vi.fn().mockReturnThis(),
+    json: vi.fn(),
   } as unknown as Response;
-  appErrorHandler(err as any, {} as Request, res, jest.fn());
+  appErrorHandler(err as any, {} as Request, res, vi.fn());
   return res;
 };
 
@@ -38,7 +43,7 @@ const lastCounterAttrs = () =>
   mockCounterAdd.mock.calls[mockCounterAdd.mock.calls.length - 1][1];
 
 describe('appErrorHandler', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   describe('client disconnect (body-parser request.aborted)', () => {
     const abortErr = Object.assign(new Error('request aborted'), {

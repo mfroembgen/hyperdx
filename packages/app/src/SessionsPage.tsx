@@ -317,13 +317,16 @@ function SessionsPage() {
     isLive: false,
   });
 
-  const onSubmit = useCallback(() => {
-    onSearch(displayedTimeInputValue);
-    handleSubmit(values => {
-      const { source, ...rest } = values;
-      setAppliedConfig({ sessionSource: source, ...rest });
-    })();
-  }, [handleSubmit, setAppliedConfig, onSearch, displayedTimeInputValue]);
+  const onSubmit = useCallback(
+    (history?: 'push' | 'replace') => {
+      onSearch(displayedTimeInputValue, history);
+      handleSubmit(values => {
+        const { source, ...rest } = values;
+        setAppliedConfig({ sessionSource: source, ...rest }, { history });
+      })();
+    },
+    [handleSubmit, setAppliedConfig, onSearch, displayedTimeInputValue],
+  );
 
   // Auto submit when the source changes. Compared against the *resolved* param
   // only: while `?sessionSource=` is still resolving — or when it names no
@@ -332,7 +335,9 @@ function SessionsPage() {
   // link and the "Source not found" warning) and reset the searched time range.
   const submitOnSourceChange = useEffectEvent(() => {
     if (sourceId !== (paramSource?.id ?? null)) {
-      onSubmit();
+      // Initializing the default source must not add a second history entry
+      // for this page, otherwise Back returns to its uninitialized state.
+      onSubmit(appliedConfig.sessionSource ? undefined : 'replace');
     }
   });
   useEffect(() => {

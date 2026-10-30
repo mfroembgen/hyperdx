@@ -4,6 +4,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { serializeError } from 'serialize-error';
 
 import * as config from '@/config';
+import { LOCAL_APP_TEAM } from '@/controllers/team';
 import { findUserByAccessKey } from '@/controllers/user';
 import type { UserDocument } from '@/models/user';
 import {
@@ -152,11 +153,10 @@ export function isUserAuthenticated(
       // @ts-expect-error local app mode uses a synthetic string id, not an ObjectId
       _id: '_local_user_',
       email: 'local-user@hyperdx.io',
-      // @ts-expect-error local app mode uses a synthetic string team, not an ObjectId
-      team: '_local_team_',
+      team: LOCAL_APP_TEAM._id,
     };
     setBusinessContext({
-      teamId: '_local_team_',
+      teamId: LOCAL_APP_TEAM._id.toString(),
       userId: '_local_user_',
       'hyperdx.local_mode': true,
       ...getStaticFeatureFlags(),

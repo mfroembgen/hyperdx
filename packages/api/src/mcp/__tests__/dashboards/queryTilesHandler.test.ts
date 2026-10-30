@@ -1,3 +1,5 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
+import { vi } from 'vitest';
 // Unit test for the clickstack_query_tiles handler's per-tile failure
 // isolation. Mocks the heavy collaborators (Mongo model, dashboard
 // conversion, ClickHouse-backed runConfigTile) so we can drive the batch loop
@@ -5,27 +7,29 @@
 // throwing tile becomes a status:'error' entry while the rest of the batch
 // still resolves and the overall call stays non-error.
 
-const mockRunConfigTile = jest.fn();
-const mockFindOne = jest.fn();
-const mockConvertToExternalDashboard = jest.fn();
+const mockRunConfigTile = vi.hoisted(() => vi.fn());
+const mockFindOne = vi.hoisted(() => vi.fn());
+const mockConvertToExternalDashboard = vi.hoisted(() => vi.fn());
 
-jest.mock('@/mcp/tools/query/helpers', () => {
-  const actual = jest.requireActual('@/mcp/tools/query/helpers');
+vi.mock('@/mcp/tools/query/helpers', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/mcp/tools/query/helpers')
+  >('@/mcp/tools/query/helpers');
   return {
     ...actual,
     runConfigTile: (...args: unknown[]) => mockRunConfigTile(...args),
   };
 });
 
-jest.mock('@/models/dashboard', () => ({
+vi.mock('@/models/dashboard', () => ({
   __esModule: true,
   default: { findOne: (...args: unknown[]) => mockFindOne(...args) },
 }));
 
-jest.mock('@/routers/external-api/v2/utils/dashboards', () => {
-  const actual = jest.requireActual(
-    '@/routers/external-api/v2/utils/dashboards',
-  );
+vi.mock('@/routers/external-api/v2/utils/dashboards', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/routers/external-api/v2/utils/dashboards')
+  >('@/routers/external-api/v2/utils/dashboards');
   return {
     ...actual,
     convertToExternalDashboard: (...args: unknown[]) =>
@@ -76,11 +80,11 @@ const okResult = {
 const tile = (id: string, name: string) => ({
   id,
   name,
-  config: { displayType: 'number', sourceId: 'src-1', select: [] },
+  config: { displayType: DisplayType.Number, sourceId: 'src-1', select: [] },
 });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockFindOne.mockResolvedValue({ _id: 'dash-1' });
 });
 
@@ -138,7 +142,7 @@ describe('clickstack_query_tiles handler — per-tile failure isolation', () => 
     // batch budget once the first slot's worth of tiles have been dispatched.
     const base = 1_000_000_000_000;
     let now = base;
-    const nowSpy = jest.spyOn(Date, 'now').mockImplementation(() => now);
+    const nowSpy = vi.spyOn(Date, 'now').mockImplementation(() => now);
 
     try {
       mockRunConfigTile.mockImplementation((_team, t: { id: string }) => {

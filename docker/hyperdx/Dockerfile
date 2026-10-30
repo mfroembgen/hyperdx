@@ -1,21 +1,22 @@
 # Starts several services in a single container
 # For production build:
-# - API (Node)
+# - API (Bun)
 # - App (Frontend)
 # For all-in-one build:
 # - Clickhouse
 # - Mongo
 # - Otel Collector (otelcol)
 
-ARG NODE_VERSION=22.23.4
-ARG CLICKHOUSE_VERSION=26.8.36.3
-ARG OTEL_COLLECTOR_VERSION=0.155.0
-ARG OTEL_COLLECTOR_CORE_VERSION=1.61.0
+ARG BUN_VERSION=1.4.4
+ARG CLICKHOUSE_VERSION=26.10.3.7
+ARG OTEL_COLLECTOR_VERSION=0.164.0
+ARG OTEL_COLLECTOR_CONTRIB_VERSION=0.164.1
+ARG OTEL_COLLECTOR_CORE_VERSION=1.70.0
 
 # base #############################################################################################
 # == Otel Collector Image ==
 FROM otel/opentelemetry-collector-opampsupervisor:${OTEL_COLLECTOR_VERSION} AS otel_collector_opampsupervisor_base
-FROM kukymbr/goose-docker@sha256:0cd025636df126e7f66472861ca4db3683bc649be46cd1f6ef1a316209058e23 AS goose
+FROM kukymbr/goose-docker:3.28.0@sha256:0c6fdb39d4975746127dbfd4b3f4683acf93df987b30b980f877bdac5c6ea1b5 AS goose
 
 # Build the custom HyperDX collector binary using OCB (OpenTelemetry Collector Builder).
 # This replaces the pre-built otel/opentelemetry-collector-contrib image so we can
@@ -23,88 +24,87 @@ FROM kukymbr/goose-docker@sha256:0cd025636df126e7f66472861ca4db3683bc649be46cd1f
 # Note: The official OCB image may ship an older Go than the contrib modules require,
 # so we copy the ocb binary into a golang base with a newer toolchain.
 FROM otel/opentelemetry-collector-builder:${OTEL_COLLECTOR_VERSION} AS ocb-bin
-FROM golang:1.26-alpine AS ocb-builder
+FROM golang:1.27.3-alpine AS ocb-builder
 ARG OTEL_COLLECTOR_VERSION
+ARG OTEL_COLLECTOR_CONTRIB_VERSION
 ARG OTEL_COLLECTOR_CORE_VERSION
 COPY --from=ocb-bin /usr/local/bin/ocb /usr/local/bin/ocb
 WORKDIR /build
 COPY packages/otel-collector/builder-config.yaml .
 RUN --mount=type=cache,target=/go/pkg/mod,id=ocb-gomod \
     --mount=type=cache,target=/root/.cache/go-build,id=ocb-gobuild \
-    sed -i "s/__OTEL_COLLECTOR_VERSION__/${OTEL_COLLECTOR_VERSION}/g; s/__OTEL_COLLECTOR_CORE_VERSION__/${OTEL_COLLECTOR_CORE_VERSION}/g" builder-config.yaml && \
+    sed -i "s/__OTEL_COLLECTOR_VERSION__/${OTEL_COLLECTOR_VERSION}/g; s/__OTEL_COLLECTOR_CORE_VERSION__/${OTEL_COLLECTOR_CORE_VERSION}/g; s/__OTEL_COLLECTOR_CONTRIB_VERSION__/${OTEL_COLLECTOR_CONTRIB_VERSION}/g" builder-config.yaml && \
     CGO_ENABLED=0 ocb --config=builder-config.yaml
 
 # Build the Go migration tool with full TLS support for ClickHouse
-FROM golang:1.26-alpine AS migrate-builder
+FROM golang:1.27.3-alpine AS migrate-builder
 WORKDIR /build
 COPY packages/otel-collector/go.mod packages/otel-collector/go.sum ./
 RUN go mod download
 COPY packages/otel-collector/ ./
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /migrate ./cmd/migrate
 
-FROM node:${NODE_VERSION}-alpine AS node_base
+FROM oven/bun:${BUN_VERSION}-alpine AS bun_base
 
 WORKDIR /app
 
-COPY .yarn ./.yarn
-COPY .yarnrc.yml yarn.lock package.json nx.json .prettierrc .prettierignore ./tsconfig.base.json ./
-# Only copy package.json for workspace resolution during yarn install;
-# full source is copied in the build stages that need it.
-COPY ./packages/common-utils/package.json ./packages/common-utils/package.json
-COPY ./packages/api/jest.config.js ./packages/api/tsconfig.json ./packages/api/tsconfig.build.json ./packages/api/package.json ./packages/api/
-COPY ./packages/app/jest.config.js ./packages/app/tsconfig.json ./packages/app/tsconfig.build.json ./packages/app/package.json ./packages/app/next.config.mjs ./packages/app/mdx.d.ts ./packages/app/css.d.ts ./packages/app/eslint.config.mjs ./packages/app/
-
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
-
-# Use BuildKit cache mount to persist Yarn download cache across builds,
-# so unchanged packages aren't re-downloaded even when yarn.lock changes.
-RUN --mount=type=cache,target=/root/.yarn/berry/cache,id=yarn-cache \
-    yarn install --mode=skip-build && yarn cache clean
+COPY bun.lock bunfig.toml mise.toml package.json nx.json .prettierrc .prettierignore tsconfig.base.json ./
+COPY patches ./patches
+COPY packages/common-utils/package.json ./packages/common-utils/package.json
+COPY packages/api/package.json ./packages/api/package.json
+COPY packages/app/package.json ./packages/app/package.json
+COPY packages/cli/package.json ./packages/cli/package.json
+COPY packages/hdx-eval/package.json ./packages/hdx-eval/package.json
+COPY packages/otel-collector/package.json ./packages/otel-collector/package.json
+RUN --mount=type=cache,target=/root/.bun/install/cache,id=bun-cache bun ci
 
 
 ## common-utils builder ############################################################################
 # Separate stage so common-utils build is cached independently of API/App source changes.
-FROM node_base AS common-utils-builder
+FROM bun_base AS common-utils-builder
 
 COPY ./packages/common-utils ./packages/common-utils
-RUN yarn workspace @hyperdx/common-utils run build
+RUN bun run --cwd packages/common-utils build
+
+
+## Shared frontend build ##########################################################################
+FROM common-utils-builder AS frontend-builder
+
+COPY packages/app ./packages/app
+COPY CHANGELOG.md ./CHANGELOG.md
+
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_OUTPUT_STANDALONE=true
+ENV NEXT_PUBLIC_IS_LOCAL_MODE=false
+RUN bun run --cwd packages/app build && rm -rf packages/app/dist/standalone/node_modules
+
+# CI supplies this stage as a named context so all platforms use one build.
+# Ordinary Docker builds use the local frontend build above.
+FROM scratch AS frontend
+COPY --from=frontend-builder /app/packages/app/dist /dist
 
 
 ## API/APP Builder Image ##########################################################################
-FROM node_base AS builder
+FROM bun_base AS builder
 
 WORKDIR /app
 
 # Copy pre-built common-utils from its dedicated build stage
 COPY --from=common-utils-builder /app/packages/common-utils ./packages/common-utils
 
-COPY --from=api ./src ./packages/api/src
-COPY --from=api ./bin ./packages/api/bin
-COPY --from=app ./src ./packages/app/src
-COPY --from=app ./pages ./packages/app/pages
-COPY --from=app ./public ./packages/app/public
-COPY --from=app ./styles ./packages/app/styles
-COPY --from=app ./types ./packages/app/types
-# Build inputs for public/whats-new.json, generated by next.config.mjs for the
-# in-app "What's new" section: the root changelog it parses and the parser
-# itself. WORKDIR is /app, and next.config resolves the changelog as
-# /app/packages/app/../../CHANGELOG.md. The build fails loudly if either is
-# missing (see next.config.mjs).
-COPY ./CHANGELOG.md ./CHANGELOG.md
-COPY --from=app ./scripts ./packages/app/scripts
+COPY packages/api ./packages/api
+COPY packages/app ./packages/app
+COPY --from=frontend /dist ./packages/app/dist
 
-ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_OUTPUT_STANDALONE=true
-ENV NEXT_PUBLIC_IS_LOCAL_MODE=false
-RUN yarn workspace @hyperdx/api run build && \
-    yarn workspace @hyperdx/app run build
-RUN --mount=type=cache,target=/root/.yarn/berry/cache,id=yarn-cache \
-    rm -rf node_modules && yarn workspaces focus @hyperdx/api --production
+# Recreate standalone dependencies on the target platform, never copy them from
+# the shared frontend build platform.
+RUN bun run --cwd packages/api build && bun packages/app/scripts/prepare-standalone.mjs
+RUN rm -rf node_modules packages/*/node_modules && bun install --frozen-lockfile --production --filter @hyperdx/api && mkdir -p packages/api/node_modules packages/common-utils/node_modules
 
 
 # prod ############################################################################################
-FROM node:${NODE_VERSION}-alpine AS prod
+FROM oven/bun:${BUN_VERSION}-alpine AS prod
 
 LABEL org.opencontainers.image.vendor="HyperDX" \
       org.opencontainers.image.title="HyperDX Production" \
@@ -118,35 +118,24 @@ ENV CODE_VERSION=$CODE_VERSION
 ENV OTEL_RESOURCE_ATTRIBUTES="service.version=$CODE_VERSION"
 ENV NODE_ENV=production
 
-# Remove package managers from production image (not needed at runtime)
-RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
-    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
-    /usr/local/bin/yarn /usr/local/bin/yarnpkg
-
-USER node
-
-# Set up API and App
+USER bun
 WORKDIR /app
-COPY --chown=node:node --from=builder /app/node_modules ./node_modules
-COPY --chown=node:node --from=builder /app/packages/api/build ./packages/api/build
-COPY --chown=node:node --from=builder /app/packages/api/bin ./packages/api/bin
-COPY --chown=node:node --from=builder /app/packages/common-utils/dist ./packages/common-utils/dist
-COPY --chown=node:node --from=node_base /app/packages/common-utils/node_modules ./packages/common-utils/node_modules
-COPY --chown=node:node --from=builder /app/packages/app/.next/standalone ./packages/app
-COPY --chown=node:node --from=builder /app/packages/app/.next/static ./packages/app/packages/app/.next/static
-COPY --chown=node:node --from=builder /app/packages/app/public ./packages/app/packages/app/public
-
-# Set up start scripts
-COPY --chown=node:node --from=hyperdx ./refresh-env.js /etc/local/refresh-env.js
-COPY --chown=node:node --from=hyperdx ./entry.prod.sh /etc/local/entry.sh
-
+COPY --chown=bun:bun --from=builder /app/node_modules ./node_modules
+COPY --chown=bun:bun --from=builder /app/packages/api/build ./packages/api/build
+COPY --chown=bun:bun --from=builder /app/packages/api/bin ./packages/api/bin
+COPY --chown=bun:bun --from=builder /app/packages/api/package.json ./packages/api/package.json
+COPY --chown=bun:bun --from=builder /app/packages/api/node_modules ./packages/api/node_modules
+COPY --chown=bun:bun --from=builder /app/packages/common-utils/dist ./packages/common-utils/dist
+COPY --chown=bun:bun --from=builder /app/packages/common-utils/package.json ./packages/common-utils/package.json
+COPY --chown=bun:bun --from=builder /app/packages/common-utils/node_modules ./packages/common-utils/node_modules
+COPY --chown=bun:bun --from=builder /app/packages/app/dist/standalone ./packages/app
+COPY --chown=bun:bun docker/hyperdx/entry.prod.sh /etc/local/entry.sh
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:8000/health',r=>r.statusCode===200?process.exit(0):process.exit(1)).on('error',()=>process.exit(1))"
-
+    CMD bun -e "fetch('http://localhost:8000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 ENTRYPOINT ["sh", "/etc/local/entry.sh"]
 
 # all-in-one base ############################################################################################
-FROM hairyhenderson/gomplate:v4.3.3-alpine AS gomplate
+FROM hairyhenderson/gomplate:v5.3.1-alpine AS gomplate
 FROM clickhouse/clickhouse-server:${CLICKHOUSE_VERSION}-alpine AS all-in-one-base
 
 ARG CODE_VERSION
@@ -159,27 +148,19 @@ ENV OTEL_RESOURCE_ATTRIBUTES="service.version=$CODE_VERSION"
 COPY --from=ocb-builder --chmod=755 /build/output/otelcol-hyperdx /otelcontribcol
 COPY --from=otel_collector_opampsupervisor_base --chmod=755 /usr/local/bin/opampsupervisor /usr/local/bin/opampsupervisor
 
-# Copy Node.js runtime from node base.
-# Deliberately NOT copying node's /usr/lib: it overwrites this image's
-# libapk.so, libssl, libcrypto and libz with whatever Alpine point release the
-# node image happens to be built on. When the two drift, apk stops linking
-# ("Error relocating /sbin/apk: ... symbol not found") and the build dies.
-# Node only needs libstdc++/libgcc from there; those are installed via apk below.
-COPY --from=node_base --link /usr/local/bin /usr/local/bin
-COPY --from=node_base --link /usr/local/lib /usr/local/lib
-COPY --from=node_base /usr/local/include /usr/local/include
+COPY --from=bun_base /usr/local/bin/bun /usr/local/bin/bun
 
 # Set up Clickhouse
-COPY --from=clickhouse ./local/*.xml /etc/clickhouse-server
-COPY --from=hyperdx ./clickhouseConfig.xml /etc/clickhouse-server/config.xml
+COPY docker/clickhouse/local/*.xml /etc/clickhouse-server
+COPY docker/hyperdx/clickhouseConfig.xml /etc/clickhouse-server/config.xml
 
 # Set up Otel Collector
-COPY --from=otel-collector ./config.yaml /etc/otelcol-contrib/config.yaml
-COPY --from=otel-collector ./supervisor_docker.yaml.tmpl /etc/otel/supervisor.yaml.tmpl
-COPY --from=otel-collector ./schema /etc/otel/schema
+COPY docker/otel-collector/config.yaml /etc/otelcol-contrib/config.yaml
+COPY docker/otel-collector/supervisor_docker.yaml.tmpl /etc/otel/supervisor.yaml.tmpl
+COPY docker/otel-collector/schema /etc/otel/schema
 
 # Copy otel-collector entrypoint script
-COPY --from=otel-collector --chmod=755 ./entrypoint.sh /otel-entrypoint.sh
+COPY --chmod=755 docker/otel-collector/entrypoint.sh /otel-entrypoint.sh
 
 # Copy gomplate binary from the gomplate image
 COPY --from=gomplate /bin/gomplate /usr/local/bin/gomplate
@@ -191,7 +172,7 @@ COPY --from=goose /bin/goose /usr/local/bin/goose
 COPY --from=migrate-builder /migrate /usr/local/bin/migrate
 
 # Install MongoDB and other dependencies (consolidated into a single RUN command).
-# libstdc++/libgcc are the Node.js runtime deps, installed before the v3.9
+# libstdc++/libgcc are Bun runtime deps, installed before the v3.9
 # repositories are appended so they resolve from this image's own Alpine release.
 RUN apk add --no-cache libstdc++ libgcc && \
   echo 'http://dl-cdn.alpinelinux.org/alpine/v3.9/main' >> /etc/apk/repositories && \
@@ -203,17 +184,13 @@ RUN apk add --no-cache libstdc++ libgcc && \
   adduser  -S -u ${USER_UID} -G otel otel && \
   mkdir -p /data/db && \
   install -d -m 0777 -o ${USER_UID} -g ${USER_GID} /etc/otel/supervisor-data && \
-  rm -rf /var/cache/apk/* && \
-  rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
-    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
-    /usr/local/bin/yarn /usr/local/bin/yarnpkg
+  rm -rf /var/cache/apk/*
 
 ENV NODE_ENV=production
 
 # Set up App
 COPY --from=prod /app /app
-COPY --from=hyperdx ./refresh-env.js /etc/local/refresh-env.js
-COPY --from=hyperdx ./entry.local.base.sh /etc/local/entry.base.sh
+COPY docker/hyperdx/entry.local.base.sh /etc/local/entry.base.sh
 
 # Copy VEX exception files for Docker Scout vulnerability suppression
 # Reference via: docker scout cves --vex-location /etc/vex/ <image>
@@ -235,7 +212,7 @@ LABEL org.opencontainers.image.vendor="HyperDX" \
       org.opencontainers.image.source="https://github.com/hyperdxio/hyperdx" \
       org.opencontainers.image.licenses="MIT"
 
-COPY --from=hyperdx ./entry.local.noauth.sh /etc/local/entry.sh
+COPY docker/hyperdx/entry.local.noauth.sh /etc/local/entry.sh
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/api/health || exit 1
@@ -251,7 +228,7 @@ LABEL org.opencontainers.image.vendor="HyperDX" \
       org.opencontainers.image.source="https://github.com/hyperdxio/hyperdx" \
       org.opencontainers.image.licenses="MIT"
 
-COPY --from=hyperdx ./entry.local.auth.sh /etc/local/entry.sh
+COPY docker/hyperdx/entry.local.auth.sh /etc/local/entry.sh
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/api/health || exit 1

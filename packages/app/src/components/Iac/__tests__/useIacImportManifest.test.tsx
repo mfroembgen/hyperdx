@@ -1,17 +1,18 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 
 import { hdxServer } from '@/api';
 import { useIacImportManifest } from '@/components/Iac/useIacImportManifest';
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {},
-  hdxServer: jest.fn(),
+  hdxServer: vi.fn(),
 }));
 
-const mockHdxServer = jest.mocked(hdxServer);
+const mockHdxServer = vi.mocked(hdxServer);
 
 function mockResponse(body: unknown) {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
@@ -42,7 +43,9 @@ const VALID = {
 };
 
 describe('useIacImportManifest', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('returns the parsed manifest on a valid payload', async () => {
     mockResponse(VALID);

@@ -37,12 +37,15 @@ Dockerfile:
 
 ### Version configuration
 
-The collector version is controlled by two variables:
+The collector versions are controlled by three variables:
 
-- **`OTEL_COLLECTOR_VERSION`** — The contrib/core component version (e.g.
-  `0.149.0`)
+- **`OTEL_COLLECTOR_VERSION`** — The builder and unstable core component version
+- **`OTEL_COLLECTOR_CONTRIB_VERSION`** — The contrib component version
 - **`OTEL_COLLECTOR_CORE_VERSION`** — The core confmap provider version (e.g.
   `1.55.0`)
+
+Graduated components such as `k8sattributesprocessor` have independent stable
+versions pinned directly in `builder-config.yaml`.
 
 These are defined in the root `.env` file and passed as Docker build args. Both
 Dockerfiles also have matching `ARG` defaults as fallbacks for standalone
@@ -544,6 +547,7 @@ Look at the `providers:` section — the core version follows a different scheme
 
 ```
 OTEL_COLLECTOR_VERSION=<new_version>
+OTEL_COLLECTOR_CONTRIB_VERSION=<new_contrib_version>
 OTEL_COLLECTOR_CORE_VERSION=<new_core_version>
 ```
 
@@ -551,6 +555,7 @@ OTEL_COLLECTOR_CORE_VERSION=<new_core_version>
 
 ```dockerfile
 ARG OTEL_COLLECTOR_VERSION=<new_version>
+ARG OTEL_COLLECTOR_CONTRIB_VERSION=<new_contrib_version>
 ARG OTEL_COLLECTOR_CORE_VERSION=<new_core_version>
 ```
 
@@ -558,6 +563,7 @@ ARG OTEL_COLLECTOR_CORE_VERSION=<new_core_version>
 
 ```dockerfile
 ARG OTEL_COLLECTOR_VERSION=<new_version>
+ARG OTEL_COLLECTOR_CONTRIB_VERSION=<new_contrib_version>
 ARG OTEL_COLLECTOR_CORE_VERSION=<new_core_version>
 ```
 
@@ -566,13 +572,15 @@ ARG OTEL_COLLECTOR_CORE_VERSION=<new_core_version>
 ```yaml
 args:
   OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-<new_version>}
+  OTEL_COLLECTOR_CONTRIB_VERSION: ${OTEL_COLLECTOR_CONTRIB_VERSION:-<new_contrib_version>}
   OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-<new_core_version>}
 ```
 
 ### Files you do NOT need to change
 
-- `packages/otel-collector/builder-config.yaml` — uses placeholders, substituted
-  at build time
+- `packages/otel-collector/builder-config.yaml` — uses placeholders for shared
+  release versions; check independently versioned graduated components when
+  updating their pins
 - `docker-compose.dev.yml` — reads from `.env` automatically
 - `docker-compose.ci.yml` — reads from `.env` automatically
 

@@ -1,7 +1,7 @@
 name: Main
 on:
   push:
-    branches: [main, v1]
+    branches: [main, v1, 'ai/release-*']
   pull_request:
     branches: [main, v1]
 concurrency:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Full history so `nx affected` can diff against the PR base ref.
           # Blobless, not treeless: `nx affected` runs `git diff --name-only`,
@@ -21,14 +21,10 @@ jobs:
           # round trip and comes out slower than the bytes it saves.
           fetch-depth: 0
           filter: blob:none
-      - name: Setup node
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache-dependency-path: 'yarn.lock'
-          cache: 'yarn'
+      - name: Setup Bun
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
       - name: Install root dependencies
-        run: yarn install --immutable
+        run: bun ci
       - name: Install core libs
         run: sudo apt-get install --yes curl bc
       # Restore-only on PRs: a PR-scoped cache entry can't be read by any other
@@ -36,7 +32,7 @@ jobs:
       # the repo's shared 10GB budget (including the integration job's buildx
       # layer cache). Only push runs write, and PRs read main's entry.
       - name: Restore nx computation cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .nx/cache
           key: nx-${{ runner.os }}-${{ github.sha }}
@@ -48,25 +44,25 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           BASE_REF: ${{ github.base_ref }}
-        run: npx nx affected -t ci:lint --base="origin/${BASE_REF}"
+        run: bun --bun x nx affected -t ci:lint --base="origin/${BASE_REF}"
       - name: Run lint + type check (full)
         if: github.event_name != 'pull_request'
-        run: npx nx run-many -t ci:lint
+        run: bun --bun x nx run-many -t ci:lint
       # Whole-repo escape-hatch ratchet — runs unconditionally (not via `nx
       # affected`, and not via `make ci-lint`, which this job no longer calls),
       # so the gate can't be silently skipped for a PR that touches few projects.
       - name: Escape-hatch ratchet tests
-        run: node --test scripts/ci/__tests__/ratchet.test.mjs
+        run: bun test scripts/ci/__tests__/ratchet.test.mjs
       # Also unconditional, and against the PR's own tree. claude-code-review.yml
       # runs this file too, but from a base-branch checkout, so a PR that breaks
       # what it pins (the AGENTS.md heading every review footer links to) passes
       # there and would fail every later PR's review job instead of its own.
       - name: Review helper tests
         run:
-          node --test
-          .github/scripts/code-review/__tests__/review-comments.test.mjs
+          bun test
+          ./.github/scripts/code-review/__tests__/review-comments.test.mjs
       - name: Escape-hatch ratchet
-        run: node scripts/ci/ratchet.mjs
+        run: bun scripts/ci/ratchet.mjs
       # Also unconditional: the api's own `ci:lint` regenerates the spec but
       # never asserts on it, and nx can skip or cache-replay that task.
       - name: Check openapi.json is in sync with its sources
@@ -75,27 +71,26 @@ jobs:
       # PR runs restore from.
       - name: Save nx computation cache
         if: always() && github.event_name == 'push'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .nx/cache
           key: nx-${{ runner.os }}-${{ github.sha }}
   unit:
-    timeout-minutes: 8
+    # Full Istanbul coverage needs more than eight minutes on a cold hosted runner.
+    timeout-minutes: 15
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
-      - name: Setup node
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache-dependency-path: 'yarn.lock'
-          cache: 'yarn'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Bun
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
       - name: Install root dependencies
-        run: yarn install --immutable
+        run: bun ci
       - name: Build dependencies
         run: make ci-build
       - name: Run unit tests
+        env:
+          NX_DEFAULT_OUTPUT_STYLE: stream
         run: make ci-unit
   integration-shards:
     name: Integration - Shard ${{ matrix.shard }}
@@ -107,32 +102,28 @@ jobs:
         shard: [1, 2, 3, 4]
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
-      - name: Setup node
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache-dependency-path: 'yarn.lock'
-          cache: 'yarn'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Bun
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
       - name: Install root dependencies
-        run: yarn install --immutable
+        run: bun ci
       - name: Expose GitHub Runtime
-        uses: crazy-max/ghaction-github-runtime@v4
+        uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4.0.0
       - name: Spin up docker services
         run: |
           docker buildx create --use --driver=docker-container
-          docker buildx bake -f ./docker-compose.ci.yml --set *.cache-to="type=gha,mode=max,scope=ci-integration" --set *.cache-from="type=gha,scope=ci-integration" --load
+          docker buildx bake -f ./docker-compose.ci.yml --set '*.cache-to=type=gha,mode=max,scope=ci-integration' --set '*.cache-from=type=gha,scope=ci-integration' --load
       - name: Build dependencies
         run: make ci-build
       # Integration tests boot a MockServer on fixed ports and share a single
-      # MongoDB/ClickHouse database, so they must stay serial (--runInBand)
-      # within a runner. We shard ACROSS runners instead: each shard is its own
-      # VM with its own Docker stack, and jest's --shard splits the test files
+      # MongoDB/ClickHouse database, so Vitest keeps files serial
+      # (fileParallelism: false) within a runner. We shard across runners instead:
+      # each shard has its own Docker stack, and --shard splits the test files
       # so the shards run in parallel.
       #
-      # Jest is invoked per package rather than through `nx run-many`: nx's
+      # Vitest is invoked per package rather than through `nx run-many`: nx's
       # streamed output prefixes every pipe chunk as its own line, splitting
-      # Jest's stack traces and ANSI codes mid-line. Both packages always run
+      # Vitest's stack traces and ANSI codes mid-line. Both packages always run
       # so one failure doesn't hide the other.
       #
       # Runs inline (not `make ci-int`) so the compose project stays `hdx-ci`
@@ -145,8 +136,8 @@ jobs:
         run: |
           docker compose -f ./docker-compose.ci.yml up -d --quiet-pull
           status=0
-          yarn workspace @hyperdx/common-utils ci:int --shard=${{ matrix.shard }}/${{ strategy.job-total }} || status=1
-          yarn workspace @hyperdx/api ci:int --shard=${{ matrix.shard }}/${{ strategy.job-total }} || status=1
+          bun run --filter @hyperdx/common-utils ci:int --shard=${{ matrix.shard }}/${{ strategy.job-total }} || status=1
+          bun run --filter @hyperdx/api ci:int --shard=${{ matrix.shard }}/${{ strategy.job-total }} || status=1
           exit $status
   # Stable aggregator context: `integration` is green only when all four shards
   # pass. Merge-queue / required-status checks target this single context, since
@@ -167,21 +158,25 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@v47.0.6
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
           files: |
             packages/otel-collector/**
       - name: Setup Go
-        if: steps.changed-files.outputs.any_changed == 'true'
-        uses: actions/setup-go@v5
+        if:
+          startsWith(github.ref, 'refs/heads/ai/release-') ||
+          steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: packages/otel-collector/go.mod
           cache-dependency-path: packages/otel-collector/go.sum
       - name: Run unit tests
-        if: steps.changed-files.outputs.any_changed == 'true'
+        if:
+          startsWith(github.ref, 'refs/heads/ai/release-') ||
+          steps.changed-files.outputs.any_changed == 'true'
         working-directory: ./packages/otel-collector
         run: go test ./...
   otel-smoke-test:
@@ -189,10 +184,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Get changed OTEL collector files
         id: changed-files
-        uses: tj-actions/changed-files@v47.0.6
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
           # The ClickHouse config is mounted into both ch-server (via
           # docker-compose.ci.yml) and ch-server-compat, which pins an older
@@ -206,7 +201,9 @@ jobs:
             docker/clickhouse/local/users.xml
             docker-compose.ci.yml
       - name: Install required tooling
-        if: steps.changed-files.outputs.any_changed == 'true'
+        if:
+          startsWith(github.ref, 'refs/heads/ai/release-') ||
+          steps.changed-files.outputs.any_changed == 'true'
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
@@ -215,9 +212,11 @@ jobs:
           ARCH=$(dpkg --print-architecture)
           echo "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg arch=${ARCH}] https://packages.clickhouse.com/deb stable main" | sudo tee /etc/apt/sources.list.d/clickhouse.list
           sudo apt-get update
-          sudo apt-get install --yes curl bats clickhouse-client
+          sudo apt-get -o Acquire::Retries=3 install --yes curl bats clickhouse-client
       - name: Run Smoke Tests
-        if: steps.changed-files.outputs.any_changed == 'true'
+        if:
+          startsWith(github.ref, 'refs/heads/ai/release-') ||
+          steps.changed-files.outputs.any_changed == 'true'
         working-directory: ./smoke-tests/otel-collector
         run: bats .
   e2e-tests:
@@ -236,7 +235,7 @@ jobs:
 
     steps:
       - name: Download all test results
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: test-results-*
           path: all-test-results
@@ -244,7 +243,7 @@ jobs:
       - name: Aggregate test results
         id: test-results
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           result-encoding: string
           script: |
@@ -314,10 +313,10 @@ jobs:
             }
 
       - name: Comment PR with test results
-        uses: mshick/add-pr-comment@v3
-        # Skip for fork PRs: GITHUB_TOKEN cannot write to the base repo
+        uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # v3.12.0
         if:
-          always() && github.event_name == 'pull_request' &&
+          always() && github.repository == 'hyperdxio/hyperdx' &&
+          github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.fork != true
         with:
           message: ${{ steps.test-results.outputs.result }}
@@ -354,20 +353,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache-dependency-path: 'yarn.lock'
-          cache: 'yarn'
-
+      - name: Setup Bun
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
       - name: Install dependencies
-        run: yarn install --immutable
+        run: bun ci
 
       - name: Build App
-        run: yarn build:clickhouse
+        run: bun run build:clickhouse
 
       - name: Verify output directory exists and has size
         run: |

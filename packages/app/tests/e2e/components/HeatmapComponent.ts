@@ -49,8 +49,16 @@ export class HeatmapComponent {
       timeout: 20000,
     });
     const plot = this.container.locator('.u-over');
-    await expect(plot).toBeVisible();
-    const box = await plot.boundingBox();
+    let box: Awaited<ReturnType<Locator['boundingBox']>> | undefined;
+    await expect
+      .poll(
+        async () => {
+          box = await plot.boundingBox();
+          return box != null && box.width > 0 && box.height > 0;
+        },
+        { timeout: 5000 },
+      )
+      .toBe(true);
     if (!box) {
       throw new Error('Heatmap plot area not found');
     }

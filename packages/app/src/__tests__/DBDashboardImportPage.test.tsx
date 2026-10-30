@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   type DashboardTemplate,
   DashboardTemplateSchema,
@@ -19,23 +20,23 @@ const mockSources = [
   { id: 'src-promql', name: 'Prom', kind: SourceKind.Promql },
 ];
 const mockConnections = [{ id: 'conn-default', name: 'Default' }];
-const mockMutateAsync = jest.fn().mockResolvedValue({ id: 'dash-new' });
+const mockMutateAsync = vi.fn().mockResolvedValue({ id: 'dash-new' });
 
-jest.mock('next/router', () => ({
-  useRouter: () => ({ push: jest.fn() }),
+vi.mock('next/router', () => ({
+  useRouter: () => ({ push: vi.fn() }),
 }));
-jest.mock('nuqs', () => ({
+vi.mock('nuqs', () => ({
   parseAsString: 'parseAsString',
-  useQueryState: () => [null, jest.fn()],
+  useQueryState: () => [null, vi.fn()],
   createParser: (opts: object) => opts,
 }));
-jest.mock('../source', () => ({
+vi.mock('../source', () => ({
   useSources: () => ({ data: mockSources }),
 }));
-jest.mock('../connection', () => ({
+vi.mock('../connection', () => ({
   useConnections: () => ({ data: mockConnections }),
 }));
-jest.mock('../dashboard', () => ({
+vi.mock('../dashboard', () => ({
   useCreateDashboard: () => ({
     mutateAsync: mockMutateAsync,
     isPending: false,
@@ -43,7 +44,7 @@ jest.mock('../dashboard', () => ({
     error: null,
   }),
   useUpdateDashboard: () => ({
-    mutateAsync: jest.fn(),
+    mutateAsync: vi.fn(),
     isPending: false,
     isError: false,
     error: null,
@@ -51,7 +52,7 @@ jest.mock('../dashboard', () => ({
   useDashboards: () => ({ data: [] }),
   normalizeRawDashboardTileColors: (x: unknown) => x,
 }));
-jest.mock('../api', () => ({
+vi.mock('../api', () => ({
   __esModule: true,
   default: { useTags: () => ({ data: { data: [] } }) },
 }));

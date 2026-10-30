@@ -47,8 +47,7 @@ export type FilterSelection = FilterState[string];
 
 /** A variable-keyed entry, without the name it is keyed by. */
 export type VariableEntryValue =
-  | Omit<VariableFilterValue, 'name'>
-  | Omit<AdhocFilterValue, 'name'>;
+  Omit<VariableFilterValue, 'name'> | Omit<AdhocFilterValue, 'name'>;
 
 export type ParsedDashboardFilterValues = {
   /** Selections addressed by SQL expression, parsed via `parseQuery`. */

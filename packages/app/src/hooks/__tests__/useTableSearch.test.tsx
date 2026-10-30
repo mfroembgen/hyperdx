@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 
 import { useTableSearch } from '@/hooks/useTableSearch';
@@ -502,7 +503,7 @@ describe('useTableSearch', () => {
     });
 
     it('should call onVisibilityChange callback when visibility changes', () => {
-      const onVisibilityChange = jest.fn();
+      const onVisibilityChange = vi.fn();
 
       const { result } = renderHook(() =>
         useTableSearch({

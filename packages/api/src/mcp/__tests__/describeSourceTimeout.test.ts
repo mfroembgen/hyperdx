@@ -1,22 +1,23 @@
-const mockMetadata = {
-  getColumns: jest.fn(),
-  getMapKeys: jest.fn(),
-  getAllKeyValues: jest.fn(),
-};
-
-jest.mock('@/models/source', () => ({}));
-jest.mock('@/controllers/sources', () => ({ getSource: jest.fn() }));
-jest.mock('@/controllers/connection', () => ({
-  getConnectionById: jest.fn(),
+import { vi } from 'vitest';
+const mockMetadata = vi.hoisted(() => ({
+  getColumns: vi.fn(),
+  getMapKeys: vi.fn(),
+  getAllKeyValues: vi.fn(),
 }));
-jest.mock('@/clickhouse', () => ({ ClickhouseClient: jest.fn() }));
-jest.mock('@hyperdx/common-utils/dist/core/metadata', () => ({
+
+vi.mock('@/models/source', () => ({}));
+vi.mock('@/controllers/sources', () => ({ getSource: vi.fn() }));
+vi.mock('@/controllers/connection', () => ({
+  getConnectionById: vi.fn(),
+}));
+vi.mock('@/clickhouse', () => ({ ClickhouseClient: vi.fn() }));
+vi.mock('@hyperdx/common-utils/dist/core/metadata', () => ({
   getMetadata: () => mockMetadata,
 }));
-jest.mock('@/mcp/tools/sources/metricNames', () => ({
-  sampleMetricNamesWithLookback: jest.fn(),
+vi.mock('@/mcp/tools/sources/metricNames', () => ({
+  sampleMetricNamesWithLookback: vi.fn(),
 }));
-jest.mock('@/utils/trimToolResponse', () => ({
+vi.mock('@/utils/trimToolResponse', () => ({
   trimToolResponse: (data: unknown) => ({ data, isTrimmed: false }),
 }));
 
@@ -41,7 +42,7 @@ const COLUMNS = [
 const traceSource = {
   _id: 'source-1',
   name: 'Traces',
-  kind: SourceKind.Trace,
+  kind: SourceKind.Trace as const,
   connection: 'conn-1',
   timestampValueExpression: 'Timestamp',
   from: { databaseName: 'default', tableName: 'otel_traces' },
@@ -52,7 +53,7 @@ const traceSource = {
 
 const metricSource = {
   ...traceSource,
-  kind: SourceKind.Metric,
+  kind: SourceKind.Metric as const,
   timestampValueExpression: 'TimeUnix',
   from: { databaseName: 'default', tableName: '' },
   metricTables: { gauge: 'otel_metrics_gauge', sum: 'otel_metrics_sum' },
@@ -80,7 +81,7 @@ function getHandler() {
 
 async function runWithClock(advanceMs: number) {
   const pending = getHandler()({ sourceId: 'source-1' });
-  await jest.advanceTimersByTimeAsync(advanceMs);
+  await vi.advanceTimersByTimeAsync(advanceMs);
   return pending;
 }
 
@@ -88,13 +89,11 @@ const parse = (result: ToolResult) => JSON.parse(result.content[0].text);
 
 describe('clickstack_describe_source deadline', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest
-      .mocked(getSource)
-      .mockResolvedValue(
-        traceSource as unknown as Awaited<ReturnType<typeof getSource>>,
-      );
-    jest.mocked(getConnectionById).mockResolvedValue({
+    vi.useFakeTimers();
+    vi.mocked(getSource).mockResolvedValue(
+      traceSource as unknown as Awaited<ReturnType<typeof getSource>>,
+    );
+    vi.mocked(getConnectionById).mockResolvedValue({
       host: 'http://localhost:8123',
       username: 'default',
       password: '',
@@ -107,8 +106,8 @@ describe('clickstack_describe_source deadline', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
-    jest.resetAllMocks();
+    vi.useRealTimers();
+    vi.resetAllMocks();
   });
 
   it('returns a complete result when discovery finishes before the deadline', async () => {
@@ -188,9 +187,9 @@ describe('clickstack_describe_source deadline', () => {
       settled = true;
     });
 
-    await jest.advanceTimersByTimeAsync(DESCRIBE_TIMEOUT_MS);
+    await vi.advanceTimersByTimeAsync(DESCRIBE_TIMEOUT_MS);
     expect(settled).toBe(false);
-    await jest.advanceTimersByTimeAsync(DESCRIBE_BACKSTOP_MS);
+    await vi.advanceTimersByTimeAsync(DESCRIBE_BACKSTOP_MS);
 
     const result = await pending;
     expect(result.isError).toBeFalsy();
@@ -284,11 +283,9 @@ describe('clickstack_describe_source deadline', () => {
 
   describe('metric sources', () => {
     beforeEach(() => {
-      jest
-        .mocked(getSource)
-        .mockResolvedValue(
-          metricSource as unknown as Awaited<ReturnType<typeof getSource>>,
-        );
+      vi.mocked(getSource).mockResolvedValue(
+        metricSource as unknown as Awaited<ReturnType<typeof getSource>>,
+      );
       mockMetadata.getColumns.mockResolvedValue([
         { name: 'TimeUnix', type: 'DateTime64(9)' },
         { name: 'MetricName', type: 'LowCardinality(String)' },
@@ -296,9 +293,9 @@ describe('clickstack_describe_source deadline', () => {
     });
 
     it('returns metric names when sampling finishes', async () => {
-      jest
-        .mocked(sampleMetricNamesWithLookback)
-        .mockResolvedValue([{ name: 'cpu.usage' }]);
+      vi.mocked(sampleMetricNamesWithLookback).mockResolvedValue([
+        { name: 'cpu.usage' },
+      ]);
 
       const { source } = parse(await runWithClock(0));
 
@@ -310,13 +307,12 @@ describe('clickstack_describe_source deadline', () => {
     });
 
     it('reports metricNames as skipped when one kind is cut short', async () => {
-      jest
-        .mocked(sampleMetricNamesWithLookback)
-        .mockImplementation(({ tableName, signal }) =>
+      vi.mocked(sampleMetricNamesWithLookback).mockImplementation(
+        ({ tableName, signal }) =>
           tableName === 'otel_metrics_gauge'
             ? Promise.resolve([{ name: 'cpu.usage' }])
             : rejectOnAbort(signal),
-        );
+      );
 
       const { source } = parse(await runWithClock(DESCRIBE_TIMEOUT_MS));
 
@@ -326,14 +322,12 @@ describe('clickstack_describe_source deadline', () => {
     });
 
     it('reports metricNames as skipped when an aborted lookback returns no names', async () => {
-      jest
-        .mocked(sampleMetricNamesWithLookback)
-        .mockImplementation(
-          ({ signal }) =>
-            new Promise(resolve =>
-              signal.addEventListener('abort', () => resolve([])),
-            ),
-        );
+      vi.mocked(sampleMetricNamesWithLookback).mockImplementation(
+        ({ signal }) =>
+          new Promise(resolve =>
+            signal.addEventListener('abort', () => resolve([])),
+          ),
+      );
 
       const { source } = parse(await runWithClock(DESCRIBE_TIMEOUT_MS));
 
@@ -343,7 +337,7 @@ describe('clickstack_describe_source deadline', () => {
     });
 
     it('lists metricNames in the backstop snapshot when sampling hangs', async () => {
-      jest.mocked(sampleMetricNamesWithLookback).mockImplementation(never);
+      vi.mocked(sampleMetricNamesWithLookback).mockImplementation(never);
 
       const { source } = parse(
         await runWithClock(DESCRIBE_TIMEOUT_MS + DESCRIBE_BACKSTOP_MS),

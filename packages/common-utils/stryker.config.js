@@ -1,12 +1,16 @@
 // Mutation testing config. See CONTRIBUTING.md#mutation-tests.
+// The package script preloads the Vitest runner to avoid Bun's plugin-import error.
 module.exports = {
-  testRunner: 'jest',
-  jest: {
-    projectType: 'custom',
-    configFile: 'jest.config.js',
+  plugins: [
+    '@stryker-mutator/typescript-checker',
+    '@stryker-mutator/vitest-runner',
+  ],
+  testRunner: 'vitest',
+  vitest: {
+    configFile: 'vitest.config.ts',
   },
   // Type-check each mutant before running it. Most mutants don't compile, and
-  // discarding those up front is much cheaper than a jest run per mutant.
+  // discarding those up front is much cheaper than a test run per mutant.
   checkers: ['typescript'],
   tsconfigFile: 'tsconfig.json',
   // Static mutants (module-level constants) are ~10% of the mutants here but

@@ -3,7 +3,7 @@ import {
   buildImportBlock,
   buildProviderBlock,
 } from '@hyperdx/common-utils/dist/iac';
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { TerraformHelperPanel } from './TerraformHelperPanel';
 

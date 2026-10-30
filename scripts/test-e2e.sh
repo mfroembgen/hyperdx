@@ -25,7 +25,6 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-DOCKER_COMPOSE_FILE="$REPO_ROOT/packages/app/tests/e2e/docker-compose.yml"
 
 # ---------------------------------------------------------------------------
 # Multi-agent / worktree isolation
@@ -43,7 +42,7 @@ hdx_e2e_ports "$REPO_ROOT"
 # run. Without this, the test process never exits in interactive terminals,
 # which breaks non-interactive (agent) invocations of `make dev-e2e`.
 # The Makefile's `REPORT=1` flag still works because it invokes
-# `npx playwright show-report` separately after the test process exits.
+# `bun --bun x playwright show-report` separately after the test process exits.
 # CI is already unaffected (Playwright skips auto-open when process.env.CI is set).
 export PLAYWRIGHT_HTML_OPEN=never
 
@@ -91,7 +90,7 @@ done
 
 cleanup_services() {
   echo "Stopping E2E services and removing volumes..."
-  docker compose -p "$E2E_PROJECT" -f "$DOCKER_COMPOSE_FILE" down -v
+  bash "$REPO_ROOT/scripts/services.sh" e2e down -v
   # Archive logs to history instead of deleting
   if [ -d "$HDX_E2E_LOGS_DIR" ] && [ -n "$(ls -A "$HDX_E2E_LOGS_DIR" 2>/dev/null)" ]; then
     _ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -110,7 +109,7 @@ METAEOF
 check_mongodb_health() {
   # Health check script that tests ping, insert, and delete operations
   # Note: MongoDB runs on port 27017 inside the container (default)
-  docker compose -p "$E2E_PROJECT" -f "$DOCKER_COMPOSE_FILE" exec -T db mongosh --quiet --eval "
+  bash "$REPO_ROOT/scripts/services.sh" e2e exec -T db mongosh --quiet --eval "
     try {
       db.adminCommand('ping');
       db.getSiblingDB('test').test.insertOne({_id: 'healthcheck', ts: new Date()});
@@ -142,7 +141,7 @@ wait_for_clickhouse() {
     if [ $attempt -eq $MAX_CLICKHOUSE_WAIT_ATTEMPTS ]; then
       local total_wait=$((MAX_CLICKHOUSE_WAIT_ATTEMPTS * CLICKHOUSE_WAIT_DELAY_SECONDS))
       echo "ClickHouse failed to become ready after $total_wait seconds"
-      echo "Try running: docker compose -p $E2E_PROJECT -f $DOCKER_COMPOSE_FILE logs ch-server"
+      echo "Try running: bash scripts/services.sh e2e logs ch-server"
       return 1
     fi
 
@@ -157,10 +156,10 @@ wait_for_mongodb() {
   local attempt=1
 
   # Verify mongosh is available in the container
-  if ! docker compose -p "$E2E_PROJECT" -f "$DOCKER_COMPOSE_FILE" exec -T db which mongosh >/dev/null 2>&1; then
+  if ! bash "$REPO_ROOT/scripts/services.sh" e2e exec -T db which mongosh >/dev/null 2>&1; then
     echo "ERROR: mongosh not found in MongoDB container"
     echo "Container may not be running or using incompatible image"
-    echo "Try running: docker compose -p $E2E_PROJECT -f $DOCKER_COMPOSE_FILE logs db"
+    echo "Try running: bash scripts/services.sh e2e logs db"
     return 1
   fi
 
@@ -192,13 +191,13 @@ setup_cleanup_trap() {
     trap cleanup_services EXIT ERR
   else
     echo "⚠️  Skipping cleanup - containers will remain running"
-    echo "   Use 'docker compose -p $E2E_PROJECT -f $DOCKER_COMPOSE_FILE down -v' to stop them manually"
+    echo "   Use 'bash scripts/services.sh e2e down -v' to stop them manually"
   fi
 }
 
 setup_clickhouse() {
   echo "Starting ClickHouse..."
-  docker compose -p "$E2E_PROJECT" -f "$DOCKER_COMPOSE_FILE" up -d ch-server
+  bash "$REPO_ROOT/scripts/services.sh" e2e up -d ch-server
 
   if ! wait_for_clickhouse; then
     exit 1
@@ -214,18 +213,18 @@ run_tests() {
   
   if [ "$LOCAL_MODE" = true ]; then
     echo "Running tests in local mode (frontend + ClickHouse)..."
-    yarn test:e2e --local "${PLAYWRIGHT_FLAGS[@]}"
+    bun --no-env-file scripts/run-e2e.js --local "${PLAYWRIGHT_FLAGS[@]}"
   else
     echo "Running tests in full-stack mode (MongoDB + API + ClickHouse)..."
-    yarn test:e2e "${PLAYWRIGHT_FLAGS[@]}"
+    bun --no-env-file scripts/run-e2e.js "${PLAYWRIGHT_FLAGS[@]}"
   fi
 }
 
 # Set up cleanup trap
 setup_cleanup_trap
 
-# Clean up E2E Next.js build directory to avoid stale lock/cache issues
-rm -rf "$REPO_ROOT/packages/app/.next-e2e" 2>/dev/null || true
+# Clean up E2E Vite cache to avoid stale lock/cache issues
+rm -rf "$REPO_ROOT/packages/app/node_modules/.vite-e2e" 2>/dev/null || true
 
 # Always start and seed ClickHouse (shared by both modes)
 setup_clickhouse
@@ -233,7 +232,7 @@ setup_clickhouse
 # Conditionally start MongoDB for full-stack mode
 if [ "$LOCAL_MODE" = false ]; then
   echo "Starting MongoDB for full-stack mode..."
-  docker compose -p "$E2E_PROJECT" -f "$DOCKER_COMPOSE_FILE" up -d db
+  bash "$REPO_ROOT/scripts/services.sh" e2e up -d db
   
   if ! wait_for_mongodb; then
     exit 1

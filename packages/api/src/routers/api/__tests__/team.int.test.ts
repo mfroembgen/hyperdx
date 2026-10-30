@@ -1,9 +1,11 @@
+import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import _ from 'lodash';
 import { ObjectId } from 'mongodb';
 import mongoose from 'mongoose';
 
 import { getLoggedInAgent, getServer } from '@/fixtures';
 import Alert, { AlertSource, AlertThresholdType } from '@/models/alert';
+import Connection from '@/models/connection';
 import Team from '@/models/team';
 import TeamInvite from '@/models/teamInvite';
 import User from '@/models/user';
@@ -71,19 +73,28 @@ describe('team router', () => {
       })
       .expect(200);
 
-    await agent.post('/sources').send({
-      team: team.id,
-      kind: 'log',
-      name: 'My New Source',
-      connection: new ObjectId().toString(),
-      from: {
-        databaseName: 'system',
-        tableName: 'query_log',
-      },
-      timestampValueExpression: 'event_date',
-      defaultTableSelectExpression: 'event_date,query',
-      id: 'l-1148034466',
+    const connection = await Connection.create({
+      team: team._id,
+      name: 'Tag source connection',
+      host: 'http://localhost:8123',
+      username: 'default',
+      password: '',
     });
+    const source = await agent
+      .post('/sources')
+      .send({
+        team: team.id,
+        kind: SourceKind.Log as const,
+        name: 'My New Source',
+        connection: connection.id,
+        from: {
+          databaseName: 'system',
+          tableName: 'query_log',
+        },
+        timestampValueExpression: 'event_date',
+        defaultTableSelectExpression: 'event_date,query',
+      })
+      .expect(200);
 
     await agent
       .post('/saved-search')
@@ -92,7 +103,7 @@ describe('team router', () => {
         name: 'Test',
         select: 'SELECT * FROM table',
         where: 'WHERE x = 1',
-        source: 'l-1148034466',
+        source: source.body.id,
         tags: ['test', 'test2'],
       })
       .expect(200);

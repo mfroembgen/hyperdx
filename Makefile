@@ -1,3 +1,4 @@
+CONTAINER_BUILD := $(if $(filter Darwin,$(shell uname -s)),container build,docker build)
 LATEST_VERSION := $$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' package.json)
 BUILD_PLATFORMS = linux/arm64,linux/amd64
 
@@ -47,7 +48,7 @@ all: install-tools
 
 .PHONY: install-tools
 install-tools:
-	yarn setup
+	bun run setup
 	@echo "All tools installed"
 
 # ---------------------------------------------------------------------------
@@ -72,23 +73,23 @@ install-tools:
 
 .PHONY: dev
 dev:
-	yarn dev
+	bun run dev
 
 .PHONY: dev-build
 dev-build:
-	bash -c '. ./scripts/dev-env.sh && docker compose -p "$$HDX_DEV_PROJECT" -f docker-compose.dev.yml build'
+	bash -c '. ./scripts/dev-env.sh && bash scripts/services.sh dev build'
 
 .PHONY: dev-up
 dev-up:
-	yarn dev
+	bun run dev
 
 .PHONY: dev-down
 dev-down:
-	yarn dev:down
+	bun run dev:down
 
 .PHONY: dev-portal
 dev-portal:
-	node scripts/dev-portal/server.js
+	bun scripts/dev-portal/server.js
 
 .PHONY: dev-portal-stop
 dev-portal-stop:
@@ -102,17 +103,17 @@ dev-portal-stop:
 
 .PHONY: dev-lint
 dev-lint:
-	npx nx run-many -t lint:fix
+	bun --bun x nx run-many -t lint:fix
 
 .PHONY: ci-build
 ci-build:
-	npx nx run-many -t ci:build
+	bun --bun x nx run-many -t ci:build
 
 .PHONY: ci-lint
 ci-lint:
-	npx nx run-many -t ci:lint
-	node scripts/ci/ratchet.mjs
-	-yarn dupes
+	bun --bun x nx run-many -t ci:lint
+	bun scripts/ci/ratchet.mjs
+	-bun run dupes
 	scripts/ci/check-openapi-sync.sh
 
 .PHONY: ci-openapi
@@ -121,7 +122,7 @@ ci-openapi:
 
 .PHONY: dev-int-down
 dev-int-down:
-	docker compose -p $(HDX_CI_PROJECT) -f ./docker-compose.ci.yml down -v
+	bash scripts/services.sh ci down -v
 	@for port in $(HDX_CI_API_PORT) $(HDX_CI_OPAMP_PORT); do \
 		pids=$$(lsof -ti :$$port 2>/dev/null); \
 		for pid in $$pids; do \
@@ -134,7 +135,7 @@ dev-int-down:
 .PHONY: dev-e2e-down
 dev-e2e-down:
 	@. ./scripts/slots.sh && hdx_e2e_ports && \
-	docker compose -p "$$E2E_PROJECT" -f packages/app/tests/e2e/docker-compose.yml down -v && \
+	bash scripts/services.sh e2e down -v && \
 	for port in $$HDX_E2E_API_PORT $$HDX_E2E_OPAMP_PORT $$HDX_E2E_APP_PORT $$HDX_E2E_APP_LOCAL_PORT; do \
 		pids=$$(lsof -ti :$$port 2>/dev/null); \
 		for pid in $$pids; do \
@@ -150,17 +151,17 @@ dev-clean: dev-down dev-int-down dev-e2e-down dev-portal-stop
 
 .PHONY: dev-int-build
 dev-int-build:
-	npx nx run-many -t ci:build
-	docker compose -p $(HDX_CI_PROJECT) -f ./docker-compose.ci.yml build
+	bun --bun x nx run-many -t ci:build
+	bash scripts/services.sh ci build
 
 .PHONY: dev-int
 dev-int:
 	@echo "Using CI slot $(HDX_CI_SLOT) (project=$(HDX_CI_PROJECT) ch=$(HDX_CI_CH_PORT) mongo=$(HDX_CI_MONGO_PORT) api=$(HDX_CI_API_PORT))"
 	@mkdir -p $(HDX_CI_LOGS_DIR)
 	@bash scripts/ensure-dev-portal.sh
-	docker compose -p $(HDX_CI_PROJECT) -f ./docker-compose.ci.yml up -d
-	bash -c 'set -o pipefail; npx nx run @hyperdx/api:dev:int $(FILE) 2>&1 | tee $(HDX_CI_LOGS_DIR)/api-int.log'; ret=$$?; \
-	docker compose -p $(HDX_CI_PROJECT) -f ./docker-compose.ci.yml down -v; \
+	bash scripts/services.sh ci up -d
+	bash -c 'set -o pipefail; bun --bun x nx run @hyperdx/api:dev:int $(FILE) 2>&1 | tee $(HDX_CI_LOGS_DIR)/api-int.log'; ret=$$?; \
+	bash scripts/services.sh ci down -v; \
 	$(call archive-int-logs); \
 	exit $$ret
 
@@ -169,37 +170,37 @@ dev-int-common-utils:
 	@echo "Using CI slot $(HDX_CI_SLOT) (project=$(HDX_CI_PROJECT) ch=$(HDX_CI_CH_PORT) mongo=$(HDX_CI_MONGO_PORT))"
 	@mkdir -p $(HDX_CI_LOGS_DIR)
 	@bash scripts/ensure-dev-portal.sh
-	docker compose -p $(HDX_CI_PROJECT) -f ./docker-compose.ci.yml up -d
-	bash -c 'set -o pipefail; npx nx run @hyperdx/common-utils:dev:int $(FILE) 2>&1 | tee $(HDX_CI_LOGS_DIR)/common-utils-int.log'; ret=$$?; \
-	docker compose -p $(HDX_CI_PROJECT) -f ./docker-compose.ci.yml down -v; \
+	bash scripts/services.sh ci up -d
+	bash -c 'set -o pipefail; bun --bun x nx run @hyperdx/common-utils:dev:int $(FILE) 2>&1 | tee $(HDX_CI_LOGS_DIR)/common-utils-int.log'; ret=$$?; \
+	bash scripts/services.sh ci down -v; \
 	$(call archive-int-logs); \
 	exit $$ret
 
 .PHONY: ci-int
 ci-int:
 	@mkdir -p $(HDX_CI_LOGS_DIR)
-	docker compose -p $(HDX_CI_PROJECT) -f ./docker-compose.ci.yml up -d --quiet-pull
-	bash -c 'set -o pipefail; npx nx run-many -t ci:int --parallel=false --output-style=stream 2>&1 | tee $(HDX_CI_LOGS_DIR)/ci-int.log'; ret=$$?; \
-	docker compose -p $(HDX_CI_PROJECT) -f ./docker-compose.ci.yml down -v; \
+	bash scripts/services.sh ci up -d --quiet-pull
+	bash -c 'set -o pipefail; bun --bun x nx run-many -t ci:int --parallel=false --output-style=stream 2>&1 | tee $(HDX_CI_LOGS_DIR)/ci-int.log'; ret=$$?; \
+	bash scripts/services.sh ci down -v; \
 	$(call archive-int-logs); \
 	exit $$ret
 
 .PHONY: dev-unit
 dev-unit:
-	npx nx run-many -t dev:unit
+	bun --bun x nx run-many -t dev:unit
 
 .PHONY: ci-unit
 ci-unit:
-	npx nx run-many -t ci:unit
-	node --test .github/scripts/__tests__/release-notes.test.mjs
-	node --test .github/scripts/__tests__/changeset-hash.test.mjs
-	node --test .github/scripts/code-review/__tests__/review-comments.test.mjs
-	node --test scripts/__tests__/slots.test.mjs
+	bun --bun x nx run-many -t ci:unit
+	bun test ./.github/scripts/__tests__/release-notes.test.mjs
+	bun test ./.github/scripts/__tests__/changeset-hash.test.mjs
+	bun test ./.github/scripts/code-review/__tests__/review-comments.test.mjs
+	bun test scripts/__tests__/slots.test.mjs
 
 .PHONY: ci-triage
 ci-triage:
-	node --test .github/scripts/__tests__/pr-triage-classify.test.js
-	node --test scripts/ci/__tests__/ratchet.test.mjs
+	bun test ./.github/scripts/__tests__/pr-triage-classify.test.js
+	bun test scripts/ci/__tests__/ratchet.test.mjs
 
 # ---------------------------------------------------------------------------
 # E2E tests — port isolation is handled by scripts/test-e2e.sh
@@ -223,7 +224,7 @@ dev-e2e-clean:
 dev-e2e:
 	./scripts/test-e2e.sh --dev $(if $(FILE),$(FILE)) $(if $(GREP),--grep "$(GREP)") $(ARGS); \
 	ret=$$?; \
-	$(if $(REPORT),. ./scripts/slots.sh && hdx_e2e_ports && cd packages/app && npx playwright show-report --port $$HDX_E2E_REPORT_PORT;) \
+	$(if $(REPORT),. ./scripts/slots.sh && hdx_e2e_ports && cd packages/app && bun --bun x playwright show-report --port $$HDX_E2E_REPORT_PORT;) \
 	exit $$ret
 
 
@@ -232,9 +233,9 @@ dev-e2e:
 .PHONY: dev-migrate-db
 dev-migrate-db:
 	@echo "Migrating Mongo db...\n"
-	npx nx run @hyperdx/api:dev:migrate-db
+	bun --bun x nx run @hyperdx/api:dev:migrate-db
 	@echo "Migrating ClickHouse db...\n"
-	npx nx run @hyperdx/api:dev:migrate-ch
+	bun --bun x nx run @hyperdx/api:dev:migrate-ch
 
 .PHONY: version
 version:
@@ -244,19 +245,14 @@ version:
 
 .PHONY: build-otel-collector
 build-otel-collector:
-	docker build . -f docker/otel-collector/Dockerfile \
+	$(CONTAINER_BUILD) . -f docker/otel-collector/Dockerfile \
 		-t ${OTEL_COLLECTOR_IMAGE_NAME_DOCKERHUB}:${IMAGE_VERSION}${IMAGE_VERSION_SUB_TAG} \
 		-t ${NEXT_OTEL_COLLECTOR_IMAGE_NAME_DOCKERHUB}:${IMAGE_VERSION}${IMAGE_VERSION_SUB_TAG} \
 		--target prod
 
 .PHONY: build-local
 build-local:
-	docker build . -f ./docker/hyperdx/Dockerfile \
-		--build-context clickhouse=./docker/clickhouse \
-		--build-context otel-collector=./docker/otel-collector \
-		--build-context hyperdx=./docker/hyperdx \
-		--build-context api=./packages/api \
-		--build-context app=./packages/app \
+	$(CONTAINER_BUILD) . -f ./docker/hyperdx/Dockerfile \
 		--build-arg CODE_VERSION=${CODE_VERSION} \
 		-t ${LOCAL_IMAGE_NAME_DOCKERHUB}:${IMAGE_VERSION}${IMAGE_VERSION_SUB_TAG} \
 		-t ${NEXT_LOCAL_IMAGE_NAME_DOCKERHUB}:${IMAGE_VERSION}${IMAGE_VERSION_SUB_TAG} \
@@ -264,12 +260,7 @@ build-local:
 
 .PHONY: build-all-in-one
 build-all-in-one:
-	docker build . -f ./docker/hyperdx/Dockerfile \
-		--build-context clickhouse=./docker/clickhouse \
-		--build-context otel-collector=./docker/otel-collector \
-		--build-context hyperdx=./docker/hyperdx \
-		--build-context api=./packages/api \
-		--build-context app=./packages/app \
+	$(CONTAINER_BUILD) . -f ./docker/hyperdx/Dockerfile \
 		--build-arg CODE_VERSION=${CODE_VERSION} \
 		-t ${ALL_IN_ONE_IMAGE_NAME_DOCKERHUB}:${IMAGE_VERSION}${IMAGE_VERSION_SUB_TAG} \
 		-t ${NEXT_ALL_IN_ONE_IMAGE_NAME_DOCKERHUB}:${IMAGE_VERSION}${IMAGE_VERSION_SUB_TAG} \
@@ -277,39 +268,28 @@ build-all-in-one:
 
 .PHONY: build-app
 build-app:
-	docker build . -f ./docker/hyperdx/Dockerfile \
-		--build-context hyperdx=./docker/hyperdx \
-		--build-context api=./packages/api \
-		--build-context app=./packages/app \
+	$(CONTAINER_BUILD) . -f ./docker/hyperdx/Dockerfile \
 		--build-arg CODE_VERSION=${CODE_VERSION} \
 		-t ${IMAGE_NAME_DOCKERHUB}:${IMAGE_VERSION}${IMAGE_VERSION_SUB_TAG} \
 		--target prod
 
 .PHONY: build-otel-collector-nightly
 build-otel-collector-nightly:
-	docker build . -f docker/otel-collector/Dockerfile \
+	$(CONTAINER_BUILD) . -f docker/otel-collector/Dockerfile \
 		-t ${OTEL_COLLECTOR_IMAGE_NAME_DOCKERHUB}:${IMAGE_NIGHTLY_TAG} \
 		-t ${NEXT_OTEL_COLLECTOR_IMAGE_NAME_DOCKERHUB}:${IMAGE_NIGHTLY_TAG} \
 		--target prod
 
 .PHONY: build-app-nightly
 build-app-nightly:
-	docker build . -f ./docker/hyperdx/Dockerfile \
-		--build-context hyperdx=./docker/hyperdx \
-		--build-context api=./packages/api \
-		--build-context app=./packages/app \
+	$(CONTAINER_BUILD) . -f ./docker/hyperdx/Dockerfile \
 		--build-arg CODE_VERSION=${CODE_VERSION} \
 		-t ${IMAGE_NAME_DOCKERHUB}:${IMAGE_NIGHTLY_TAG} \
 		--target prod
 
 .PHONY: build-local-nightly
 build-local-nightly:
-	docker build . -f ./docker/hyperdx/Dockerfile \
-		--build-context clickhouse=./docker/clickhouse \
-		--build-context otel-collector=./docker/otel-collector \
-		--build-context hyperdx=./docker/hyperdx \
-		--build-context api=./packages/api \
-		--build-context app=./packages/app \
+	$(CONTAINER_BUILD) . -f ./docker/hyperdx/Dockerfile \
 		--build-arg CODE_VERSION=${CODE_VERSION} \
 		-t ${LOCAL_IMAGE_NAME_DOCKERHUB}:${IMAGE_NIGHTLY_TAG} \
 		-t ${NEXT_LOCAL_IMAGE_NAME_DOCKERHUB}:${IMAGE_NIGHTLY_TAG} \
@@ -317,12 +297,7 @@ build-local-nightly:
 
 .PHONY: build-all-in-one-nightly
 build-all-in-one-nightly:
-	docker build . -f ./docker/hyperdx/Dockerfile \
-		--build-context clickhouse=./docker/clickhouse \
-		--build-context otel-collector=./docker/otel-collector \
-		--build-context hyperdx=./docker/hyperdx \
-		--build-context api=./packages/api \
-		--build-context app=./packages/app \
+	$(CONTAINER_BUILD) . -f ./docker/hyperdx/Dockerfile \
 		--build-arg CODE_VERSION=${CODE_VERSION} \
 		-t ${ALL_IN_ONE_IMAGE_NAME_DOCKERHUB}:${IMAGE_NIGHTLY_TAG} \
 		-t ${NEXT_ALL_IN_ONE_IMAGE_NAME_DOCKERHUB}:${IMAGE_NIGHTLY_TAG} \

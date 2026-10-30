@@ -1,20 +1,21 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { Socket } from 'net';
+import { vi } from 'vitest';
 
 import logger from '@/utils/logger';
 import { captureProxyBody, writeProxyBody } from '@/utils/proxyBody';
 
-jest.mock('@/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   __esModule: true,
-  default: { error: jest.fn() },
+  default: { error: vi.fn() },
 }));
 
 const makeProxyRequest = () => ({
-  getHeader: jest.fn(),
-  setHeader: jest.fn(),
-  removeHeader: jest.fn(),
-  write: jest.fn().mockReturnValue(true),
-  destroy: jest.fn().mockReturnThis(),
+  getHeader: vi.fn(),
+  setHeader: vi.fn(),
+  removeHeader: vi.fn(),
+  write: vi.fn().mockReturnValue(true),
+  destroy: vi.fn().mockReturnThis(),
 });
 
 describe('ClickHouse proxy body capture', () => {

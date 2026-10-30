@@ -2,9 +2,9 @@ import React, { useEffect } from 'react';
 import type { NextPage } from 'next';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
-import { env } from 'next-runtime-env';
-import randomUUID from 'crypto-randomuuid';
+import { Buffer } from 'buffer/';
 import { enableMapSet } from 'immer';
+import { NuqsAdapter } from 'nuqs/adapters/next/pages';
 import HyperDX from '@hyperdx/browser';
 import {
   MutationCache,
@@ -21,6 +21,7 @@ import {
   FONT_VAR_MAP,
   MANTINE_FONT_MAP,
 } from '@/config/fonts';
+import { env } from '@/config/runtime-env';
 import { ibmPlexMono, inter, roboto, robotoMono } from '@/fonts';
 import { fetchServerVersion, installHdxDebug } from '@/hdxDebug';
 import {
@@ -47,10 +48,30 @@ import '@styles/globals.css';
 import '@xyflow/react/dist/style.css';
 import 'uplot/dist/uPlot.min.css';
 
+// SQLString expects the Buffer global previously supplied by the Next bundler.
+if (typeof globalThis.Buffer === 'undefined') {
+  Object.assign(globalThis, { Buffer });
+}
+
 // Polyfill crypto.randomUUID for non-HTTPS environments
 if (typeof crypto !== 'undefined' && !crypto.randomUUID) {
-  crypto.randomUUID =
-    randomUUID as () => `${string}-${string}-${string}-${string}-${string}`;
+  Object.defineProperty(crypto, 'randomUUID', {
+    value: () => {
+      const bytes = crypto.getRandomValues(new Uint8Array(16));
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+      const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0'));
+      return [
+        hex.slice(0, 4),
+        hex.slice(4, 6),
+        hex.slice(6, 8),
+        hex.slice(8, 10),
+        hex.slice(10),
+      ]
+        .map(part => part.join(''))
+        .join('-');
+    },
+  });
 }
 
 enableMapSet();
@@ -212,7 +233,7 @@ export default function MyApp({ Component, pageProps }: AppPropsWithLayout) {
   }, []);
 
   return (
-    <React.Fragment>
+    <NuqsAdapter>
       <AppThemeProvider>
         <AppHeadContent />
         <DynamicFavicon />
@@ -221,6 +242,6 @@ export default function MyApp({ Component, pageProps }: AppPropsWithLayout) {
           <ReactQueryDevtools initialIsOpen={true} />
         </QueryClientProvider>
       </AppThemeProvider>
-    </React.Fragment>
+    </NuqsAdapter>
   );
 }

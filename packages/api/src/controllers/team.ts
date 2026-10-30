@@ -18,7 +18,7 @@ export function getTeamInviteUrl(token: string) {
 
 const LOCAL_APP_TEAM_ID = '_local_team_';
 export const LOCAL_APP_TEAM = {
-  _id: new mongoose.Types.ObjectId(LOCAL_APP_TEAM_ID),
+  _id: new mongoose.Types.ObjectId(Buffer.from(LOCAL_APP_TEAM_ID)),
   id: LOCAL_APP_TEAM_ID,
   name: 'Local App Team',
   // Placeholder keys

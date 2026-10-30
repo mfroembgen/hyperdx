@@ -1,19 +1,17 @@
 ## base #############################################################################################
-FROM node:22.23.4-alpine AS base
+FROM oven/bun:1.4.4-alpine AS base
 
 WORKDIR /app
 
-COPY .yarn ./.yarn
-COPY .yarnrc.yml yarn.lock package.json nx.json .prettierrc .prettierignore ./tsconfig.base.json ./
-# Only copy package.json for workspace resolution during yarn install;
-# full source is copied in the build stages that need it.
-COPY ./packages/common-utils/package.json ./packages/common-utils/package.json
-COPY ./packages/api/jest.config.js ./packages/api/tsconfig.json ./packages/api/tsconfig.build.json ./packages/api/package.json ./packages/api/
-COPY ./packages/api/bin ./packages/api/bin
-# Use BuildKit cache mount to persist Yarn download cache across builds,
-# so unchanged packages aren't re-downloaded even when yarn.lock changes.
-RUN --mount=type=cache,target=/root/.yarn/berry/cache,id=yarn-cache \
-    yarn install --mode=skip-build && yarn cache clean
+COPY bun.lock bunfig.toml mise.toml package.json nx.json .prettierrc .prettierignore tsconfig.base.json ./
+COPY patches ./patches
+COPY packages/common-utils/package.json ./packages/common-utils/package.json
+COPY packages/api/package.json ./packages/api/package.json
+COPY packages/app/package.json ./packages/app/package.json
+COPY packages/cli/package.json ./packages/cli/package.json
+COPY packages/hdx-eval/package.json ./packages/hdx-eval/package.json
+COPY packages/otel-collector/package.json ./packages/otel-collector/package.json
+RUN --mount=type=cache,target=/root/.bun/install/cache,id=bun-cache bun ci
 
 
 ## dev #############################################################################################
@@ -24,7 +22,7 @@ COPY ./packages/common-utils ./packages/common-utils
 
 EXPOSE 8000
 
-ENTRYPOINT ["npx", "nx", "run", "@hyperdx/api:dev"]
+ENTRYPOINT ["bun", "--bun", "x", "nx", "run", "@hyperdx/api:dev"]
 
 
 ## common-utils-builder ############################################################################
@@ -33,7 +31,7 @@ ENTRYPOINT ["npx", "nx", "run", "@hyperdx/api:dev"]
 FROM base AS common-utils-builder
 
 COPY ./packages/common-utils ./packages/common-utils
-RUN yarn workspace @hyperdx/common-utils run build
+RUN bun run --cwd packages/common-utils build
 
 
 ## builder #########################################################################################
@@ -43,15 +41,14 @@ FROM base AS builder
 # Copy pre-built common-utils from its dedicated build stage
 COPY --from=common-utils-builder /app/packages/common-utils ./packages/common-utils
 
-COPY ./packages/api/src ./packages/api/src
-RUN yarn workspace @hyperdx/api run build
-RUN --mount=type=cache,target=/root/.yarn/berry/cache,id=yarn-cache \
-    rm -rf node_modules && yarn workspaces focus @hyperdx/api --production
+COPY ./packages/api ./packages/api
+RUN bun run --cwd packages/api build
+RUN rm -rf node_modules packages/*/node_modules && bun install --frozen-lockfile --production --filter @hyperdx/api && mkdir -p packages/api/node_modules packages/common-utils/node_modules
 
 
 ## prod ############################################################################################
 
-FROM node:22.23.4-alpine AS prod
+FROM oven/bun:1.4.4-alpine AS prod
 
 LABEL org.opencontainers.image.vendor="HyperDX" \
       org.opencontainers.image.title="HyperDX API" \
@@ -65,22 +62,26 @@ ENV CODE_VERSION=$CODE_VERSION
 ENV OTEL_RESOURCE_ATTRIBUTES="service.version=$CODE_VERSION"
 ENV NODE_ENV production
 
-ARG PORT
+ARG PORT=8000
 
 ENV PORT=$PORT
 
 EXPOSE ${PORT}
 
-USER node
+USER bun
 
 WORKDIR /app
 
-COPY --chown=node:node --from=builder /app/node_modules ./node_modules
-COPY --chown=node:node --from=builder /app/packages/api/build ./packages/api/build
-COPY --chown=node:node --from=builder /app/packages/api/bin ./packages/api/bin
-COPY --chown=node:node --from=builder /app/packages/common-utils/dist ./packages/common-utils/dist
+COPY --chown=bun:bun --from=builder /app/node_modules ./node_modules
+COPY --chown=bun:bun --from=builder /app/packages/api/build ./packages/api/build
+COPY --chown=bun:bun --from=builder /app/packages/api/bin ./packages/api/bin
+COPY --chown=bun:bun --from=builder /app/packages/api/package.json ./packages/api/package.json
+COPY --chown=bun:bun --from=builder /app/packages/api/node_modules ./packages/api/node_modules
+COPY --chown=bun:bun --from=builder /app/packages/common-utils/dist ./packages/common-utils/dist
+COPY --chown=bun:bun --from=builder /app/packages/common-utils/package.json ./packages/common-utils/package.json
+COPY --chown=bun:bun --from=builder /app/packages/common-utils/node_modules ./packages/common-utils/node_modules
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:'+(process.env.PORT||8000)+'/health',r=>r.statusCode===200?process.exit(0):process.exit(1)).on('error',()=>process.exit(1))"
+    CMD bun -e "fetch('http://localhost:'+(process.env.PORT||8000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 ENTRYPOINT ["./packages/api/bin/hyperdx", "api"]

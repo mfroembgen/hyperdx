@@ -16,7 +16,7 @@
     "isolatedModules": true,
     "useUnknownInCatchVariables": false,
     "jsx": "preserve",
-    "types": ["@types/intercom-web", "jest"],
+    "types": ["@types/intercom-web", "vitest/globals"],
     "paths": {
       "@/*": ["./src/*"],
       "@styles/*": ["./styles/*"],
@@ -24,6 +24,6 @@
       "@agent-docs/*": ["../../agent_docs/*"]
     }
   },
-  "include": ["next-env.d.ts", "mdx.d.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "include": ["vinext-env.d.ts", "mdx.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "dist", "out", "storybook-static", ".vercel"]
 }

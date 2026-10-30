@@ -995,12 +995,10 @@ const renderAdhocConditionSql = ({
 export function adhocConditionsToFilters(
   conditions: AdhocFilterCondition[],
 ): ConditionFilter[] {
-  return conditions.map(
-    (condition): ConditionFilter => ({
-      type: 'sql',
-      condition: renderAdhocConditionSql(condition),
-    }),
-  );
+  return conditions.map((condition): ConditionFilter => ({
+    type: 'sql',
+    condition: renderAdhocConditionSql(condition),
+  }));
 }
 
 /** How a value clicked in a tile updates an ad hoc filter. */
@@ -1113,12 +1111,10 @@ export function adhocConditionsToPromqlFilters(
 ): PromqlConditionFilter[] {
   return conditions
     .filter(condition => isAdhocConditionSupported('promql', condition))
-    .map(
-      (condition): PromqlConditionFilter => ({
-        type: 'promql',
-        condition: renderAdhocMatcherPromql(condition),
-      }),
-    );
+    .map((condition): PromqlConditionFilter => ({
+      type: 'promql',
+      condition: renderAdhocMatcherPromql(condition),
+    }));
 }
 
 function isPromqlFilter(

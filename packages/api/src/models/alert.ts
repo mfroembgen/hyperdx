@@ -33,14 +33,7 @@ export interface IAlertError {
 
 // follow 'ms' pkg formats
 export type AlertInterval =
-  | '1m'
-  | '5m'
-  | '15m'
-  | '30m'
-  | '1h'
-  | '6h'
-  | '12h'
-  | '1d';
+  '1m' | '5m' | '15m' | '30m' | '1h' | '6h' | '12h' | '1d';
 
 export type AlertChannel =
   | {
@@ -160,12 +153,19 @@ const AlertSchema = new Schema<IAlert>(
       // Maximum offset for daily windows (24h - 1 minute).
       max: 1439,
       validate: {
-        validator: function (this: IAlert, value: number | undefined) {
+        validator: function (
+          this: AlertDocument | mongoose.Query<unknown, AlertDocument>,
+          value: number | undefined,
+        ) {
           if (value == null) {
             return true;
           }
 
-          const intervalMinutes = ALERT_INTERVAL_TO_MINUTES[this.interval];
+          const interval =
+            this instanceof mongoose.Query
+              ? this.get('interval')
+              : this.interval;
+          const intervalMinutes = ALERT_INTERVAL_TO_MINUTES[interval];
           return intervalMinutes == null || value < intervalMinutes;
         },
         message:
@@ -272,7 +272,6 @@ const AlertSchema = new Schema<IAlert>(
           type: Date,
           required: true,
         },
-        required: false,
       },
     },
     executionErrors: {

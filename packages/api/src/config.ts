@@ -13,8 +13,7 @@ const DEFAULT_FRONTEND_URL = env.HYPERDX_APP_PORT
 export const NODE_ENV = env.NODE_ENV as string;
 
 export const APP_TYPE = (env.APP_TYPE || DEFAULT_APP_TYPE) as
-  | 'api'
-  | 'scheduled-task';
+  'api' | 'scheduled-task';
 export const CODE_VERSION = env.CODE_VERSION ?? '';
 // Only for single container local deployments, disable authentication
 export const IS_LOCAL_APP_MODE =

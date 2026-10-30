@@ -42,3 +42,10 @@ initSDK({
       : {}),
   },
 });
+
+// Bun's HTTPS server inherits HTTP's emit. Instrument HTTPS first so loading
+// it later cannot unwrap the HTTP server instrumentation.
+if (process.versions.bun) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('node:https');
+}

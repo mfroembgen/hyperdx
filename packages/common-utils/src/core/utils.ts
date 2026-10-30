@@ -1,6 +1,6 @@
 // Port from ChartUtils + source.ts
 import { add as fnsAdd, format as fnsFormat } from 'date-fns';
-import { formatInTimeZone, zonedTimeToUtc } from 'date-fns-tz';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { omit } from 'lodash';
 import { z } from 'zod';
 
@@ -824,7 +824,7 @@ export function toWallClock(date: Date, timeZone: string): Date {
  */
 export function fromWallClock(wallClock: Date, timeZone: string): Date {
   // An ISO string without an offset is read as a clock reading in `timeZone`.
-  return zonedTimeToUtc(wallClock.toISOString().slice(0, 23), timeZone);
+  return fromZonedTime(wallClock.toISOString().slice(0, 23), timeZone);
 }
 
 type Dashboard = z.infer<typeof DashboardSchema>;

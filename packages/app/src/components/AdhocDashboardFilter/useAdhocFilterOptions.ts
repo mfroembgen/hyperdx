@@ -232,24 +232,22 @@ function usePromqlSourceKeys(
   );
 
   return useQueries({
-    queries: sources.map(
-      (source): UseQueryOptions<string[]> => ({
-        queryKey: [
-          'adhoc-filter-promql-keys',
-          source.id,
-          seconds.start,
-          seconds.end,
-        ],
-        queryFn: async () => {
-          const labels = await fetchPromqlLabelNames(
-            promqlLookupParams(source, seconds, attribution),
-          );
-          return labels.filter(label => label !== '__name__');
-        },
-        staleTime: STALE_TIME_MS,
-        placeholderData: keepPreviousData,
-      }),
-    ),
+    queries: sources.map((source): UseQueryOptions<string[]> => ({
+      queryKey: [
+        'adhoc-filter-promql-keys',
+        source.id,
+        seconds.start,
+        seconds.end,
+      ],
+      queryFn: async () => {
+        const labels = await fetchPromqlLabelNames(
+          promqlLookupParams(source, seconds, attribution),
+        );
+        return labels.filter(label => label !== '__name__');
+      },
+      staleTime: STALE_TIME_MS,
+      placeholderData: keepPreviousData,
+    })),
     combine: combineKeys,
   });
 }
@@ -305,25 +303,23 @@ function usePromqlSourceValues(
   const seconds = toPromqlSeconds(dateRange);
 
   return useQueries({
-    queries: sources.map(
-      (source): UseQueryOptions<string[]> => ({
-        queryKey: [
-          'adhoc-filter-promql-values',
-          source.id,
-          key,
-          seconds.start,
-          seconds.end,
-        ],
-        queryFn: () =>
-          fetchPromqlLabelValues({
-            label: key,
-            ...promqlLookupParams(source, seconds, attribution),
-          }),
-        enabled: !!key,
-        staleTime: STALE_TIME_MS,
-        retry: false,
-      }),
-    ),
+    queries: sources.map((source): UseQueryOptions<string[]> => ({
+      queryKey: [
+        'adhoc-filter-promql-values',
+        source.id,
+        key,
+        seconds.start,
+        seconds.end,
+      ],
+      queryFn: () =>
+        fetchPromqlLabelValues({
+          label: key,
+          ...promqlLookupParams(source, seconds, attribution),
+        }),
+      enabled: !!key,
+      staleTime: STALE_TIME_MS,
+      retry: false,
+    })),
     combine: combineValues,
   });
 }

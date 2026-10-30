@@ -1,7 +1,9 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import { AlertErrorType, SourceKind } from '@hyperdx/common-utils/dist/types';
 import _ from 'lodash';
 import { ObjectId } from 'mongodb';
 import request from 'supertest';
+import { vi } from 'vitest';
 
 import {
   getLoggedInAgent,
@@ -9,8 +11,8 @@ import {
   RAW_SQL_ALERT_TEMPLATE,
   RAW_SQL_NUMBER_ALERT_TEMPLATE,
 } from '@/fixtures';
-import { AlertSource, AlertThresholdType } from '@/models/alert';
 import Alert from '@/models/alert';
+import { AlertSource, AlertThresholdType } from '@/models/alert';
 import Connection from '@/models/connection';
 import Dashboard from '@/models/dashboard';
 import { SavedSearch } from '@/models/savedSearch';
@@ -170,9 +172,9 @@ describe('External API Alerts', () => {
     };
   };
 
-  // Helper to create a test alert directly in the database (bypasses validation)
+  // Helper to create a test alert directly in the database (bypasses HTTP validation)
   const createTestAlertDirectly = async (overrides = {}) => {
-    return Alert.create({
+    return new Alert({
       team: team._id,
       dashboardId: new ObjectId().toString(),
       tileId: new ObjectId().toString(),
@@ -187,7 +189,7 @@ describe('External API Alerts', () => {
       name: 'Direct DB Alert',
       message: 'Created directly in DB',
       ...overrides,
-    });
+    }).save();
   };
 
   // The readers behind these routes project the referenced dashboard down to
@@ -208,7 +210,7 @@ describe('External API Alerts', () => {
             h: 3,
             config: {
               name: 'Projected Tile',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               source: new ObjectId().toString(),
               select: [
                 {
@@ -279,7 +281,7 @@ describe('External API Alerts', () => {
             h: 3,
             config: {
               name: 'Error Rate',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               source: new ObjectId().toString(),
               select: [
                 {
@@ -593,7 +595,7 @@ describe('External API Alerts', () => {
 
     it('should handle validation errors when creating alerts', async () => {
       // Spy on console.error to suppress error output in tests
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -946,7 +948,7 @@ describe('External API Alerts', () => {
         password: '',
       });
       const source = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         from: { databaseName: 'default', tableName: 'otel_logs' },
         timestampValueExpression: 'Timestamp',
@@ -962,7 +964,7 @@ describe('External API Alerts', () => {
       sourceId: string,
       overrides: Record<string, unknown> = {},
     ) => ({
-      displayType: 'line',
+      displayType: DisplayType.Line,
       sourceId,
       select: [
         {
@@ -1009,7 +1011,7 @@ describe('External API Alerts', () => {
       expect(created.body.data.savedSearchId).toBeUndefined();
       expect(created.body.data.dashboardId).toBeUndefined();
       expect(created.body.data.chartConfig).toMatchObject({
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId: source._id.toString(),
         select: [
           {
@@ -1023,7 +1025,7 @@ describe('External API Alerts', () => {
       // Mongo persists the internal dialect the check-alerts task evaluates.
       const stored = await Alert.findById(created.body.data.id);
       expect(stored!.chartConfig).toMatchObject({
-        displayType: 'line',
+        displayType: DisplayType.Line,
         source: source._id.toString(),
         select: [
           {
@@ -1039,7 +1041,7 @@ describe('External API Alerts', () => {
         `${ALERTS_BASE_URL}/${created.body.data.id}`,
       ).expect(200);
       expect(single.body.data.chartConfig).toMatchObject({
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId: source._id.toString(),
       });
 
@@ -1280,7 +1282,7 @@ describe('External API Alerts', () => {
         .send(
           makeInlineAlertInput(
             makeBuilderChartConfig(source._id.toString(), {
-              displayType: 'table',
+              displayType: DisplayType.Table,
             }),
             webhook._id.toString(),
           ),
@@ -1337,7 +1339,7 @@ describe('External API Alerts', () => {
             {
               ...base,
               configType: 'promql',
-              displayType: 'number',
+              displayType: DisplayType.Number,
               select: [
                 { aggFn: 'count', where: 'level:error' },
                 { aggFn: 'count', where: '' },
@@ -1421,7 +1423,7 @@ describe('External API Alerts', () => {
           makeInlineAlertInput(
             {
               configType: 'sql',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sqlTemplate: 'SELECT 1',
               connectionId: connection._id.toString(),
             },
@@ -1436,7 +1438,7 @@ describe('External API Alerts', () => {
           makeInlineAlertInput(
             {
               configType: 'sql',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sqlTemplate: RAW_SQL_ALERT_TEMPLATE,
               connectionId: new ObjectId().toString(),
             },
@@ -1450,7 +1452,7 @@ describe('External API Alerts', () => {
           makeInlineAlertInput(
             {
               configType: 'sql',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sqlTemplate: RAW_SQL_ALERT_TEMPLATE,
               connectionId: connection._id.toString(),
             },
@@ -1460,7 +1462,7 @@ describe('External API Alerts', () => {
         .expect(200);
       expect(created.body.data.chartConfig).toMatchObject({
         configType: 'sql',
-        displayType: 'line',
+        displayType: DisplayType.Line,
         connectionId: connection._id.toString(),
         sqlTemplate: RAW_SQL_ALERT_TEMPLATE,
       });
@@ -1486,7 +1488,7 @@ describe('External API Alerts', () => {
 
       const rawSqlConfig = {
         configType: 'sql',
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sqlTemplate: RAW_SQL_ALERT_TEMPLATE,
         sourceId: source._id.toString(),
       };
@@ -1528,7 +1530,7 @@ describe('External API Alerts', () => {
       const webhook = await createTestWebhook();
 
       const numberConfig = {
-        displayType: 'number',
+        displayType: DisplayType.Number,
         sourceId: source._id.toString(),
         select: [{ aggFn: 'count', where: 'level:error' }],
       };
@@ -1537,7 +1539,7 @@ describe('External API Alerts', () => {
         .send(makeInlineAlertInput(numberConfig, webhook._id.toString()))
         .expect(200);
       expect(created.body.data.chartConfig).toMatchObject({
-        displayType: 'number',
+        displayType: DisplayType.Number,
         sourceId: source._id.toString(),
       });
 
@@ -1589,7 +1591,7 @@ describe('External API Alerts', () => {
       const webhook = await createTestWebhook();
 
       const sessionSource = await Source.create({
-        kind: SourceKind.Session,
+        kind: SourceKind.Session as const,
         team: team._id,
         from: { databaseName: 'default', tableName: 'rrweb_events' },
         timestampValueExpression: 'Timestamp',
@@ -1812,7 +1814,7 @@ describe('External API Alerts', () => {
           makeInlineAlertInput(
             {
               configType: 'sql',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sqlTemplate: RAW_SQL_ALERT_TEMPLATE,
               connectionId: connection._id.toString(),
               where: 'ServiceName:api',
@@ -1839,7 +1841,7 @@ describe('External API Alerts', () => {
         dashboardId: undefined,
         tileId: undefined,
         chartConfig: {
-          displayType: 'line',
+          displayType: DisplayType.Line,
           source: source._id.toString(),
           select: [
             {
@@ -1885,7 +1887,7 @@ describe('External API Alerts', () => {
         {
           label: 'array groupBy',
           chartConfig: {
-            displayType: 'line',
+            displayType: DisplayType.Line,
             source: source._id.toString(),
             select: [
               {
@@ -1903,7 +1905,7 @@ describe('External API Alerts', () => {
         {
           label: 'over-cap aggCondition',
           chartConfig: {
-            displayType: 'line',
+            displayType: DisplayType.Line,
             source: source._id.toString(),
             select: [
               {
@@ -1957,7 +1959,7 @@ describe('External API Alerts', () => {
         tileId: undefined,
         chartConfig: {
           name: 'Chart Alert Query',
-          displayType: 'line',
+          displayType: DisplayType.Line,
           source: source._id.toString(),
           select: [
             {
@@ -1979,7 +1981,7 @@ describe('External API Alerts', () => {
         `${ALERTS_BASE_URL}/${alert._id}`,
       ).expect(200);
       expect(single.body.data.chartConfig).toMatchObject({
-        displayType: 'line',
+        displayType: DisplayType.Line,
         name: 'Chart Alert Query',
         sourceId: source._id.toString(),
         select: [{ aggFn: 'count', where: 'level:error' }],
@@ -2124,7 +2126,7 @@ describe('External API Alerts', () => {
       it('should allow creating an alert on a raw SQL line tile', async () => {
         const webhook = await createTestWebhook();
         const { dashboard, tileId } = await createTestDashboardWithRawSqlTile({
-          displayType: 'line',
+          displayType: DisplayType.Line,
           sqlTemplate: RAW_SQL_ALERT_TEMPLATE,
         });
 
@@ -2151,7 +2153,7 @@ describe('External API Alerts', () => {
       it('should allow creating an alert on a raw SQL number tile', async () => {
         const webhook = await createTestWebhook();
         const { dashboard, tileId } = await createTestDashboardWithRawSqlTile({
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sqlTemplate: RAW_SQL_NUMBER_ALERT_TEMPLATE,
         });
 
@@ -2178,7 +2180,7 @@ describe('External API Alerts', () => {
       it('should reject creating an alert on a raw SQL table tile', async () => {
         const webhook = await createTestWebhook();
         const { dashboard, tileId } = await createTestDashboardWithRawSqlTile({
-          displayType: 'table',
+          displayType: DisplayType.Table,
           sqlTemplate: RAW_SQL_ALERT_TEMPLATE,
         });
 
@@ -2201,7 +2203,7 @@ describe('External API Alerts', () => {
       it('should reject creating an alert on a raw SQL tile without interval params', async () => {
         const webhook = await createTestWebhook();
         const { dashboard, tileId } = await createTestDashboardWithRawSqlTile({
-          displayType: 'line',
+          displayType: DisplayType.Line,
           sqlTemplate: 'SELECT count() FROM otel_logs',
         });
 
@@ -2225,7 +2227,7 @@ describe('External API Alerts', () => {
         const { alert, webhook } = await createTestAlert();
         const { dashboard: rawSqlDashboard, tileId: rawSqlTileId } =
           await createTestDashboardWithRawSqlTile({
-            displayType: 'table',
+            displayType: DisplayType.Table,
             sqlTemplate: RAW_SQL_ALERT_TEMPLATE,
           });
 
@@ -2414,7 +2416,7 @@ describe('External API Alerts', () => {
     });
 
     it('should reject BETWEEN without thresholdMax', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -2440,7 +2442,7 @@ describe('External API Alerts', () => {
     });
 
     it('should reject BETWEEN when thresholdMax < threshold', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -2640,7 +2642,7 @@ describe('External API Alerts', () => {
     });
 
     it('should reject numConsecutiveWindows below 1', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -2745,14 +2747,14 @@ describe('External API Alerts', () => {
         savedSearchId: savedSearch._id.toString(),
         interval: '5m',
         threshold: 1,
-        thresholdType: 'above',
+        thresholdType: AlertThresholdType.ABOVE,
       };
     };
 
     it('creates an alert with multiple channels and echoes both shapes', async () => {
       const [w1, w2] = await Promise.all([
-        makeWebhookNamed('multi-1'),
-        makeWebhookNamed('multi-2'),
+        await makeWebhookNamed('multi-1'),
+        await makeWebhookNamed('multi-2'),
       ]);
       const base = await baseSavedSearchAlert();
       const resp = await authRequest('post', ALERTS_BASE_URL)
@@ -2791,8 +2793,8 @@ describe('External API Alerts', () => {
 
     it('round-trips a multi-channel alert through PUT unchanged', async () => {
       const [w1, w2] = await Promise.all([
-        makeWebhookNamed('rt-1'),
-        makeWebhookNamed('rt-2'),
+        await makeWebhookNamed('rt-1'),
+        await makeWebhookNamed('rt-2'),
       ]);
       const base = await baseSavedSearchAlert();
       const created = await authRequest('post', ALERTS_BASE_URL)
@@ -2824,8 +2826,8 @@ describe('External API Alerts', () => {
     // target -- documented behaviour, pinned here so it can't change silently.
     it('collapses to one channel when a legacy client sends only `channel`', async () => {
       const [w1, w2] = await Promise.all([
-        makeWebhookNamed('legacy-1'),
-        makeWebhookNamed('legacy-2'),
+        await makeWebhookNamed('legacy-1'),
+        await makeWebhookNamed('legacy-2'),
       ]);
       const base = await baseSavedSearchAlert();
       const created = await authRequest('post', ALERTS_BASE_URL)

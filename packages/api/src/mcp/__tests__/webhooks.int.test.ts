@@ -1,8 +1,9 @@
+import { AlertThresholdType } from '@hyperdx/common-utils/dist/types';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 
 import { getLoggedInAgent, getServer } from '@/fixtures';
 import { McpContext } from '@/mcp/tools/types';
-import Alert from '@/models/alert';
+import Alert, { AlertSource } from '@/models/alert';
 import Team from '@/models/team';
 import Webhook, { WebhookService } from '@/models/webhook';
 
@@ -322,9 +323,9 @@ describe('MCP Webhook Tools', () => {
       });
       await Alert.create({
         team: team._id,
-        source: 'saved_search',
+        source: AlertSource.SAVED_SEARCH,
         threshold: 1,
-        thresholdType: 'above',
+        thresholdType: AlertThresholdType.ABOVE,
         interval: '5m',
         channel: { type: 'webhook', webhookId: wh._id.toString() },
       });

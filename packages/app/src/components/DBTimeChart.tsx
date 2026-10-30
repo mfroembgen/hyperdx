@@ -421,7 +421,7 @@ function DBTimeChartComponent({
   onFilter,
 }: DBTimeChartComponentProps) {
   const [selectedSeriesSet, setSelectedSeriesSet] = useState<Set<string>>(
-    new Set(),
+    () => new Set(),
   );
 
   // When the render cap hides series, the hidden-series notice lets the user

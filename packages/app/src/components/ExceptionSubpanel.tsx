@@ -13,6 +13,7 @@ import {
 } from '@tabler/icons-react';
 import { ColumnDef, Row, Table as TanstackTable } from '@tanstack/react-table';
 
+import type { AppTableFeatures } from '@/tableFeatures';
 import type {
   StacktraceBreadcrumb,
   StacktraceFrame as TStacktraceFrame,
@@ -184,8 +185,8 @@ const StacktraceRow = ({
   row,
   table,
 }: {
-  row: Row<TStacktraceFrame>;
-  table: TanstackTable<TStacktraceFrame>;
+  row: Row<AppTableFeatures, TStacktraceFrame>;
+  table: TanstackTable<AppTableFeatures, TStacktraceFrame>;
 }) => {
   const tableMeta = table.options.meta as {
     firstFrameIndex?: number;
@@ -278,7 +279,7 @@ const StacktraceRow = ({
   );
 };
 
-const stacktraceColumns: ColumnDef<TStacktraceFrame>[] = [
+const stacktraceColumns: ColumnDef<AppTableFeatures, TStacktraceFrame>[] = [
   {
     accessorKey: 'filename',
     cell: StacktraceRow,
@@ -312,7 +313,7 @@ const LevelChip = React.memo(({ level }: { level?: string }) => {
   return <Badge size="sm" text={level} state={state} />;
 });
 
-const breadcrumbColumns: ColumnDef<StacktraceBreadcrumb>[] = [
+const breadcrumbColumns: ColumnDef<AppTableFeatures, StacktraceBreadcrumb>[] = [
   {
     accessorKey: 'category',
     header: 'Category',

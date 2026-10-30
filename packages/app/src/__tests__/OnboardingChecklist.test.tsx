@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { ONBOARDING_TASK_IDS } from '@hyperdx/common-utils/dist/types';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -11,31 +12,31 @@ import OnboardingChecklist from '@/OnboardingChecklist';
 import { PRODUCT_TASKS } from '@/OnboardingChecklist/onboardingTasks';
 import { useSources } from '@/source';
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
-    useMe: jest.fn(),
-    useTeam: jest.fn(),
-    useDismissOnboarding: jest.fn(),
+    useMe: vi.fn(),
+    useTeam: vi.fn(),
+    useDismissOnboarding: vi.fn(),
   },
 }));
-jest.mock('@/connection', () => ({ useConnections: jest.fn() }));
-jest.mock('@/source', () => ({ useSources: jest.fn() }));
-jest.mock('@/hooks/useChartConfig', () => ({
-  useQueriedChartConfig: jest.fn(),
+vi.mock('@/connection', () => ({ useConnections: vi.fn() }));
+vi.mock('@/source', () => ({ useSources: vi.fn() }));
+vi.mock('@/hooks/useChartConfig', () => ({
+  useQueriedChartConfig: vi.fn(),
 }));
-jest.mock('@/theme/ThemeProvider', () => ({
+vi.mock('@/theme/ThemeProvider', () => ({
   useBrandDisplayName: () => 'HyperDX',
 }));
 
-const mockUseMe = jest.mocked(api.useMe);
-const mockUseTeam = jest.mocked(api.useTeam);
-const mockUseDismiss = jest.mocked(api.useDismissOnboarding);
-const mockUseConnections = jest.mocked(useConnections);
-const mockUseSources = jest.mocked(useSources);
-const mockUseQueriedChartConfig = jest.mocked(useQueriedChartConfig);
+const mockUseMe = vi.mocked(api.useMe);
+const mockUseTeam = vi.mocked(api.useTeam);
+const mockUseDismiss = vi.mocked(api.useDismissOnboarding);
+const mockUseConnections = vi.mocked(useConnections);
+const mockUseSources = vi.mocked(useSources);
+const mockUseQueriedChartConfig = vi.mocked(useQueriedChartConfig);
 
-const dismissMutate = jest.fn();
+const dismissMutate = vi.fn();
 
 // Team age (in days) drives the eligibility gate: setup phase shows for teams
 // younger than 3 days, product phase for younger than 7. Default the mock to a
@@ -115,7 +116,7 @@ function renderChecklist() {
 
 describe('OnboardingChecklist', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     setTeamAgeDays(0);
     mockUseDismiss.mockReturnValue({
       mutate: dismissMutate,
@@ -208,7 +209,7 @@ describe('OnboardingChecklist', () => {
   });
 
   it('does not celebrate on load when completion resolves after mount (async load)', () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       // Mount while the setup queries are still loading, even though the user is
       // already fully complete. Nothing should render yet.
@@ -234,19 +235,19 @@ describe('OnboardingChecklist', () => {
         </QueryClientProvider>,
       );
       act(() => {
-        jest.advanceTimersByTime(4000);
+        vi.advanceTimersByTime(4000);
       });
       expect(screen.queryByText(/You're all set/)).not.toBeInTheDocument();
       expect(
         screen.queryByText('Get started with HyperDX'),
       ).not.toBeInTheDocument();
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
   it('celebrates when the last task completes in-session, then hides — without persisting dismissal', () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       // Mount with one task still open.
       setMe({
@@ -274,12 +275,12 @@ describe('OnboardingChecklist', () => {
       // After the delay the card hides. We do NOT persist an isDismissed flag —
       // completion is derived, so adding a task later reopens the checklist.
       act(() => {
-        jest.advanceTimersByTime(4000);
+        vi.advanceTimersByTime(4000);
       });
       expect(screen.queryByText(/You're all set/)).not.toBeInTheDocument();
       expect(dismissMutate).not.toHaveBeenCalled();
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 

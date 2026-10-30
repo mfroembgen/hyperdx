@@ -167,7 +167,7 @@ describe('asTaskArgs', () => {
         concurrency: 'invalid',
       };
 
-      expect(() => asTaskArgs(invalidArgs)).toThrow('Expected number');
+      expect(() => asTaskArgs(invalidArgs)).toThrow('expected number');
     });
 
     it('should throw error when concurrency is zero', () => {
@@ -249,7 +249,7 @@ describe('asTaskArgs', () => {
         sourceTimeoutMs: 'invalid',
       };
 
-      expect(() => asTaskArgs(invalidArgs)).toThrow('Expected number');
+      expect(() => asTaskArgs(invalidArgs)).toThrow('expected number');
     });
 
     it('should throw error when sourceTimeoutMs is negative', () => {

@@ -1,5 +1,6 @@
-import { env } from 'next-runtime-env';
 import { z } from 'zod';
+
+import { env } from '@/config/runtime-env';
 
 import { clickstackTheme } from './themes/clickstack';
 import { hyperdxTheme } from './themes/hyperdx';
@@ -94,11 +95,12 @@ function validateThemeConfig(
     themeConfigSchema.parse(theme);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const details = error.errors
+      const details = error.issues
         .map(e => `${e.path.join('.')}: ${e.message}`)
         .join('; ');
       throw new Error(
         `Invalid theme configuration for "${themeName}": ${details}`,
+        { cause: error },
       );
     }
     throw error;

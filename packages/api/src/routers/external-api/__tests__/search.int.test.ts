@@ -22,7 +22,7 @@ const iso = (ms: number) => new Date(ms).toISOString();
 
 describe('External API v2 Search', () => {
   const server = getServer();
-  let agent: request.SuperTest<request.Test>;
+  let agent: request.Agent;
   let user: IUser;
   let logSource: ISource;
 
@@ -45,7 +45,7 @@ describe('External API v2 Search', () => {
     });
 
     logSource = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -211,7 +211,7 @@ describe('External API v2 Search', () => {
       password: config.CLICKHOUSE_PASSWORD,
     });
     const orphanSource = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team,
       from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
       timestampValueExpression: 'Timestamp',
@@ -540,7 +540,7 @@ describe('External API v2 Search', () => {
       password: config.CLICKHOUSE_PASSWORD,
     });
     const otherSource = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: otherTeamId,
       from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
       timestampValueExpression: 'Timestamp',

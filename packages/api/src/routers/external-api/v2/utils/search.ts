@@ -133,12 +133,16 @@ export async function runSearchConfig({
     ...(requestTimeout != null ? { requestTimeout } : {}),
   });
 
-  const searchBase = buildSearchChartConfig(source, {
+  const querySource = {
+    ...source.toJSON(),
+    connection: source.connection.toString(),
+  };
+  const searchBase = buildSearchChartConfig(querySource, {
     where: typeof config.where === 'string' ? config.where : '',
     whereLanguage: config.whereLanguage ?? 'lucene',
     select: config.select ?? null,
     displayType: DisplayType.Search,
-    orderBy: config.orderBy?.trim() || resolveSearchOrderBy(source),
+    orderBy: config.orderBy?.trim() || resolveSearchOrderBy(querySource),
     dateRange: [startDate, endDate],
   });
 

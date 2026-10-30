@@ -1,4 +1,5 @@
-jest.mock('next-runtime-env', () => ({
+import { vi } from 'vitest';
+vi.mock('@/config/runtime-env', () => ({
   env: (key: string) =>
     key === 'NEXT_PUBLIC_INSTANCE_LABEL' ? '  prod-U😀  ' : undefined,
 }));

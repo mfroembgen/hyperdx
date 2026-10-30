@@ -1,3 +1,5 @@
+import { type Mocked, vi } from 'vitest';
+
 import { ColumnMeta } from '@/clickhouse';
 import { ClickhouseClient } from '@/clickhouse/node';
 import {
@@ -19,7 +21,7 @@ import {
 
 describe('materializedViews', () => {
   const metadata: Metadata = {
-    getColumn: jest.fn().mockImplementation(({ column }) => {
+    getColumn: vi.fn().mockImplementation(({ column }) => {
       const columns: Record<string, ColumnMeta> = {
         count: {
           type: 'SimpleAggregateFunction(sum, UInt64)',
@@ -43,7 +45,7 @@ describe('materializedViews', () => {
       return columns[column];
     }),
     // These fixtures use plain identifiers, which render to themselves.
-    renderKeyExpressions: jest
+    renderKeyExpressions: vi
       .fn()
       .mockImplementation(({ keys }: { keys: string[] }) =>
         Promise.resolve(new Map(keys.map(k => [k, k]))),
@@ -295,7 +297,7 @@ describe('materializedViews', () => {
 
     it('should normalize a quantiles AggregateFunction to quantileMerge', async () => {
       const quantilesMetadata: Metadata = {
-        getColumn: jest.fn().mockImplementation(({ column }) => {
+        getColumn: vi.fn().mockImplementation(({ column }) => {
           if (column === 'quantile__Duration') {
             return {
               type: 'AggregateFunction(quantiles(0.9, 0.95), UInt64)',
@@ -348,7 +350,7 @@ describe('materializedViews', () => {
 
     it('should normalize a quantilesTDigest AggregateFunction to quantileTDigestMerge', async () => {
       const quantilesTDigestMetadata: Metadata = {
-        getColumn: jest.fn().mockImplementation(({ column }) => {
+        getColumn: vi.fn().mockImplementation(({ column }) => {
           if (column === 'quantile__Duration') {
             return {
               type: 'AggregateFunction(quantilesTDigest(0.9, 0.95), UInt64)',
@@ -1171,11 +1173,11 @@ describe('materializedViews', () => {
 
   describe('tryOptimizeConfigWithMaterializedView', () => {
     const mockClickHouseClient = {
-      testChartConfigValidity: jest.fn(),
-    } as unknown as jest.Mocked<ClickhouseClient>;
+      testChartConfigValidity: vi.fn(),
+    } as unknown as Mocked<ClickhouseClient>;
 
     beforeEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
 
       mockClickHouseClient.testChartConfigValidity.mockResolvedValue({
         isValid: true,
@@ -1585,11 +1587,11 @@ describe('materializedViews', () => {
 
   describe('tryOptimizeConfigWithMaterializedViewWithExplanation', () => {
     const mockClickHouseClient = {
-      testChartConfigValidity: jest.fn(),
-    } as unknown as jest.Mocked<ClickhouseClient>;
+      testChartConfigValidity: vi.fn(),
+    } as unknown as Mocked<ClickhouseClient>;
 
     beforeEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
 
       mockClickHouseClient.testChartConfigValidity.mockResolvedValue({
         isValid: true,
@@ -1990,8 +1992,8 @@ describe('materializedViews', () => {
 
   describe('optimizeGetKeyValuesCalls', () => {
     const mockClickHouseClient = {
-      testChartConfigValidity: jest.fn(),
-    } as unknown as jest.Mocked<ClickhouseClient>;
+      testChartConfigValidity: vi.fn(),
+    } as unknown as Mocked<ClickhouseClient>;
 
     const MV_CONFIG_LOGS_1M: MaterializedViewConfiguration = {
       databaseName: 'default',
@@ -2012,7 +2014,7 @@ describe('materializedViews', () => {
     };
 
     beforeEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     it('should return MVs for all keys when single MV covers all keys', async () => {
@@ -2554,8 +2556,8 @@ describe('materializedViews', () => {
 
   describe('optimizeFacetedKeyValuesConfig', () => {
     const mockClickHouseClient = {
-      testChartConfigValidity: jest.fn(),
-    } as unknown as jest.Mocked<ClickhouseClient>;
+      testChartConfigValidity: vi.fn(),
+    } as unknown as Mocked<ClickhouseClient>;
 
     const facetedChartConfig: ChartConfigWithOptDateRange = {
       from: { databaseName: 'default', tableName: 'otel_spans' },
@@ -2571,7 +2573,7 @@ describe('materializedViews', () => {
     } as TLogSource;
 
     beforeEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
       mockClickHouseClient.testChartConfigValidity.mockResolvedValue({
         isValid: true,
         rowEstimate: 1000,

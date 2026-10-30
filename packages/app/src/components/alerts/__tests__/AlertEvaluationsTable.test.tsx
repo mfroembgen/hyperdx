@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import {
   AlertErrorType,
   AlertEvaluation,
@@ -10,14 +11,18 @@ import { AlertEvaluationsTable } from '@/components/alerts/AlertEvaluationsTable
 
 // Controls whether the infinite-scroll sentinel reports itself as visible.
 let mockInViewport = false;
-jest.mock('@mantine/hooks', () => ({
-  ...jest.requireActual('@mantine/hooks'),
-  useInViewport: () => ({ ref: jest.fn(), inViewport: mockInViewport }),
-}));
+vi.mock('@mantine/hooks', async () => {
+  const actualModule0 =
+    await vi.importActual<typeof import('@mantine/hooks')>('@mantine/hooks');
+  return {
+    ...actualModule0,
+    useInViewport: () => ({ ref: vi.fn(), inViewport: mockInViewport }),
+  };
+});
 
 // Render raw ISO timestamps so time assertions don't depend on the test
 // runner's timezone or the user's clock-format preference.
-jest.mock('@/useFormatTime', () => ({
+vi.mock('@/useFormatTime', () => ({
   FormatTime: ({ value }: { value?: number | string | Date }) =>
     value ? new Date(value).toISOString() : null,
 }));
@@ -98,7 +103,7 @@ const renderTable = (
       isError={false}
       hasNextPage={false}
       isFetchingNextPage={false}
-      onLoadMore={jest.fn()}
+      onLoadMore={vi.fn()}
       {...props}
     />,
   );
@@ -154,7 +159,7 @@ describe('AlertEvaluationsTable', () => {
 
   it('fetches the next page when the scroll sentinel enters the viewport', () => {
     mockInViewport = true;
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
     renderTable({ hasNextPage: true, onLoadMore });
 
     expect(
@@ -165,7 +170,7 @@ describe('AlertEvaluationsTable', () => {
 
   it('does not fetch while a page is already being fetched', () => {
     mockInViewport = true;
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
     renderTable({ hasNextPage: true, isFetchingNextPage: true, onLoadMore });
 
     expect(onLoadMore).not.toHaveBeenCalled();
@@ -182,7 +187,7 @@ describe('AlertEvaluationsTable', () => {
     // Without this, the sentinel effect refires each time the failed fetch
     // settles (isFetchingNextPage true -> false), refetching forever.
     mockInViewport = true;
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
     renderTable({ hasNextPage: true, isError: true, onLoadMore });
 
     // The sentinel is unmounted, so nothing auto-fetches

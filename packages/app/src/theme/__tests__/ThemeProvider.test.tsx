@@ -8,8 +8,8 @@
  * - Fallback behavior outside provider
  * - Theme CSS class application
  */
-
 import React from 'react';
+import { type Mocked, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
 import { DEFAULT_THEME, themes } from '@/theme/index';
@@ -22,18 +22,18 @@ import {
   useWordmark,
 } from '@/theme/ThemeProvider';
 
-jest.mock('@/config', () => ({ INSTANCE_TITLE_SUFFIX: ' UK' }));
+vi.mock('@/config', () => ({ INSTANCE_TITLE_SUFFIX: ' UK' }));
 
 // Mock localStorage
-let localStorageMock: jest.Mocked<Storage>;
+let localStorageMock: Mocked<Storage>;
 
 beforeEach(() => {
   localStorageMock = {
-    getItem: jest.fn().mockReturnValue(null),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn(),
-    key: jest.fn(),
+    getItem: vi.fn().mockReturnValue(null),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+    key: vi.fn(),
     length: 0,
   };
 
@@ -47,7 +47,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('ThemeProvider', () => {
@@ -105,7 +105,7 @@ describe('ThemeProvider', () => {
   describe('useAppTheme outside provider', () => {
     it('should return fallback values without crashing', () => {
       // Mock console.warn to avoid noise
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       const { result } = renderHook(() => useAppTheme());
 

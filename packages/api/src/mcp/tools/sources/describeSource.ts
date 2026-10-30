@@ -129,8 +129,7 @@ async function describeSourceSchema(
 
   // Key columns by source kind
   let representativeMetric:
-    | { kind: QueryableMetricKind; tableName: string }
-    | undefined;
+    { kind: QueryableMetricKind; tableName: string } | undefined;
   if (source.kind === SourceKind.Trace) {
     meta.keyColumns = {
       spanName: source.spanNameExpression,

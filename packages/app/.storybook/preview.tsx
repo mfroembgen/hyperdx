@@ -1,6 +1,6 @@
 import React from 'react';
-import { initialize, mswLoader } from 'msw-storybook-addon';
-import type { Preview } from '@storybook/nextjs';
+import { mswLoader } from 'msw-storybook-addon/csf3';
+import type { Preview } from '@storybook/react-vite';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import {
@@ -81,8 +81,6 @@ export const globalTypes = {
     },
   },
 };
-
-initialize();
 
 const fontMap = {
   inter: { nextFont: inter, name: 'Inter' },
@@ -179,7 +177,7 @@ const preview: Preview = {
       );
     },
   ],
-  loaders: [mswLoader],
+  loaders: [mswLoader()],
   parameters: {
     msw: {
       handlers: [meHandler],

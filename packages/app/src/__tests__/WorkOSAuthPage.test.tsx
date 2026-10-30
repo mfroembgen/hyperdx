@@ -1,23 +1,19 @@
+import { vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import { render, screen, waitFor } from '@testing-library/react';
 
 import WorkOSAuthPage from '@/WorkOSAuthPage';
 
-const mocks = {
-  useMe: jest.fn(),
-  replace: jest.fn(),
-};
-
-jest.mock('@/api', () => ({
-  __esModule: true,
-  default: {
-    get useMe() {
-      return mocks.useMe;
-    },
-  },
+const mocks = vi.hoisted(() => ({
+  useMe: vi.fn(),
+  replace: vi.fn(),
 }));
-jest.mock('@/LandingHeader', () => ({ __esModule: true, default: () => null }));
-jest.mock('next/router', () => ({
+
+vi.mock('@/api', () => ({
+  default: { useMe: mocks.useMe },
+}));
+vi.mock('@/LandingHeader', () => ({ default: () => null }));
+vi.mock('next/router', () => ({
   useRouter: () => ({ query: {}, replace: mocks.replace }),
 }));
 

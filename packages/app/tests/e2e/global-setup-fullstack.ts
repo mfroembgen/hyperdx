@@ -219,6 +219,7 @@ async function globalSetup(_config: FullConfig) {
       console.error('  Network error fetching sources:', error);
       throw new Error(
         `Failed to connect to API at ${API_URL}/sources - is the API server running?`,
+        { cause: error },
       );
     }
 

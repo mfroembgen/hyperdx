@@ -248,7 +248,7 @@ describe('alerts list paging and filtering', () => {
       ]);
     });
 
-    it('matches any repeated tag', async () => {
+    it.each(['tag', 'tag[]'])('matches any repeated %s filter', async key => {
       const both = await createAlert({
         displayName: 'Both',
         tags: ['prod', 'web'],
@@ -259,7 +259,7 @@ describe('alerts list paging and filtering', () => {
 
       expect(await listIds('?tag=prod')).toHaveLength(2);
       // Union, not intersection: 'One' and 'Other' each carry one of the two.
-      expect(await listIds('?tag=prod&tag=web')).toEqual([
+      expect(await listIds(`?${key}=prod&${key}=web`)).toEqual([
         both._id.toString(),
         one._id.toString(),
         other._id.toString(),

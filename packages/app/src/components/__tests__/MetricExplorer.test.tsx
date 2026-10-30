@@ -1,4 +1,5 @@
 import React from 'react';
+import { type Mock, vi } from 'vitest';
 import {
   MetricsDataType,
   SourceKind,
@@ -12,37 +13,41 @@ import type { MetricCatalogEntry } from '@/utils/metricNameTree';
 
 // Every metric lookup hits ClickHouse directly from the browser, so the
 // explorer is exercised against mocked hooks rather than a query client.
-jest.mock('@/hooks/useMetricCatalog', () => ({
-  useMetricCatalog: jest.fn(),
+vi.mock('@/hooks/useMetricCatalog', () => ({
+  useMetricCatalog: vi.fn(),
 }));
-jest.mock('@/hooks/useFetchMetricAttributeValues', () => ({
-  useFetchMetricAttributeValues: jest.fn(),
+vi.mock('@/hooks/useFetchMetricAttributeValues', () => ({
+  useFetchMetricAttributeValues: vi.fn(),
 }));
-jest.mock('@/hooks/useFetchMetricResourceAttrs', () => ({
-  useFetchMetricResourceAttrs: jest.fn(),
-  parseAttributeKeysFromSuggestions: jest.fn(() => []),
+vi.mock('@/hooks/useFetchMetricResourceAttrs', () => ({
+  useFetchMetricResourceAttrs: vi.fn(),
+  parseAttributeKeysFromSuggestions: vi.fn(() => []),
 }));
 
 /**
  * Mock handles read back through `requireMock`, which is already typed as the
- * mocked shape — no assertion needed. Going through `jest.mocked` on the real
+ * mocked shape — no assertion needed. Going through `vi.mocked` on the real
  * imports would instead demand a complete `UseQueryResult` from every stub,
  * when the explorer only ever reads `data` / `entries` and `isLoading`.
  */
-const mockUseMetricCatalog = jest.requireMock<{
-  useMetricCatalog: jest.Mock;
-}>('@/hooks/useMetricCatalog').useMetricCatalog;
+const mockUseMetricCatalog = (
+  await vi.importMock<{
+    useMetricCatalog: Mock;
+  }>('@/hooks/useMetricCatalog')
+).useMetricCatalog;
 
-const mockUseFetchMetricAttributeValues = jest.requireMock<{
-  useFetchMetricAttributeValues: jest.Mock;
-}>('@/hooks/useFetchMetricAttributeValues').useFetchMetricAttributeValues;
+const mockUseFetchMetricAttributeValues = (
+  await vi.importMock<{
+    useFetchMetricAttributeValues: Mock;
+  }>('@/hooks/useFetchMetricAttributeValues')
+).useFetchMetricAttributeValues;
 
 const {
   useFetchMetricResourceAttrs: mockUseFetchMetricResourceAttrs,
   parseAttributeKeysFromSuggestions: mockParseAttributeKeys,
-} = jest.requireMock<{
-  useFetchMetricResourceAttrs: jest.Mock;
-  parseAttributeKeysFromSuggestions: jest.Mock;
+} = await vi.importMock<{
+  useFetchMetricResourceAttrs: Mock;
+  parseAttributeKeysFromSuggestions: Mock;
 }>('@/hooks/useFetchMetricResourceAttrs');
 
 const METRIC_SOURCE: TMetricSource = {
@@ -85,8 +90,8 @@ const CATALOG = { entries: ENTRIES, isLoading: false };
 type ModalProps = React.ComponentProps<typeof MetricExplorerModal>;
 
 function renderModal(overrides: Partial<ModalProps> = {}) {
-  const onApply = jest.fn();
-  const onClose = jest.fn();
+  const onApply = vi.fn();
+  const onClose = vi.fn();
   const view = renderWithMantine(
     <MetricExplorerModal
       opened
@@ -133,9 +138,8 @@ const mockAttributeValues = (values: {
 const VIEWPORT_HEIGHT = 900;
 
 beforeAll(() => {
-  jest
-    .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-    .mockImplementation(function (this: HTMLElement) {
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+    function (this: HTMLElement) {
       const height =
         this.dataset.testid === 'metric-explorer-list' ? VIEWPORT_HEIGHT : 46;
       return {
@@ -149,18 +153,19 @@ beforeAll(() => {
         y: 0,
         toJSON: () => ({}),
       };
-    });
-  jest
-    .spyOn(HTMLElement.prototype, 'clientHeight', 'get')
-    .mockReturnValue(VIEWPORT_HEIGHT);
+    },
+  );
+  vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(
+    VIEWPORT_HEIGHT,
+  );
 });
 
 afterAll(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   window.localStorage.clear();
   mockUseMetricCatalog.mockReturnValue(CATALOG);
   mockUseFetchMetricResourceAttrs.mockReturnValue({
@@ -351,7 +356,7 @@ describe('MetricExplorerModal', () => {
     ]);
     mockAttributeValues({ tagValues: ['host-a'] });
 
-    const onApply = jest.fn();
+    const onApply = vi.fn();
     renderModal({ onApply });
     await clickRow('system');
     await clickRow('memory');
@@ -628,7 +633,7 @@ describe('MetricExplorerModal', () => {
     mockUseMetricCatalog.mockImplementation(() => {
       throw new Error('catalog blew up');
     });
-    const consoleError = jest
+    const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
 

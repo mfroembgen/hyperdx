@@ -1,46 +1,62 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { Connection } from '@hyperdx/common-utils/dist/types';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 
 import { ConnectionForm } from '@/components/ConnectionForm';
 
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 
 // --- Mocks ---
-const mockCreateMutate = jest.fn();
-const mockUpdateMutate = jest.fn();
-jest.mock('@/connection', () => ({
-  ...jest.requireActual('@/connection'),
-  useCreateConnection: () => ({
-    mutate: mockCreateMutate,
-    isPending: false,
-  }),
-  useUpdateConnection: () => ({
-    mutate: mockUpdateMutate,
-    isPending: false,
-  }),
+const mockCreateMutate = vi.fn();
+const mockUpdateMutate = vi.fn();
+vi.mock('@/connection', async () => {
+  const actualModule0 =
+    await vi.importActual<typeof import('@/connection')>('@/connection');
+  return {
+    ...actualModule0,
+    useCreateConnection: () => ({
+      mutate: mockCreateMutate,
+      isPending: false,
+    }),
+    useUpdateConnection: () => ({
+      mutate: mockUpdateMutate,
+      isPending: false,
+    }),
 
-  useDeleteConnection: () => ({
-    mutate: jest.fn(),
-    isPending: false,
-  }),
-}));
+    useDeleteConnection: () => ({
+      mutate: vi.fn(),
+      isPending: false,
+    }),
+  };
+});
 
-jest.mock('@mantine/notifications', () => ({
+vi.mock('@mantine/notifications', () => ({
   notifications: {
-    show: jest.fn(),
+    show: vi.fn(),
   },
 }));
 
-const mockTestConnectionMutateAsync = jest.fn();
-jest.mock('@/api', () => ({
-  ...(jest.requireActual('@/api') ?? {}),
-  useTestConnection: () => ({
-    mutateAsync: mockTestConnectionMutateAsync.mockResolvedValue({
-      success: true,
+const mockTestConnectionMutateAsync = vi.fn();
+vi.mock('@/api', async () => {
+  const actualModule1 = await vi.importActual<typeof import('@/api')>('@/api');
+  return {
+    ...actualModule1,
+    default: {
+      ...actualModule1.default,
+      useTestConnection: () => ({
+        mutateAsync: mockTestConnectionMutateAsync.mockResolvedValue({
+          success: true,
+        }),
+      }),
+    },
+    useTestConnection: () => ({
+      mutateAsync: mockTestConnectionMutateAsync.mockResolvedValue({
+        success: true,
+      }),
     }),
-  }),
-}));
+  };
+});
 
 // --- Test Suite ---
 
@@ -53,12 +69,14 @@ describe('ConnectionForm', () => {
     password: '',
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockCreateMutate.mockClear();
     mockUpdateMutate.mockClear();
     mockTestConnectionMutateAsync.mockClear();
     (
-      jest.requireMock('@mantine/notifications') as any
+      (await vi.importMock<typeof import('@mantine/notifications')>(
+        '@mantine/notifications',
+      )) as any
     ).notifications.show.mockClear();
   });
 

@@ -114,9 +114,17 @@ export class SearchPage {
       return;
     }
     await this.sourceSelector.click();
-    await this.page
-      .getByRole('option', { name: sourceName, exact: true })
-      .click();
+    const option = this.page.getByRole('option', {
+      name: sourceName,
+      exact: true,
+    });
+    const sourceId = await option.getAttribute('value');
+    await option.click();
+    // Source changes apply after the form's debounce. Wait for the applied
+    // source before a caller searches, changes the time range, or reloads.
+    await expect(this.page).toHaveURL(
+      url => sourceId != null && url.searchParams.get('source') === sourceId,
+    );
   }
 
   /** The "Event Patterns" analysis-mode tab in the filters sidebar. */

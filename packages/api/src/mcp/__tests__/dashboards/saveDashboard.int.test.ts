@@ -1,3 +1,4 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import { MetricsDataType, SourceKind } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
 
@@ -25,7 +26,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             w: 12,
             h: 4,
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count', where: '' }],
             },
@@ -81,7 +82,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             {
               name: 'Tile 1',
               config: {
-                displayType: 'number',
+                displayType: DisplayType.Number,
                 sourceId,
                 select: [{ aggFn: 'count' }],
               },
@@ -102,7 +103,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             {
               name: 'Updated Tile',
               config: {
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 sourceId,
                 select: [{ aggFn: 'count' }],
               },
@@ -129,7 +130,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
           {
             name: 'Bad Tile',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId: fakeSourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -150,7 +151,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
           {
             name: 'Tile',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -174,7 +175,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             w: 12,
             h: 4,
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -186,7 +187,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             w: 12,
             h: 4,
             config: {
-              displayType: 'table',
+              displayType: DisplayType.Table,
               sourceId,
               select: [{ aggFn: 'count' }],
               groupBy: 'SpanName',
@@ -200,7 +201,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             w: 6,
             h: 3,
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -212,7 +213,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             w: 6,
             h: 3,
             config: {
-              displayType: 'pie',
+              displayType: DisplayType.Pie,
               sourceId,
               select: [{ aggFn: 'count' }],
               groupBy: 'SpanName',
@@ -225,7 +226,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             w: 6,
             h: 3,
             config: {
-              displayType: 'bar',
+              displayType: DisplayType.Bar,
               sourceId,
               select: [{ aggFn: 'count' }],
               groupBy: 'SpanName',
@@ -262,7 +263,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             name: 'Raw SQL',
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sqlTemplate: 'SELECT 1 AS value LIMIT 1',
             },
@@ -285,7 +286,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             name: 'Filtered SQL',
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sourceId,
               sqlTemplate:
@@ -314,7 +315,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             name: 'Filtered SQL',
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sqlTemplate:
                 'SELECT ServiceName, count() AS c FROM otel_traces WHERE $__timeFilter(Timestamp) AND $__filters GROUP BY ServiceName LIMIT 10',
@@ -342,7 +343,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             name: 'Source Table SQL',
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sqlTemplate:
                 'SELECT ServiceName, count() AS c FROM $__sourceTable WHERE $__timeFilter(Timestamp) GROUP BY ServiceName LIMIT 10',
@@ -370,7 +371,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             name: 'Joined SQL',
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sqlTemplate:
                 'SELECT t.ServiceName, count() AS c FROM otel_traces t JOIN otel_logs l ON t.TraceId = l.TraceId GROUP BY t.ServiceName LIMIT 10',
@@ -528,7 +529,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
 
     it('should save and re-read a series heatmap tile on a Log source', async () => {
       const logSource = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: ctx.team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: 'otel_logs' },
         timestampValueExpression: 'Timestamp',
@@ -700,7 +701,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
               {
                 name: 'Number Tile',
                 config: {
-                  displayType: 'number',
+                  displayType: DisplayType.Number,
                   sourceId,
                   select: [{ aggFn: 'count' }],
                   numberFormat,
@@ -709,7 +710,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
               {
                 name: 'Line Tile',
                 config: {
-                  displayType: 'line',
+                  displayType: DisplayType.Line,
                   sourceId,
                   select: [
                     { aggFn: 'count' },
@@ -758,7 +759,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
           {
             name: 'Number Tile',
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [{ aggFn: 'count' }],
               numberFormat: { output: 'not_a_real_output' },
@@ -775,7 +776,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
       // One rule per operator family the number-tile editor emits:
       // gt/gte/lt/lte (number), between ([min, max]), eq/neq (number).
       const numberConfig = {
-        displayType: 'number',
+        displayType: DisplayType.Number,
         sourceId,
         select: [{ aggFn: 'count' }],
         color: 'chart-blue',
@@ -822,7 +823,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
           {
             name: 'Number',
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [{ aggFn: 'count' }],
               color: 'not-a-token',
@@ -845,7 +846,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
           {
             name: 'Number',
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [{ aggFn: 'count' }],
               colorRules: [
@@ -863,7 +864,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
       const connectionId = ctx.connection._id.toString();
       const sqlConfig = {
         configType: 'sql',
-        displayType: 'number',
+        displayType: DisplayType.Number,
         connectionId,
         sqlTemplate: 'SELECT 0.99 AS value LIMIT 1',
         color: 'chart-success',
@@ -900,7 +901,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
     it('should round-trip number-tile backgroundChart through save and get', async () => {
       const sourceId = ctx.traceSource._id.toString();
       const numberConfig = {
-        displayType: 'number',
+        displayType: DisplayType.Number,
         sourceId,
         select: [{ aggFn: 'count' }],
         color: 'chart-green',
@@ -939,7 +940,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
           {
             name: 'Number',
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [{ aggFn: 'count' }],
               backgroundChart: { type: 'bar' },
@@ -966,7 +967,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
               name: 'SLO',
               config: {
                 configType: 'sql',
-                displayType: 'number',
+                displayType: DisplayType.Number,
                 connectionId,
                 sqlTemplate: 'SELECT 0.99 AS value LIMIT 1',
                 color: 'chart-success',
@@ -1128,7 +1129,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
       // sourceId is valid), so this exercises the runtime check that
       // the REST POST path also runs.
       const logSource = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: ctx.team._id,
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -1163,7 +1164,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
     // (displayType changed to heatmap on an existing tile).
     it('should reject update that changes a tile to heatmap on a non-Trace source', async () => {
       const logSource = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: ctx.team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: 'otel_logs' },
         timestampValueExpression: 'Timestamp',
@@ -1177,7 +1178,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
           {
             name: 'Line',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId: logSource._id.toString(),
               select: [{ aggFn: 'count' }],
             },
@@ -1211,7 +1212,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
     // (sourceId changed on an existing heatmap tile).
     it('should reject update that changes a heatmap tile source to a non-Trace source', async () => {
       const logSource = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: ctx.team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: 'otel_logs' },
         timestampValueExpression: 'Timestamp',
@@ -1330,7 +1331,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             name: 'Static SQL',
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sqlTemplate: 'SELECT 1 AS value LIMIT 1',
             },
@@ -1366,7 +1367,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             name: 'Macro SQL',
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sourceId,
               sqlTemplate:
@@ -1392,7 +1393,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             name: 'Line SQL',
             config: {
               configType: 'sql',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               connectionId,
               sourceId,
               // Has time-range + filters + source table, but buckets by a
@@ -1427,7 +1428,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             {
               name: 'Builder Tile',
               config: {
-                displayType: 'number',
+                displayType: DisplayType.Number,
                 sourceId,
                 select: [{ aggFn: 'count' }],
               },
@@ -1450,7 +1451,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
               name: 'Static SQL',
               config: {
                 configType: 'sql',
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 connectionId,
                 sqlTemplate: 'SELECT 1 AS value LIMIT 1',
               },
@@ -1880,7 +1881,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
       );
       expect(tooLongResult.isError).toBe(true);
       expect(getFirstText(tooLongResult)).toContain(
-        'String must contain at most 256 character(s)',
+        'Too big: expected string to have <=256 characters',
       );
       expect(getFirstText(tooLongResult)).toContain('containerId');
     });
@@ -3086,7 +3087,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             w: 12,
             h: 6,
             config: {
-              displayType: 'table',
+              displayType: DisplayType.Table,
               sourceId,
               select: [{ aggFn: 'count', alias: 'Count' }],
               groupBy: 'StatusMessage',
@@ -3123,7 +3124,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
               w: 12,
               h: 6,
               config: {
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 sourceId,
                 groupBy: "ResourceAttributes['service.name']",
                 select: [{ aggFn: 'count' }],
@@ -3193,7 +3194,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             w: 12,
             h: 6,
             config: {
-              displayType: 'table',
+              displayType: DisplayType.Table,
               sourceId,
               groupBy: "ResourceAttributes['service.name']",
               select: [{ aggFn: 'count' }],
@@ -3245,7 +3246,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             w: 12,
             h: 6,
             config: {
-              displayType: 'table',
+              displayType: DisplayType.Table,
               sourceId,
               groupBy: "ResourceAttributes['service.name']",
               select: [{ aggFn: 'count' }],
@@ -3292,7 +3293,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             w: 12,
             h: 6,
             config: {
-              displayType: 'table',
+              displayType: DisplayType.Table,
               sourceId,
               groupBy: 'SpanName',
               select: [{ aggFn: 'count' }],
@@ -3335,7 +3336,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             h: 6,
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sqlTemplate:
                 'SELECT ServiceName, count() AS c FROM otel_traces GROUP BY ServiceName LIMIT 50',
@@ -3381,7 +3382,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
           {
             name: 'Top Services',
             config: {
-              displayType: 'table',
+              displayType: DisplayType.Table,
               sourceId,
               select: [{ aggFn: 'count' }],
               onClick: {
@@ -3406,7 +3407,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
       // path. Create the metric source inline so this test is
       // self-contained.
       const metricSource = await Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: ctx.team._id,
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -3429,7 +3430,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
           {
             name: 'Top Services',
             config: {
-              displayType: 'table',
+              displayType: DisplayType.Table,
               sourceId,
               select: [{ aggFn: 'count' }],
               onClick: {
@@ -3462,7 +3463,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
           {
             name: 'Top Services',
             config: {
-              displayType: 'table',
+              displayType: DisplayType.Table,
               sourceId,
               select: [{ aggFn: 'count' }],
               onClick: {
@@ -3490,7 +3491,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
           {
             name: 'Top Services',
             config: {
-              displayType: 'table',
+              displayType: DisplayType.Table,
               sourceId,
               select: [{ aggFn: 'count' }],
               onClick: {
@@ -3521,7 +3522,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
           {
             name: 'Top Services',
             config: {
-              displayType: 'table',
+              displayType: DisplayType.Table,
               sourceId,
               select: [{ aggFn: 'count' }],
               onClick: {
@@ -3552,7 +3553,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
             {
               name: 'Top Services',
               config: {
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 sourceId,
                 select: [{ aggFn: 'count' }],
               },
@@ -3596,7 +3597,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
   describe('metric tiles', () => {
     const makeMetricSource = () =>
       Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: ctx.team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: '' },
         metricTables: {
@@ -3619,7 +3620,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
       w: 12,
       h: 4,
       config: {
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId,
         select: [
           {

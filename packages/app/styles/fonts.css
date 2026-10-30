@@ -1,0 +1,103 @@
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/inter/files/inter-latin-wght-normal.woff2')
+    format('woff2');
+}
+
+@font-face {
+  font-family: 'Roboto Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/roboto/files/roboto-latin-wght-normal.woff2')
+    format('woff2');
+}
+
+@font-face {
+  font-family: 'Roboto Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/roboto-mono/files/roboto-mono-latin-wght-normal.woff2')
+    format('woff2');
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300;
+  src: url('@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-300-normal.woff2')
+    format('woff2');
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2')
+    format('woff2');
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url('@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2')
+    format('woff2');
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url('@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2')
+    format('woff2');
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url('@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-700-normal.woff2')
+    format('woff2');
+}
+
+.font-ibm-plex-mono {
+  --font-ibm-plex-mono: 'IBM Plex Mono';
+}
+
+.font-inter {
+  --font-inter: 'Inter Variable';
+}
+
+.font-roboto {
+  --font-roboto: 'Roboto Variable';
+}
+
+.font-roboto-mono {
+  --font-roboto-mono: 'Roboto Mono Variable';
+}
+
+.face-ibm-plex-mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.face-inter {
+  font-family: 'Inter Variable', sans-serif;
+}
+
+.face-roboto {
+  font-family: 'Roboto Variable', sans-serif;
+}
+
+.face-roboto-mono {
+  font-family: 'Roboto Mono Variable', monospace;
+}

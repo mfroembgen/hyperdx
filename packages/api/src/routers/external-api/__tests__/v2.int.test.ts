@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { getLoggedInAgent, getServer } from '@/fixtures';
 
 describe('external api v2', () => {
@@ -9,7 +11,7 @@ describe('external api v2', () => {
 
   afterEach(async () => {
     await server.clearDBs();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterAll(async () => {

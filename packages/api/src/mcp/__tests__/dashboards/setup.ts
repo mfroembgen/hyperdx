@@ -49,7 +49,7 @@ export function setupDashboardTests() {
     });
 
     ctx.traceSource = await Source.create({
-      kind: SourceKind.Trace,
+      kind: SourceKind.Trace as const,
       team: ctx.team._id,
       from: {
         databaseName: DEFAULT_DATABASE,

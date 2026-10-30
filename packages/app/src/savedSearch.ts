@@ -95,12 +95,12 @@ export function useDeleteSavedSearch() {
   const invalidateTags = useInvalidateTags();
 
   return useMutation({
-    mutationFn: (id: string) => {
+    mutationFn: async (id: string) => {
       if (IS_LOCAL_MODE) {
         localSavedSearches.delete(id);
-        return Promise.resolve();
+        return;
       }
-      return hdxServer(`saved-search/${id}`, { method: 'DELETE' }).json<void>();
+      await hdxServer(`saved-search/${id}`, { method: 'DELETE' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['saved-search'] });

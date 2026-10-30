@@ -1,7 +1,10 @@
 import { ClickhouseClient } from '@hyperdx/common-utils/dist/clickhouse/node';
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
+import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { createServer } from 'http';
 import mongoose from 'mongoose';
 import ms from 'ms';
+import { type Mock, vi } from 'vitest';
 
 import * as config from '@/config';
 import { createAlert } from '@/controllers/alerts';
@@ -84,7 +87,7 @@ describe('Single Invocation Alert Test', () => {
       webhookServer.close();
     }
     await server.clearDBs();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterAll(async () => {
@@ -93,7 +96,7 @@ describe('Single Invocation Alert Test', () => {
 
   it('should trigger alert and send webhook notification - happy path', async () => {
     // Mock slack webhook to avoid external calls
-    jest.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
+    vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
 
     // Create team
     const team = await createTeam({ name: 'Test Team' });
@@ -109,7 +112,7 @@ describe('Single Invocation Alert Test', () => {
 
     // Create source
     const source = await Source.create({
-      kind: 'log',
+      kind: SourceKind.Log as const,
       team: team._id,
       from: {
         databaseName: 'default',
@@ -187,7 +190,10 @@ describe('Single Invocation Alert Test', () => {
     // Process the alert - this should trigger the webhook
     const details: any = {
       alert: enhancedAlert,
-      source,
+      source: {
+        ...source.toJSON({ virtuals: true }),
+        connection: connection.id,
+      },
       conn: connection,
       taskType: AlertTaskType.SAVED_SEARCH,
       savedSearch,
@@ -225,7 +231,7 @@ describe('Single Invocation Alert Test', () => {
     expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(1);
 
     // Get the actual call to inspect it
-    const webhookCall = (slack.postMessageToWebhook as jest.Mock).mock.calls[0];
+    const webhookCall = (slack.postMessageToWebhook as Mock).mock.calls[0];
     expect(webhookCall[0]).toBe('https://hooks.slack.com/services/test123');
 
     const webhookPayload = webhookCall[1];
@@ -256,7 +262,7 @@ describe('Single Invocation Alert Test', () => {
   });
 
   it('should include saved search filters in alert ClickHouse query', async () => {
-    jest.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
+    vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
 
     const team = await createTeam({ name: 'Test Team' });
 
@@ -269,7 +275,7 @@ describe('Single Invocation Alert Test', () => {
     });
 
     const source = await Source.create({
-      kind: 'log',
+      kind: SourceKind.Log as const,
       team: team._id,
       from: {
         databaseName: 'default',
@@ -362,7 +368,10 @@ describe('Single Invocation Alert Test', () => {
 
     const details: any = {
       alert: enhancedAlert,
-      source,
+      source: {
+        ...source.toJSON({ virtuals: true }),
+        connection: connection.id,
+      },
       conn: connection,
       taskType: AlertTaskType.SAVED_SEARCH,
       savedSearch,
@@ -397,7 +406,7 @@ describe('Single Invocation Alert Test', () => {
   });
 
   it('should not trigger alert when filters exclude all matching logs', async () => {
-    jest.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
+    vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
 
     const team = await createTeam({ name: 'Test Team' });
 
@@ -410,7 +419,7 @@ describe('Single Invocation Alert Test', () => {
     });
 
     const source = await Source.create({
-      kind: 'log',
+      kind: SourceKind.Log as const,
       team: team._id,
       from: {
         databaseName: 'default',
@@ -490,7 +499,10 @@ describe('Single Invocation Alert Test', () => {
 
     const details: any = {
       alert: enhancedAlert,
-      source,
+      source: {
+        ...source.toJSON({ virtuals: true }),
+        connection: connection.id,
+      },
       conn: connection,
       taskType: AlertTaskType.SAVED_SEARCH,
       savedSearch,
@@ -519,7 +531,7 @@ describe('Single Invocation Alert Test', () => {
   });
 
   it('should apply both where clause and filters together in alert query', async () => {
-    jest.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
+    vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
 
     const team = await createTeam({ name: 'Test Team' });
 
@@ -532,7 +544,7 @@ describe('Single Invocation Alert Test', () => {
     });
 
     const source = await Source.create({
-      kind: 'log',
+      kind: SourceKind.Log as const,
       team: team._id,
       from: {
         databaseName: 'default',
@@ -629,7 +641,10 @@ describe('Single Invocation Alert Test', () => {
 
     const details: any = {
       alert: enhancedAlert,
-      source,
+      source: {
+        ...source.toJSON({ virtuals: true }),
+        connection: connection.id,
+      },
       conn: connection,
       taskType: AlertTaskType.SAVED_SEARCH,
       savedSearch,
@@ -658,7 +673,7 @@ describe('Single Invocation Alert Test', () => {
 
   it('should use correct tile name in alert title when alerting tile is not first', async () => {
     // Mock slack webhook to avoid external calls
-    jest.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
+    vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
 
     // Create team
     const team = await createTeam({ name: 'Test Team' });
@@ -699,7 +714,7 @@ describe('Single Invocation Alert Test', () => {
 
     // Create source
     const source = await Source.create({
-      kind: 'log',
+      kind: SourceKind.Log as const,
       team: team._id,
       from: {
         databaseName: 'default',
@@ -732,7 +747,7 @@ describe('Single Invocation Alert Test', () => {
               },
             ],
             where: '',
-            displayType: 'line',
+            displayType: DisplayType.Line,
             granularity: 'auto',
             source: source.id,
             groupBy: '',
@@ -755,7 +770,7 @@ describe('Single Invocation Alert Test', () => {
               },
             ],
             where: '',
-            displayType: 'line',
+            displayType: DisplayType.Line,
             granularity: 'auto',
             source: source.id,
             groupBy: '',
@@ -804,7 +819,10 @@ describe('Single Invocation Alert Test', () => {
     // Set up alert processing details (like existing tile tests)
     const details = {
       alert: enhancedAlert,
-      source,
+      source: {
+        ...source.toJSON({ virtuals: true }),
+        connection: connection.id,
+      },
       taskType: AlertTaskType.TILE,
       tile,
       dashboard,
@@ -816,24 +834,6 @@ describe('Single Invocation Alert Test', () => {
       username: connection.username,
       password: connection.password,
     });
-
-    const mockMetadata = {
-      getColumn: jest.fn().mockImplementation(({ column }) => {
-        const columnMap = {
-          ServiceName: { name: 'ServiceName', type: 'String' },
-          Timestamp: { name: 'Timestamp', type: 'DateTime' },
-          SeverityText: { name: 'SeverityText', type: 'String' },
-          Body: { name: 'Body', type: 'String' },
-        };
-        return Promise.resolve(columnMap[column]);
-      }),
-    };
-
-    // Mock the getMetadata function
-    jest.mock('@hyperdx/common-utils/dist/core/metadata', () => ({
-      ...jest.requireActual('@hyperdx/common-utils/dist/core/metadata'),
-      getMetadata: jest.fn().mockReturnValue(mockMetadata),
-    }));
 
     // Process alert - this triggers the webhook with the title
     await processAlert(
@@ -847,7 +847,7 @@ describe('Single Invocation Alert Test', () => {
 
     // Get the webhook call to inspect the title
     expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(1);
-    const webhookCall = (slack.postMessageToWebhook as jest.Mock).mock.calls[0];
+    const webhookCall = (slack.postMessageToWebhook as Mock).mock.calls[0];
     const messageText = webhookCall[1].text;
 
     // This assertion SHOULD pass but WILL FAIL due to the bug
@@ -864,7 +864,7 @@ describe('Single Invocation Alert Test', () => {
   });
 
   it('should trigger alert for raw SQL Number chart tile', async () => {
-    jest.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
+    vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
 
     const team = await createTeam({ name: 'Test Team' });
 
@@ -895,7 +895,7 @@ describe('Single Invocation Alert Test', () => {
           h: 4,
           config: {
             configType: 'sql',
-            displayType: 'number',
+            displayType: DisplayType.Number,
             sqlTemplate: RAW_SQL_NUMBER_ALERT_TEMPLATE,
             connection: connection.id,
           },
