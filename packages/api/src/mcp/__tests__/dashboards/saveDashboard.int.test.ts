@@ -1881,7 +1881,7 @@ describe('MCP Dashboard Tools - clickstack_save_dashboard', () => {
       );
       expect(tooLongResult.isError).toBe(true);
       expect(getFirstText(tooLongResult)).toContain(
-        'String must contain at most 256 character(s)',
+        'Too big: expected string to have <=256 characters',
       );
       expect(getFirstText(tooLongResult)).toContain('containerId');
     });

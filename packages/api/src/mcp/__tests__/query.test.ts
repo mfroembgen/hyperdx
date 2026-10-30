@@ -8,7 +8,7 @@ vi.mock('@/utils/trimToolResponse', () => ({
   trimToolResponse: (data: unknown) => ({ data, isTrimmed: false }),
 }));
 
-import { ClickHouseError } from '@clickhouse/client-common';
+import { ClickHouseError } from '@clickhouse/client';
 import {
   MacroExpansionError,
   UnknownVariableError,

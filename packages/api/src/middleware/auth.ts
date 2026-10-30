@@ -9,10 +9,17 @@ import { findUserByAccessKey } from '@/controllers/user';
 import type { UserDocument } from '@/models/user';
 import {
   getActiveTraceId,
+  getCounter,
   getStaticFeatureFlags,
   setBusinessContext,
 } from '@/utils/instrumentation';
 import logger from '@/utils/logger';
+import {
+  resolveWorkosUser,
+  WorkosAuthenticationError,
+} from '@/utils/workosIdentity';
+import { authenticateWorkosMcp } from '@/utils/workosMcp';
+import { authenticateWorkosSession } from '@/utils/workosSession';
 
 declare global {
   // Express type augmentation requires `namespace` + interface merging; there is
@@ -97,7 +104,7 @@ export async function validateUserAccessKey(
   }
 
   const user = await findUserByAccessKey(key);
-  if (!user) {
+  if (!user?.team) {
     return res.sendStatus(401);
   }
 
@@ -136,6 +143,9 @@ export function isUserAuthenticated(
   res: Response,
   next: NextFunction,
 ) {
+  if (config.WORKOS) {
+    return authenticateWorkos(req, res, next, 'ui');
+  }
   if (config.IS_LOCAL_APP_MODE) {
     // If local app mode is enabled, skip authentication
     logger.warn('Skipping authentication in local app mode');
@@ -154,7 +164,7 @@ export function isUserAuthenticated(
     return nextWithQueryAttribution(req, next);
   }
 
-  if (req.isAuthenticated()) {
+  if (req.isAuthenticated() && req.user?.team) {
     // Attach incident-remediation context to the trace and active span.
     setBusinessContext({
       teamId: req.user?.team?.toString(),
@@ -166,6 +176,61 @@ export function isUserAuthenticated(
     return nextWithQueryAttribution(req, next);
   }
   res.sendStatus(401);
+}
+
+export function validateMcpUser(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  return config.WORKOS
+    ? authenticateWorkos(req, res, next, 'mcp')
+    : validateUserAccessKey(req, res, next);
+}
+
+async function authenticateWorkos(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  surface: 'ui' | 'mcp',
+) {
+  const counter = getCounter('hyperdx.auth.requests', {
+    description: 'WorkOS authentication outcomes by surface and bounded reason',
+  });
+  try {
+    const subject =
+      surface === 'mcp'
+        ? await authenticateWorkosMcp(req)
+        : (await authenticateWorkosSession(req)).userId;
+    const user = await resolveWorkosUser(subject);
+    req.user = user;
+    setBusinessContext({
+      teamId: user.team.toString(),
+      userId: user._id.toString(),
+      email: user.email,
+      'hyperdx.auth.method': 'workos',
+      ...getStaticFeatureFlags(),
+    });
+    counter.add(1, { surface, outcome: 'success' });
+    nextWithQueryAttribution(req, next);
+  } catch (err) {
+    if (err instanceof WorkosAuthenticationError) {
+      counter.add(1, { surface, outcome: 'denied', reason: err.reason });
+      if (surface === 'mcp' && err.status === 401 && config.WORKOS) {
+        res.set(
+          'WWW-Authenticate',
+          `Bearer resource_metadata="${config.WORKOS.metadataUrl}", error="invalid_token"`,
+        );
+      }
+      // UI authentication failures return to the explicit sign-in page.
+      const status =
+        surface === 'ui' && err.reason === 'unmapped_identity'
+          ? 401
+          : err.status;
+      return res.sendStatus(status);
+    }
+    next(err);
+  }
 }
 
 export function getNonNullUserWithTeam(req: Request) {

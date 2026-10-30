@@ -65,7 +65,7 @@ export function registerSaveSource({
       const parsed = SourceSchemaNoId.safeParse(assembled);
       if (!parsed.success) {
         return mcpUserError(
-          parsed.error.errors
+          parsed.error.issues
             .map(e => `${e.path.join('.') || 'input'}: ${e.message}`)
             .join('; '),
         );

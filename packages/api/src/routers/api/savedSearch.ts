@@ -5,7 +5,6 @@ import {
 import express from 'express';
 import _ from 'lodash';
 import { z } from 'zod';
-import { validateRequest } from 'zod-express-middleware';
 
 import {
   createSavedSearch,
@@ -15,6 +14,7 @@ import {
   updateSavedSearch,
 } from '@/controllers/savedSearch';
 import { getNonNullUserWithTeam } from '@/middleware/auth';
+import { validateRequest } from '@/middleware/validation';
 import { sendJson } from '@/utils/serialization';
 import { objectIdSchema } from '@/utils/zod';
 

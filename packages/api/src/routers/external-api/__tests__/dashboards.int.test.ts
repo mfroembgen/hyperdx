@@ -6375,8 +6375,8 @@ describe('External API v2 Dashboards - new format', () => {
         const response = await sendFilters([staticFilterInput(overrides)]);
 
         expect(response.status).toBe(400);
-        expect(JSON.stringify(response.body)).toContain(
-          `Unrecognized key(s) in object: '${Object.keys(overrides)[0]}'`,
+        expect(response.body.message).toContain(
+          `Unrecognized key: "${Object.keys(overrides)[0]}"`,
         );
       });
 
@@ -6386,9 +6386,7 @@ describe('External API v2 Dashboards - new format', () => {
         ]);
 
         expect(response.status).toBe(400);
-        expect(JSON.stringify(response.body)).toContain(
-          "Unrecognized key(s) in object: 'options'",
-        );
+        expect(response.body.message).toContain('Unrecognized key: "options"');
       });
 
       it.each(['expression', 'sourceId'])(
@@ -6537,8 +6535,8 @@ describe('External API v2 Dashboards - new format', () => {
           const response = await sendFilters([promqlFilterInput(overrides)]);
 
           expect(response.status).toBe(400);
-          expect(JSON.stringify(response.body)).toContain(
-            `Unrecognized key(s) in object: '${Object.keys(overrides)[0]}'`,
+          expect(response.body.message).toContain(
+            `Unrecognized key: "${Object.keys(overrides)[0]}"`,
           );
         },
       );
@@ -6547,9 +6545,7 @@ describe('External API v2 Dashboards - new format', () => {
         const response = await sendFilters([filterInput({ label: 'pod' })]);
 
         expect(response.status).toBe(400);
-        expect(JSON.stringify(response.body)).toContain(
-          "Unrecognized key(s) in object: 'label'",
-        );
+        expect(response.body.message).toContain('Unrecognized key: "label"');
       });
     });
   });

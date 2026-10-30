@@ -64,13 +64,13 @@ const rejectTileWhereMessage =
 
 const rejectedTileWhereFields = {
   where: z
-    .never({ invalid_type_error: rejectTileWhereMessage })
+    .never({ error: rejectTileWhereMessage })
     .optional()
     .describe(
       "Not supported on this tile type; any value is rejected. Put the filter on each select item's `where` instead.",
     ),
   whereLanguage: z
-    .never({ invalid_type_error: rejectTileWhereMessage })
+    .never({ error: rejectTileWhereMessage })
     .optional()
     .describe(
       'Not supported on this tile type; any value is rejected. Set `whereLanguage` on each select item instead.',
@@ -1289,7 +1289,7 @@ const mcpTileSchema = z.union(
     mcpMarkdownTileSchema,
     mcpSqlTileSchema,
   ],
-  { errorMap: mcpUnionErrorMap },
+  { error: mcpUnionErrorMap },
 );
 
 // Layout schema without defaults for the patch tool: layout fields stay
@@ -1386,7 +1386,7 @@ const mcpPatchTileSchema = z.union(
     }),
     mcpPatchTileLayoutSchema.extend({ config: mcpSqlTileSchema.shape.config }),
   ],
-  { errorMap: mcpUnionErrorMap },
+  { error: mcpUnionErrorMap },
 );
 
 export const mcpTilesParam = z

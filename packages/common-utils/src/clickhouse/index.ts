@@ -7,7 +7,7 @@ import type {
   ResponseHeaders,
   ResponseJSON,
   Row,
-} from '@clickhouse/client-common';
+} from '@clickhouse/client';
 import type { ClickHouseClient as WebClickHouseClient } from '@clickhouse/client-web';
 import * as SQLParser from 'node-sql-parser';
 

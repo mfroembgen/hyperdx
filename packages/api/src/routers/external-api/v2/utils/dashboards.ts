@@ -1916,13 +1916,9 @@ export async function cleanupDashboardAlerts({
 // Body validation schemas
 // --------------------------------------------------------------------------------
 
-function buildDashboardBodySchema(filterSchema: z.ZodTypeAny): z.ZodEffects<
-  z.ZodObject<
-    typeof dashboardBodyBaseShape & {
-      filters: z.ZodOptional<z.ZodArray<z.ZodTypeAny>>;
-    }
-  >
-> {
+function buildDashboardBodySchema<T extends z.ZodType<ExternalDashboardFilter>>(
+  filterSchema: T,
+) {
   return z
     .object({
       ...dashboardBodyBaseShape,

@@ -647,6 +647,7 @@ export const WEBHOOK_TEMPLATE_VARIABLES = [
   'sourceQuery',
   'teamId',
   'note',
+  'tags',
 ] as const;
 
 export type WebhookTemplateVariable =
@@ -773,7 +774,8 @@ export const DEFAULT_INCIDENT_IO_WEBHOOK_BODY = `{
     "value": "{{value}}",
     "group_key": "{{groupKey}}",
     "window_start": "{{startTimeISO}}",
-    "window_end": "{{endTimeISO}}"
+    "window_end": "{{endTimeISO}}",
+    "tags": "{{tags}}"
   }
 }`;
 
@@ -3314,6 +3316,7 @@ export type RotateApiKeyApiResponse = z.infer<
 // Installation
 export const InstallationApiResponseSchema = z.object({
   isTeamExisting: z.boolean(),
+  workosEnabled: z.boolean().optional(),
 });
 
 export type InstallationApiResponse = z.infer<

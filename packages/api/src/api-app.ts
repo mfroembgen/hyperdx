@@ -22,7 +22,8 @@ import usageStats from './tasks/usageStats';
 import { registerAITelemetry } from './utils/aiTelemetry';
 import logger, { expressLogger } from './utils/logger';
 import passport from './utils/passport';
-import { captureProxyBody } from './utils/proxyBody';
+import { captureProxyBody, preserveProxyCharset } from './utils/proxyBody';
+import { generateSessionId } from './utils/workosSessionStore';
 
 registerAITelemetry();
 
@@ -31,9 +32,8 @@ const app: express.Application = express();
 const sess: session.SessionOptions & { cookie: session.CookieOptions } = {
   // Use a slot-specific cookie name in dev so multiple worktrees on localhost
   // don't overwrite each other's session cookies.
-  ...(config.IS_DEV && process.env.HDX_DEV_SLOT
-    ? { name: `connect.sid.${process.env.HDX_DEV_SLOT}` }
-    : {}),
+  name: config.SESSION_COOKIE_NAME,
+  genid: generateSessionId,
   resave: false,
   saveUninitialized: false,
   secret: config.EXPRESS_SESSION_SECRET,
@@ -47,6 +47,8 @@ const sess: session.SessionOptions & { cookie: session.CookieOptions } = {
 };
 
 app.set('trust proxy', 1);
+// Preserve bracket-array query parameters supported before Express 5.
+app.set('query parser', 'extended');
 if (!config.IS_CI && config.FRONTEND_URL) {
   const feUrl = new URL(config.FRONTEND_URL);
   sess.cookie.domain = feUrl.hostname;
@@ -57,7 +59,11 @@ if (!config.IS_CI && config.FRONTEND_URL) {
 
 app.disable('x-powered-by');
 app.use(compression());
-app.use(express.json({ limit: '32mb', verify: captureProxyBody }));
+app.use(
+  preserveProxyCharset(
+    express.json({ limit: '32mb', verify: captureProxyBody }),
+  ),
+);
 app.use(express.text({ limit: '32mb', verify: captureProxyBody }));
 app.use(
   express.urlencoded({

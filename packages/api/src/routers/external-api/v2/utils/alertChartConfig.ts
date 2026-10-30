@@ -225,7 +225,7 @@ function isRepresentableExternally(
     isRawSql
       ? externalAlertRawSqlChartConfigSchema
       : externalAlertBuilderChartConfigSchema
-  ).optionsMap.get(displayType);
+  ).options.find(option => option.shape.displayType.value === displayType);
   if (memberSchema == null) {
     return false;
   }

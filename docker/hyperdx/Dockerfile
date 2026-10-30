@@ -8,14 +8,15 @@
 # - Otel Collector (otelcol)
 
 ARG BUN_VERSION=1.4.4
-ARG CLICKHOUSE_VERSION=26.8
-ARG OTEL_COLLECTOR_VERSION=0.155.0
-ARG OTEL_COLLECTOR_CORE_VERSION=1.61.0
+ARG CLICKHOUSE_VERSION=26.10.2.103
+ARG OTEL_COLLECTOR_VERSION=0.164.0
+ARG OTEL_COLLECTOR_CONTRIB_VERSION=0.164.1
+ARG OTEL_COLLECTOR_CORE_VERSION=1.70.0
 
 # base #############################################################################################
 # == Otel Collector Image ==
 FROM otel/opentelemetry-collector-opampsupervisor:${OTEL_COLLECTOR_VERSION} AS otel_collector_opampsupervisor_base
-FROM kukymbr/goose-docker@sha256:0cd025636df126e7f66472861ca4db3683bc649be46cd1f6ef1a316209058e23 AS goose
+FROM kukymbr/goose-docker:3.28.0@sha256:0c6fdb39d4975746127dbfd4b3f4683acf93df987b30b980f877bdac5c6ea1b5 AS goose
 
 # Build the custom HyperDX collector binary using OCB (OpenTelemetry Collector Builder).
 # This replaces the pre-built otel/opentelemetry-collector-contrib image so we can
@@ -23,19 +24,20 @@ FROM kukymbr/goose-docker@sha256:0cd025636df126e7f66472861ca4db3683bc649be46cd1f
 # Note: The official OCB image may ship an older Go than the contrib modules require,
 # so we copy the ocb binary into a golang base with a newer toolchain.
 FROM otel/opentelemetry-collector-builder:${OTEL_COLLECTOR_VERSION} AS ocb-bin
-FROM golang:1.26-alpine AS ocb-builder
+FROM golang:1.27.3-alpine AS ocb-builder
 ARG OTEL_COLLECTOR_VERSION
+ARG OTEL_COLLECTOR_CONTRIB_VERSION
 ARG OTEL_COLLECTOR_CORE_VERSION
 COPY --from=ocb-bin /usr/local/bin/ocb /usr/local/bin/ocb
 WORKDIR /build
 COPY packages/otel-collector/builder-config.yaml .
 RUN --mount=type=cache,target=/go/pkg/mod,id=ocb-gomod \
     --mount=type=cache,target=/root/.cache/go-build,id=ocb-gobuild \
-    sed -i "s/__OTEL_COLLECTOR_VERSION__/${OTEL_COLLECTOR_VERSION}/g; s/__OTEL_COLLECTOR_CORE_VERSION__/${OTEL_COLLECTOR_CORE_VERSION}/g" builder-config.yaml && \
+    sed -i "s/__OTEL_COLLECTOR_VERSION__/${OTEL_COLLECTOR_VERSION}/g; s/__OTEL_COLLECTOR_CORE_VERSION__/${OTEL_COLLECTOR_CORE_VERSION}/g; s/__OTEL_COLLECTOR_CONTRIB_VERSION__/${OTEL_COLLECTOR_CONTRIB_VERSION}/g" builder-config.yaml && \
     CGO_ENABLED=0 ocb --config=builder-config.yaml
 
 # Build the Go migration tool with full TLS support for ClickHouse
-FROM golang:1.26-alpine AS migrate-builder
+FROM golang:1.27.3-alpine AS migrate-builder
 WORKDIR /build
 COPY packages/otel-collector/go.mod packages/otel-collector/go.sum ./
 RUN go mod download
@@ -65,6 +67,23 @@ COPY ./packages/common-utils ./packages/common-utils
 RUN bun run --cwd packages/common-utils build
 
 
+## Shared frontend build ##########################################################################
+FROM common-utils-builder AS frontend-builder
+
+COPY packages/app ./packages/app
+COPY CHANGELOG.md ./CHANGELOG.md
+
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_OUTPUT_STANDALONE=true
+ENV NEXT_PUBLIC_IS_LOCAL_MODE=false
+RUN bun run --cwd packages/app build && rm -rf packages/app/dist/standalone/node_modules
+
+# CI supplies this stage as a named context so all platforms use one build.
+# Ordinary Docker builds use the local frontend build above.
+FROM scratch AS frontend
+COPY --from=frontend-builder /app/packages/app/dist /dist
+
+
 ## API/APP Builder Image ##########################################################################
 FROM bun_base AS builder
 
@@ -75,12 +94,12 @@ COPY --from=common-utils-builder /app/packages/common-utils ./packages/common-ut
 
 COPY packages/api ./packages/api
 COPY packages/app ./packages/app
-COPY CHANGELOG.md ./CHANGELOG.md
+COPY --from=frontend /dist ./packages/app/dist
 
-ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_OUTPUT_STANDALONE=true
-ENV NEXT_PUBLIC_IS_LOCAL_MODE=false
-RUN bun run --cwd packages/api build && bun run --cwd packages/app build
+# Recreate standalone dependencies on the target platform, never copy them from
+# the shared frontend build platform.
+RUN bun run --cwd packages/api build && bun packages/app/scripts/prepare-standalone.mjs
 RUN rm -rf node_modules packages/*/node_modules && bun install --frozen-lockfile --production --filter @hyperdx/api && mkdir -p packages/api/node_modules packages/common-utils/node_modules
 
 
@@ -116,7 +135,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
 ENTRYPOINT ["sh", "/etc/local/entry.sh"]
 
 # all-in-one base ############################################################################################
-FROM hairyhenderson/gomplate:v4.3.3-alpine AS gomplate
+FROM hairyhenderson/gomplate:v5.3.1-alpine AS gomplate
 FROM clickhouse/clickhouse-server:${CLICKHOUSE_VERSION}-alpine AS all-in-one-base
 
 ARG CODE_VERSION

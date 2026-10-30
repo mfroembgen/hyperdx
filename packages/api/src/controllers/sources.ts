@@ -104,7 +104,7 @@ export async function updateSource(
   const parseResult = SourceSchemaNoId.safeParse(source);
   if (!parseResult.success) {
     throw new Error(
-      `Invalid source data: ${parseResult.error.errors.map(e => e.message).join(', ')}`,
+      `Invalid source data: ${parseResult.error.issues.map(e => e.message).join(', ')}`,
     );
   }
 

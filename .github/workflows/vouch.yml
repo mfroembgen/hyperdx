@@ -63,7 +63,7 @@ jobs:
 
       # One step covers both checks so an author who is unvouched *and* over
       # the PR limit gets a single comment rather than two.
-      - uses: actions/github-script@v9
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           VOUCH_STATUS: ${{ steps.vouch.outputs.status }}
         with:
@@ -203,7 +203,7 @@ jobs:
       # and issue_comment runs are not surfaced on the issue timeline, so a
       # maintainer would otherwise assume a failed /vouch worked.
       - if: failure()
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             await github.rest.issues.createComment({

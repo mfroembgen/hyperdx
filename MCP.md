@@ -9,8 +9,9 @@ data sources directly.
 
 - A running HyperDX instance (see [CONTRIBUTING.md](/CONTRIBUTING.md) for local
   development setup, or [DEPLOY.md](/DEPLOY.md) for self-hosted deployment)
-- A **Personal API access key** — find yours in the HyperDX UI under **Team
-  Settings > API keys > Personal API access key**
+- An instance configured for WorkOS AuthKit OAuth, or a **Personal
+  API access key** for the default authentication mode. Find personal keys under
+  **Team Settings > API keys > Personal API access key**.
 
 > **Note:** HyperDX v1 ([hyperdx.io](https://hyperdx.io)) does not yet support
 > the MCP server. The documentation below applies to self-hosted HyperDX v2
@@ -32,10 +33,47 @@ the defaults.
 > also reach the MCP server directly at `<backend_url>/mcp`, but not all
 > deployments expose the backend, so these docs use frontend paths.
 
-## Connecting an MCP Client
+## Connecting with Google login
 
-The MCP server uses the **Streamable HTTP** transport with Bearer token
-authentication. In the examples below, replace `<your-hyperdx-url>` with your
+When your administrator has enabled [WorkOS AuthKit](DEPLOY.md#workos-authkit),
+use browser OAuth instead of supplying a personal API key:
+
+```bash
+codex mcp add clickstack --url https://hyperdx.example.com/api/mcp
+codex mcp login clickstack
+```
+
+For Claude Code:
+
+```bash
+claude mcp add --transport http clickstack https://hyperdx.example.com/api/mcp
+```
+
+Open `/mcp` in Claude Code to sign in. For Claude's hosted connector, use the
+same MCP URL in its connector settings. Replace the example host with your
+instance and complete the organization's Google login in the browser.
+
+WorkOS handles client registration, browser consent and token refresh. HyperDX
+advertises protected-resource metadata and validates each Connect access token
+against its fixed AuthKit issuer and this exact MCP URL as the audience. It
+verifies the WorkOS profile when first linking an identity, then checks that
+stored identity and current local membership on each request. By default, only
+existing team members can sign in. If the administrator sets
+`WORKOS_AUTO_JOIN_DOMAIN`, first sign-in with a verified email in that exact
+domain creates a passwordless member in the configured existing team. The server
+grants access only to its configured team.
+Remove a previous static Authorization header or bearer-token environment binding
+when switching a client to OAuth; WorkOS mode does not accept personal keys for
+MCP. Keep legacy bindings until the administrator has deployed and verified the
+OAuth configuration.
+
+See the official [Codex commands](https://learn.chatgpt.com/docs/developer-commands#codex-mcp)
+and [Claude OAuth setup](https://claude.com/docs/connectors/building/authentication).
+
+## Connecting with a personal API access key
+
+In legacy authentication mode, the MCP server uses the **Streamable HTTP**
+transport with a personal Bearer token. In the examples below, replace `<your-hyperdx-url>` with your
 instance URL (e.g. `http://localhost:8080`).
 
 ### Claude Code
@@ -97,7 +135,7 @@ settings):
 The MCP Inspector is useful for interactively testing and debugging the server.
 
 ```bash
-cd packages/api && yarn dev:mcp
+cd packages/api && bun run dev:mcp
 ```
 
 Then configure the inspector:

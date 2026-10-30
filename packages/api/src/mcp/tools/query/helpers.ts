@@ -1,7 +1,4 @@
-import {
-  ClickHouseError,
-  type ClickHouseSettings,
-} from '@clickhouse/client-common';
+import { ClickHouseError, type ClickHouseSettings } from '@clickhouse/client';
 import { getHeatmapMode } from '@hyperdx/common-utils/dist/core/heatmap';
 import { getMetadata } from '@hyperdx/common-utils/dist/core/metadata';
 import {

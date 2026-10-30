@@ -890,7 +890,7 @@ const externalDashboardTileConfigSchema = z
     const result = schema.safeParse(data);
     if (!result.success) {
       for (const issue of result.error.issues) {
-        ctx.addIssue(issue);
+        ctx.issues.push({ ...issue, input: undefined });
       }
       return;
     }
@@ -1084,7 +1084,7 @@ const alertChartConfigNameSchema = z.string().optional();
 // caller who meant to filter learns the field does not exist here.
 const rejectedAlertRawSqlWhereField = z
   .never({
-    invalid_type_error:
+    error:
       'Raw SQL alert configs have no chart-level where; filter inside the sqlTemplate instead',
   })
   .optional();
@@ -1164,7 +1164,7 @@ export const externalAlertChartConfigSchema = z
     const result = schema.safeParse(data);
     if (!result.success) {
       for (const issue of result.error.issues) {
-        ctx.addIssue(issue);
+        ctx.issues.push({ ...issue, input: undefined });
       }
       return;
     }
@@ -1195,7 +1195,7 @@ const zExternalInlineAlert = z.object({
 // the internal schema keeps its historical strip semantics.
 const rejectedNonInlineChartConfigField = z
   .never({
-    invalid_type_error: 'chartConfig is only supported when source is "inline"',
+    error: 'chartConfig is only supported when source is "inline"',
   })
   .optional();
 

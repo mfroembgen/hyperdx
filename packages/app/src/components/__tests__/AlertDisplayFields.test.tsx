@@ -129,7 +129,7 @@ describe('AlertDisplayFields', () => {
     fireEvent.click(screen.getByText('Submit'));
 
     expect(
-      await screen.findByText(/at least 1 character/i),
+      await screen.findByText(/expected string to have >=1 characters/i),
     ).toBeInTheDocument();
     expect(submitted).not.toHaveBeenCalled();
   });
@@ -142,7 +142,7 @@ describe('AlertDisplayFields', () => {
     fireEvent.click(screen.getByText('Submit'));
 
     expect(await screen.findByTestId('alert-tags-error')).toHaveTextContent(
-      /at most 32 character/i,
+      /expected string to have <=32 characters/i,
     );
     expect(submitted).not.toHaveBeenCalled();
   });

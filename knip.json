@@ -42,6 +42,7 @@
         "src/serverless.ts",
         "scripts/*.ts",
         "src/fixtures.ts",
+        "src/__tests__/fixtures/tracing.ts",
         "src/tracing.ts"
       ],
       "project": ["src/**/*.ts"],

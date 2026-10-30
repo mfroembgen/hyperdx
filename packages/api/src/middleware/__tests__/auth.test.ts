@@ -12,6 +12,7 @@ vi.mock('@/config', async () => ({
   IS_LOCAL_APP_MODE: true,
 }));
 vi.mock('@/utils/instrumentation', () => ({
+  getCounter: () => ({ add: vi.fn() }),
   getActiveTraceId: () => undefined,
   getStaticFeatureFlags: () => ({}),
   setBusinessContext: vi.fn(),

@@ -1,4 +1,4 @@
-import type { ClickHouseSettings } from '@clickhouse/client-common';
+import type { ClickHouseSettings } from '@clickhouse/client';
 import { chunk, omit, pick } from 'lodash';
 import SqlString from 'sqlstring';
 

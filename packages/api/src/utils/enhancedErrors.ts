@@ -1,5 +1,18 @@
-import type { NextFunction, Request, Response } from 'express';
-import { z, ZodError } from 'zod';
+import type { Request, RequestHandler } from 'express';
+import { ZodError } from 'zod';
+
+import {
+  type RequestSchemas,
+  setParsedRequestPart,
+} from '@/middleware/validation';
+
+type EnhancedRequestValidator = <
+  TParams = Record<string, string>,
+  TQuery = Request['query'],
+  TBody = Request['body'],
+>(
+  schemas: RequestSchemas<TParams, TQuery, TBody>,
+) => RequestHandler<TParams>;
 
 /**
  * Formats a Zod error into a single concatenated error message
@@ -21,95 +34,97 @@ function formatZodError(error: ZodError): string {
  * @param schemas - Object containing schemas for body, params, and/or query
  * @returns Express middleware function
  */
-export function validateRequestWithEnhancedErrors(schemas: {
-  body?: z.ZodSchema;
-  params?: z.ZodSchema;
-  query?: z.ZodSchema;
-}) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const errors: string[] = [];
+export const validateRequestWithEnhancedErrors: EnhancedRequestValidator =
+  schemas => {
+    return (req, res, next) => {
+      const errors: string[] = [];
 
-    if (schemas.body) {
-      const result = schemas.body.safeParse(req.body);
-      if (!result.success) {
-        errors.push(`Body validation failed: ${formatZodError(result.error)}`);
+      if (schemas.body) {
+        const result = schemas.body.safeParse(req.body);
+        if (!result.success) {
+          errors.push(
+            `Body validation failed: ${formatZodError(result.error)}`,
+          );
+        }
       }
-    }
 
-    if (schemas.params) {
-      const result = schemas.params.safeParse(req.params);
-      if (!result.success) {
-        errors.push(
-          `Params validation failed: ${formatZodError(result.error)}`,
-        );
+      if (schemas.params) {
+        const result = schemas.params.safeParse(req.params);
+        if (!result.success) {
+          errors.push(
+            `Params validation failed: ${formatZodError(result.error)}`,
+          );
+        }
       }
-    }
 
-    if (schemas.query) {
-      const result = schemas.query.safeParse(req.query);
-      if (!result.success) {
-        errors.push(`Query validation failed: ${formatZodError(result.error)}`);
+      if (schemas.query) {
+        const result = schemas.query.safeParse(req.query);
+        if (!result.success) {
+          errors.push(
+            `Query validation failed: ${formatZodError(result.error)}`,
+          );
+        }
       }
-    }
 
-    if (errors.length > 0) {
-      return res.status(400).json({
-        message: errors.join('; '),
-      });
-    }
+      if (errors.length > 0) {
+        return res.status(400).json({
+          message: errors.join('; '),
+        });
+      }
 
-    next();
+      next();
+    };
   };
-}
 
 /**
  * Custom validation middleware that validates and assigns parsed request data.
  * This preserves Zod transforms/refinements and strips unknown fields while
  * keeping the same concatenated external API error format.
  */
-export function processRequestWithEnhancedErrors(schemas: {
-  body?: z.ZodSchema;
-  params?: z.ZodSchema;
-  query?: z.ZodSchema;
-}) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const errors: string[] = [];
+export const processRequestWithEnhancedErrors: EnhancedRequestValidator =
+  schemas => {
+    return (req, res, next) => {
+      const errors: string[] = [];
 
-    if (schemas.body) {
-      const result = schemas.body.safeParse(req.body);
-      if (!result.success) {
-        errors.push(`Body validation failed: ${formatZodError(result.error)}`);
-      } else {
-        req.body = result.data;
+      if (schemas.body) {
+        const result = schemas.body.safeParse(req.body);
+        if (!result.success) {
+          errors.push(
+            `Body validation failed: ${formatZodError(result.error)}`,
+          );
+        } else {
+          setParsedRequestPart(req, 'body', result.data);
+        }
       }
-    }
 
-    if (schemas.params) {
-      const result = schemas.params.safeParse(req.params);
-      if (!result.success) {
-        errors.push(
-          `Params validation failed: ${formatZodError(result.error)}`,
-        );
-      } else {
-        req.params = result.data;
+      if (schemas.params) {
+        const result = schemas.params.safeParse(req.params);
+        if (!result.success) {
+          errors.push(
+            `Params validation failed: ${formatZodError(result.error)}`,
+          );
+        } else {
+          setParsedRequestPart(req, 'params', result.data);
+        }
       }
-    }
 
-    if (schemas.query) {
-      const result = schemas.query.safeParse(req.query);
-      if (!result.success) {
-        errors.push(`Query validation failed: ${formatZodError(result.error)}`);
-      } else {
-        req.query = result.data;
+      if (schemas.query) {
+        const result = schemas.query.safeParse(req.query);
+        if (!result.success) {
+          errors.push(
+            `Query validation failed: ${formatZodError(result.error)}`,
+          );
+        } else {
+          setParsedRequestPart(req, 'query', result.data);
+        }
       }
-    }
 
-    if (errors.length > 0) {
-      return res.status(400).json({
-        message: errors.join('; '),
-      });
-    }
+      if (errors.length > 0) {
+        return res.status(400).json({
+          message: errors.join('; '),
+        });
+      }
 
-    next();
+      next();
+    };
   };
-}

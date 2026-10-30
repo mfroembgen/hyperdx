@@ -1,12 +1,22 @@
-import type { OnboardingTaskId } from '@hyperdx/common-utils/dist/types';
+import type {
+  OnboardingTaskId,
+  TeamMember,
+} from '@hyperdx/common-utils/dist/types';
 import { isPersistableUserId as isPersistableUserIdHex } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
+import * as config from '@/config';
 import type { ObjectId } from '@/models';
 import Alert from '@/models/alert';
-import User from '@/models/user';
+import User, { type IUser } from '@/models/user';
+import { getCounter, setBusinessContext } from '@/utils/instrumentation';
 import logger from '@/utils/logger';
+
+const memberRemovals = getCounter('hyperdx.team.member_removals', {
+  description: 'Team members removed from local membership',
+});
+
 export function findUserByAccessKey(accessKey: string) {
   return User.findOne({ accessKey });
 }
@@ -32,7 +42,27 @@ export function findUserByEmail(email: string) {
 }
 
 export function findUsersByTeam(team: string | ObjectId) {
-  return User.find({ team }).sort({ createdAt: 1 });
+  return User.aggregate<
+    Pick<TeamMember, 'email' | 'name' | 'hasPasswordAuth'> & Pick<IUser, '_id'>
+  >([
+    { $match: { team: new mongoose.Types.ObjectId(team) } },
+    { $sort: { createdAt: 1 } },
+    {
+      $project: {
+        _id: 1,
+        email: 1,
+        name: 1,
+        hasPasswordAuth: {
+          $and: [
+            { $eq: [{ $type: '$hash' }, 'string'] },
+            { $ne: ['$hash', ''] },
+            { $eq: [{ $type: '$salt' }, 'string'] },
+            { $ne: ['$salt', ''] },
+          ],
+        },
+      },
+    },
+  ]);
 }
 
 // Type-guard wrapper over the shared 24-hex check; rejects the synthetic
@@ -100,6 +130,12 @@ export async function deleteTeamMember(
   userIdToDelete: string,
   userIdRequestingDelete: string | ObjectId,
 ) {
+  setBusinessContext({
+    teamId: teamId.toString(),
+    userId: userIdRequestingDelete.toString(),
+    'hyperdx.team.removed_user_id': userIdToDelete,
+  });
+  const member = { team: teamId, _id: userIdToDelete };
   const [, deletedUser] = await Promise.all([
     Alert.updateMany(
       { createdBy: new mongoose.Types.ObjectId(userIdToDelete), team: teamId },
@@ -109,11 +145,20 @@ export async function deleteTeamMember(
         },
       },
     ),
-    User.findOneAndDelete({
-      team: teamId,
-      _id: userIdToDelete,
-    }),
+    config.WORKOS
+      ? User.findOneAndUpdate(
+          member,
+          {
+            $unset: { team: 1 },
+            // Keep email/binding reserved against automatic re-registration.
+            // Rotating also preserves the non-sparse unique access-key index.
+            $set: { accessKey: uuidv4() },
+          },
+          { returnDocument: 'before' },
+        )
+      : User.findOneAndDelete(member),
   ]);
 
+  if (deletedUser) memberRemovals.add(1);
   return deletedUser;
 }
