@@ -1,4 +1,4 @@
-import type { BaseResultSet, DataFormat } from '@clickhouse/client-common';
+import type { BaseResultSet, DataFormat } from '@clickhouse/client';
 
 import { BaseClickhouseClient, QueryInputs } from '@/clickhouse';
 import {

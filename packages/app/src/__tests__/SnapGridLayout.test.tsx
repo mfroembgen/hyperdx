@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 
 import SnapGridLayout from '@/components/dashboard/SnapGridLayout';
@@ -16,8 +17,10 @@ const mockLayout = [mockOld];
 // Replace react-grid-layout with a stub that renders buttons to fire each
 // lifecycle callback with realistic arguments (newItem = cursor, placeholder =
 // landing), so we can drive the wrapper's logic without a real drag.
-jest.mock('react-grid-layout', () => {
-  const React = jest.requireActual('react');
+vi.mock('react-grid-layout/legacy', async () => {
+  const actualModule0 = await vi.importActual<typeof import('react')>('react');
+
+  const React = actualModule0;
   const fire = (handler: any, newItem: any, placeholder: any) => () =>
     handler?.(mockLayout, mockOld, newItem, placeholder, {}, {});
   const GridLayout = (props: any) =>
@@ -54,8 +57,10 @@ jest.mock('react-grid-layout', () => {
 });
 
 // Stub the overlay so we can read the focus it receives and its presence.
-jest.mock('@/components/dashboard/GridSnapOverlay', () => {
-  const React = jest.requireActual('react');
+vi.mock('@/components/dashboard/GridSnapOverlay', async () => {
+  const actualModule1 = await vi.importActual<typeof import('react')>('react');
+
+  const React = actualModule1;
   return {
     __esModule: true,
     default: (props: any) =>
@@ -118,8 +123,8 @@ describe('SnapGridLayout', () => {
   });
 
   it('tracks the moving tile and clears the overlay on drop', () => {
-    const onDrag = jest.fn();
-    const onDragStop = jest.fn();
+    const onDrag = vi.fn();
+    const onDragStop = vi.fn();
     render(
       <SnapGridLayout onDrag={onDrag} onDragStop={onDragStop}>
         <div key="a" />

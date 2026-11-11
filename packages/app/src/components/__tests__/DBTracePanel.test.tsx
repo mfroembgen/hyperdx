@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { fireEvent, screen } from '@testing-library/react';
 
@@ -8,28 +9,28 @@ import DBTracePanel from '@/components/DBTracePanel';
 let mockSources: Record<string, any> = {};
 // Controls the value returned by the mocked `useQueryState('eventRowWhere')`
 // so tests can render with or without a selected span. Prefixed with `mock` so
-// the hoisted jest.mock factory may reference it.
+// the hoisted vi.mock factory may reference it.
 let mockEventRowWhere: any = null;
 
-jest.mock('nuqs', () => ({
-  useQueryState: () => [mockEventRowWhere, jest.fn()],
+vi.mock('nuqs', () => ({
+  useQueryState: () => [mockEventRowWhere, vi.fn()],
 }));
 
-jest.mock('@/utils/queryParsers', () => ({
+vi.mock('@/utils/queryParsers', () => ({
   parseAsJsonEncoded: () => 'parseAsJsonEncoded',
 }));
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   useSource: ({ id }: { id?: string | null }) => ({
     data: id ? mockSources[id] : undefined,
     isLoading: false,
   }),
   useUpdateSource: () => ({
-    mutate: jest.fn(),
+    mutate: vi.fn(),
   }),
 }));
 
-jest.mock('@/components/DBTraceWaterfallChart', () => ({
+vi.mock('@/components/DBTraceWaterfallChart', () => ({
   DBTraceWaterfallChartContainer: ({
     emptyState,
     controlsExtra,
@@ -44,13 +45,13 @@ jest.mock('@/components/DBTraceWaterfallChart', () => ({
   ),
 }));
 
-jest.mock('../SourceSelect', () => ({
+vi.mock('../SourceSelect', () => ({
   SourceSelectControlled: () => <div>source select</div>,
 }));
 
 // useRowData runs unconditionally (for the Infrastructure tab / k8s detection)
 // and would otherwise need a QueryClient provider; stub it for this unit test.
-jest.mock('../DBRowDataPanel', () => ({
+vi.mock('../DBRowDataPanel', () => ({
   useRowData: () => ({ data: undefined }),
   rowHasK8sContext: () => false,
   RowDataPanel: () => <div>row data panel</div>,
@@ -59,38 +60,44 @@ jest.mock('../DBRowDataPanel', () => ({
 // Stands in for the real overview panel but still consumes the (real)
 // RowSidePanelContext, so the tests below can observe the source-aware
 // context SpanDetailPanel derives for the selected event (HDX-5040).
-jest.mock('../DBRowOverviewPanel', () => ({
-  RowOverviewPanel: () => {
-    const ReactActual = jest.requireActual('react');
-    // Required lazily so the circular DBTracePanel <-> DBRowSidePanel import
-    // is fully initialized by render time.
-    const { RowSidePanelContext: Ctx } =
-      jest.requireActual('../DBRowSidePanel');
-    const ctx = ReactActual.use(Ctx);
-    return (
-      <div>
-        <div>overview panel</div>
-        <button
-          onClick={() =>
-            ctx.generateSearchUrl?.({ where: 'x', whereLanguage: 'sql' })
-          }
-        >
-          generate search url
-        </button>
-        <div data-testid="can-add-to-filters">
-          {ctx.onPropertyAddClick ? 'yes' : 'no'}
-        </div>
-      </div>
+vi.mock('../DBRowOverviewPanel', async () => {
+  const actualModule0 = await vi.importActual<typeof import('react')>('react');
+  const actualModule1 =
+    await vi.importActual<typeof import('../DBRowSidePanel')>(
+      '../DBRowSidePanel',
     );
-  },
-}));
+  return {
+    RowOverviewPanel: () => {
+      const ReactActual = actualModule0;
+      // Required lazily so the circular DBTracePanel <-> DBRowSidePanel import
+      // is fully initialized by render time.
+      const { RowSidePanelContext: Ctx } = actualModule1;
+      const ctx = ReactActual.use(Ctx);
+      return (
+        <div>
+          <div>overview panel</div>
+          <button
+            onClick={() =>
+              ctx.generateSearchUrl?.({ where: 'x', whereLanguage: 'sql' })
+            }
+          >
+            generate search url
+          </button>
+          <div data-testid="can-add-to-filters">
+            {ctx.onPropertyAddClick ? 'yes' : 'no'}
+          </div>
+        </div>
+      );
+    },
+  };
+});
 
-jest.mock('../DBInfraPanel', () => ({
+vi.mock('../DBInfraPanel', () => ({
   __esModule: true,
   default: () => <div>infra panel</div>,
 }));
 
-jest.mock('../SourceSchemaPreview', () => ({
+vi.mock('../SourceSchemaPreview', () => ({
   __esModule: true,
   default: () => <div />,
   isSourceSchemaPreviewEnabled: () => false,
@@ -211,8 +218,8 @@ describe('DBTracePanel', () => {
   // must be gated off for cross-source events.
   describe('span detail context for the selected event', () => {
     const renderWithSearchContext = () => {
-      const generateSearchUrl = jest.fn(() => '/search?mock');
-      const onPropertyAddClick = jest.fn();
+      const generateSearchUrl = vi.fn(() => '/search?mock');
+      const onPropertyAddClick = vi.fn();
       renderWithMantine(
         <RowSidePanelContext
           value={{

@@ -61,8 +61,8 @@ export function createSource(
   team: string,
   source: DistributiveOmit<ISourceInput, 'id'>,
 ) {
-  // @ts-expect-error The create method has incompatible type signatures but is actually safe
-  return getModelForKind(source.kind)?.create({ ...source, team });
+  const Model = getModelForKind(source.kind);
+  return new Model({ ...source, team }).save();
 }
 
 export async function updateSource(
@@ -80,12 +80,21 @@ export async function updateSource(
   // findOneAndReplace swaps the whole document, so `team` must be in the
   // replacement or the source is dropped from every team-scoped query.
   if (existing.kind === source.kind) {
-    // @ts-expect-error The findOneAndReplace method has incompatible type signatures but is actually safe
-    return getModelForKind(source.kind)?.findOneAndReplace(
-      { _id: sourceId, team },
-      { ...source, team, ...(createdAt && { createdAt }) },
-      { new: true },
-    );
+    const filter = { _id: sourceId, team };
+    const replacement = { ...source, team, ...(createdAt && { createdAt }) };
+    const options = { returnDocument: 'after' } as const;
+    switch (source.kind) {
+      case SourceKind.Log:
+        return LogSource.findOneAndReplace(filter, replacement, options);
+      case SourceKind.Trace:
+        return TraceSource.findOneAndReplace(filter, replacement, options);
+      case SourceKind.Session:
+        return SessionSource.findOneAndReplace(filter, replacement, options);
+      case SourceKind.Metric:
+        return MetricSource.findOneAndReplace(filter, replacement, options);
+      case SourceKind.Promql:
+        return PromqlSource.findOneAndReplace(filter, replacement, options);
+    }
   }
 
   // Kind changed: validate through Zod before writing since the raw
@@ -95,7 +104,7 @@ export async function updateSource(
   const parseResult = SourceSchemaNoId.safeParse(source);
   if (!parseResult.success) {
     throw new Error(
-      `Invalid source data: ${parseResult.error.errors.map(e => e.message).join(', ')}`,
+      `Invalid source data: ${parseResult.error.issues.map(e => e.message).join(', ')}`,
     );
   }
 
@@ -124,7 +133,7 @@ export async function updateSource(
   // Deleted concurrently between the findOne above and the replace: report
   // not-found instead of returning a hydrated document that no longer exists.
   if (result.matchedCount === 0) return null;
-  return getModelForKind(replacement.kind)?.hydrate(replacement);
+  return Source.hydrate(replacement);
 }
 
 export function deleteSource(team: string, sourceId: string) {

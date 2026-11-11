@@ -224,6 +224,7 @@ test.describe('Chart Explorer Functionality', { tag: ['@charts'] }, () => {
         .toEqual(descendingLabels.slice(0, seriesLimit));
     });
   });
+
   test(
     'should carry the builder config over to a macro-based SQL template when switching to SQL mode',
     { tag: '@full-stack' },

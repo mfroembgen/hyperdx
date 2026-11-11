@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Code, Stack } from '@mantine/core';
-import type { Meta } from '@storybook/nextjs';
+import type { Meta } from '@storybook/react-vite';
 
 import {
   MOCK_PROMQL_VALUES,

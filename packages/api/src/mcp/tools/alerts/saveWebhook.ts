@@ -123,7 +123,7 @@ export function registerSaveWebhook({
       const parsed = externalWebhookCreateSchema.safeParse(webhookFields);
       if (!parsed.success) {
         return mcpUserError(
-          parsed.error.errors
+          parsed.error.issues
             .map(e => `${e.path.join('.') || 'input'}: ${e.message}`)
             .join('; '),
         );

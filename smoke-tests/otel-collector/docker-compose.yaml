@@ -24,8 +24,9 @@ services:
       dockerfile: docker/otel-collector/Dockerfile
       target: dev
       args:
-        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.155.0}
-        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.61.0}
+        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.164.0}
+        OTEL_COLLECTOR_CONTRIB_VERSION: ${OTEL_COLLECTOR_CONTRIB_VERSION:-0.164.1}
+        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.70.0}
     environment:
       - CLICKHOUSE_ENDPOINT=tcp://ch-server:9000?dial_timeout=10s
       - CLICKHOUSE_PROMETHEUS_METRICS_ENDPOINT=ch-server:9363
@@ -55,8 +56,9 @@ services:
       dockerfile: docker/otel-collector/Dockerfile
       target: dev
       args:
-        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.155.0}
-        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.61.0}
+        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.164.0}
+        OTEL_COLLECTOR_CONTRIB_VERSION: ${OTEL_COLLECTOR_CONTRIB_VERSION:-0.164.1}
+        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.70.0}
     environment:
       - CLICKHOUSE_ENDPOINT=tcp://ch-server:9000?dial_timeout=10s
       - CLICKHOUSE_PROMETHEUS_METRICS_ENDPOINT=ch-server:9363
@@ -86,8 +88,9 @@ services:
       dockerfile: docker/otel-collector/Dockerfile
       target: dev
       args:
-        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.155.0}
-        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.61.0}
+        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.164.0}
+        OTEL_COLLECTOR_CONTRIB_VERSION: ${OTEL_COLLECTOR_CONTRIB_VERSION:-0.164.1}
+        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.70.0}
     environment:
       - CLICKHOUSE_ENDPOINT=tcp://ch-server:9000?dial_timeout=10s
       - CLICKHOUSE_PROMETHEUS_METRICS_ENDPOINT=ch-server:9363
@@ -117,8 +120,9 @@ services:
       dockerfile: docker/otel-collector/Dockerfile
       target: dev
       args:
-        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.155.0}
-        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.61.0}
+        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.164.0}
+        OTEL_COLLECTOR_CONTRIB_VERSION: ${OTEL_COLLECTOR_CONTRIB_VERSION:-0.164.1}
+        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.70.0}
     environment:
       - CLICKHOUSE_ENDPOINT=tcp://ch-server:9000?dial_timeout=10s
       - CLICKHOUSE_PROMETHEUS_METRICS_ENDPOINT=http://ch-server:9363/
@@ -146,8 +150,9 @@ services:
       dockerfile: docker/otel-collector/Dockerfile
       target: dev
       args:
-        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.155.0}
-        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.61.0}
+        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.164.0}
+        OTEL_COLLECTOR_CONTRIB_VERSION: ${OTEL_COLLECTOR_CONTRIB_VERSION:-0.164.1}
+        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.70.0}
     environment:
       - CLICKHOUSE_ENDPOINT=tcp://127.0.0.1:1/?dial_timeout=1s
       - CLICKHOUSE_PROMETHEUS_METRICS_ENDPOINT=https://ch-server:9363/write
@@ -167,8 +172,9 @@ services:
       dockerfile: docker/otel-collector/Dockerfile
       target: dev
       args:
-        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.155.0}
-        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.61.0}
+        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.164.0}
+        OTEL_COLLECTOR_CONTRIB_VERSION: ${OTEL_COLLECTOR_CONTRIB_VERSION:-0.164.1}
+        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.70.0}
     environment:
       - CLICKHOUSE_ENDPOINT=tcp://ch-server:9000?dial_timeout=10s
       - CLICKHOUSE_PROMETHEUS_METRICS_ENDPOINT=ch-server:9363
@@ -196,7 +202,7 @@ services:
   # config.standalone.oidc.yaml (plain issuer_url/audience, live discovery)
   # rather than adding a collector-side option to bypass it.
   otel-collector-oidc-mock:
-    image: python:3.13-alpine
+    image: python:3.15.2-alpine
     command: ["python3", "-m", "http.server", "8080", "--directory", "/srv"]
     volumes:
       - ./data/oidc-auth/public:/srv:ro
@@ -218,8 +224,9 @@ services:
       dockerfile: docker/otel-collector/Dockerfile
       target: dev
       args:
-        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.155.0}
-        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.61.0}
+        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.164.0}
+        OTEL_COLLECTOR_CONTRIB_VERSION: ${OTEL_COLLECTOR_CONTRIB_VERSION:-0.164.1}
+        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.70.0}
     environment:
       - CLICKHOUSE_ENDPOINT=tcp://ch-server:9000?dial_timeout=10s
       - CLICKHOUSE_PROMETHEUS_METRICS_ENDPOINT=ch-server:9363
@@ -263,8 +270,9 @@ services:
       dockerfile: docker/otel-collector/Dockerfile
       target: dev
       args:
-        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.155.0}
-        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.61.0}
+        OTEL_COLLECTOR_VERSION: ${OTEL_COLLECTOR_VERSION:-0.164.0}
+        OTEL_COLLECTOR_CONTRIB_VERSION: ${OTEL_COLLECTOR_CONTRIB_VERSION:-0.164.1}
+        OTEL_COLLECTOR_CORE_VERSION: ${OTEL_COLLECTOR_CORE_VERSION:-1.70.0}
     environment:
       - CLICKHOUSE_ENDPOINT=tcp://127.0.0.1:1/?dial_timeout=1s
       - CLICKHOUSE_USER=default

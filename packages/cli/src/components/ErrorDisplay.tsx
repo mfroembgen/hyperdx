@@ -16,7 +16,7 @@
  */
 
 import React from 'react';
-import { Box, Text, useStdout } from 'ink';
+import { Box, Text, useWindowSize } from 'ink';
 
 import { ClickHouseQueryError } from '@hyperdx/common-utils/dist/clickhouse';
 
@@ -89,8 +89,8 @@ export default function ErrorDisplay({
   searchQuery,
   compact = false,
 }: ErrorDisplayProps) {
-  const { stdout } = useStdout();
-  const termHeight = stdout?.rows ?? 24;
+  const { rows } = useWindowSize();
+  const termHeight = rows;
 
   const config = SEVERITY_CONFIG[severity];
   const parsed = parseError(error, severity);

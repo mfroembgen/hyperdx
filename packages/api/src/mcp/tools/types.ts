@@ -3,7 +3,7 @@ import type {
   CallToolResult,
   ToolAnnotations,
 } from '@modelcontextprotocol/sdk/types.js';
-import type { AnyZodObject } from 'zod';
+import type { ZodObject } from 'zod';
 
 import type { ToolBehaviorAnnotations } from '@/mcp/tools/annotations';
 import type { McpClientInfo } from '@/mcp/utils/mcpClient';
@@ -35,7 +35,7 @@ export type ToolResult = CallToolResult & {
  * - Import and manually wire up withToolTracing in every tool file
  * - Import McpServer type in every tool file
  */
-export type RegisterToolFn = <TSchema extends AnyZodObject>(
+export type RegisterToolFn = <TSchema extends ZodObject>(
   name: string,
   config: {
     title: string;

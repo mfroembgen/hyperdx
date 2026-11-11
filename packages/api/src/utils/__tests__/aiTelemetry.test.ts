@@ -1,9 +1,9 @@
 import { trace } from '@opentelemetry/api';
 import {
-  BasicTracerProvider,
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { generateText, isStepCount, tool } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { z } from 'zod';
@@ -75,8 +75,8 @@ const runToolCall = (telemetry: ReturnType<typeof llmTelemetry>) =>
 
 const runTracedCall = async (attribution: LLMAttribution) => {
   const exporter = new InMemorySpanExporter();
-  const provider = new BasicTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(exporter)],
+  const provider = new TracerProvider({
+    spanProcessors: [new SimpleSpanProcessor({ exporter })],
   });
   await runToolCall(
     llmTelemetry(attribution, {
@@ -191,8 +191,8 @@ describe('registerAITelemetry', () => {
 
     const exporter = new InMemorySpanExporter();
     trace.setGlobalTracerProvider(
-      new BasicTracerProvider({
-        spanProcessors: [new SimpleSpanProcessor(exporter)],
+      new TracerProvider({
+        spanProcessors: [new SimpleSpanProcessor({ exporter })],
       }),
     );
     registerAITelemetry();

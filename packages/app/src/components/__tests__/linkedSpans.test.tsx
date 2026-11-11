@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { SourceKind, TTraceSource } from '@hyperdx/common-utils/dist/types';
 import { renderHook } from '@testing-library/react';
 
@@ -10,8 +11,8 @@ import {
   useReverseSpanLinks,
 } from '@/components/linkedSpans';
 
-const mockUseQueriedChartConfig = jest.fn();
-jest.mock('@/hooks/useChartConfig', () => ({
+const mockUseQueriedChartConfig = vi.fn();
+vi.mock('@/hooks/useChartConfig', () => ({
   __esModule: true,
   useQueriedChartConfig: (config: unknown, options: unknown) =>
     mockUseQueriedChartConfig(config, options),

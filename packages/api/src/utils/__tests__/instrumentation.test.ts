@@ -1,31 +1,32 @@
+import { vi } from 'vitest';
 // Mock OpenTelemetry + the HyperDX SDK before importing the module under test.
 
-const mockSpan = {
-  setAttribute: jest.fn(),
-  setAttributes: jest.fn(),
-  setStatus: jest.fn(),
-  recordException: jest.fn(),
-  end: jest.fn(),
-};
+const mockSpan = vi.hoisted(() => ({
+  setAttribute: vi.fn(),
+  setAttributes: vi.fn(),
+  setStatus: vi.fn(),
+  recordException: vi.fn(),
+  end: vi.fn(),
+}));
 
-const mockTracer = {
+const mockTracer = vi.hoisted(() => ({
   startActiveSpan: (
     _name: string,
     _options: unknown,
     fn: (span: typeof mockSpan) => Promise<unknown>,
   ) => fn(mockSpan),
-};
+}));
 
-const mockCounter = { add: jest.fn() };
-const mockHistogram = { record: jest.fn() };
-const mockMeter = {
-  createCounter: jest.fn(() => mockCounter),
-  createHistogram: jest.fn(() => mockHistogram),
-};
+const mockCounter = vi.hoisted(() => ({ add: vi.fn() }));
+const mockHistogram = vi.hoisted(() => ({ record: vi.fn() }));
+const mockMeter = vi.hoisted(() => ({
+  createCounter: vi.fn(() => mockCounter),
+  createHistogram: vi.fn(() => mockHistogram),
+}));
 
-const mockSetTraceAttributes = jest.fn();
+const mockSetTraceAttributes = vi.hoisted(() => vi.fn());
 
-jest.mock('@opentelemetry/api', () => ({
+vi.mock('@opentelemetry/api', () => ({
   __esModule: true,
   default: {
     trace: {
@@ -40,12 +41,17 @@ jest.mock('@opentelemetry/api', () => ({
   SpanKind: { INTERNAL: 0, SERVER: 1, CLIENT: 2, PRODUCER: 3, CONSUMER: 4 },
 }));
 
-jest.mock('@hyperdx/node-opentelemetry', () => ({
+vi.mock('@hyperdx/node-opentelemetry', () => ({
   __esModule: true,
   setTraceAttributes: (...args: unknown[]) => mockSetTraceAttributes(...args),
+  getPinoMixinFunction: () => ({}),
 }));
 
-jest.mock('@/config', () => ({
+vi.mock('@/config', () => ({
+  HYPERDX_LOG_LEVEL: undefined,
+  HYPERDX_API_KEY: undefined,
+  IS_DEV: false,
+  IS_CI: true,
   CODE_VERSION: 'test-version',
   IS_LOCAL_APP_MODE: false,
   IS_PROMQL_ENABLED: true,
@@ -69,7 +75,7 @@ import {
 
 describe('instrumentation', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('withSpan', () => {

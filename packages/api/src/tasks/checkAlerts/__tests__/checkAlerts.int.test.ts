@@ -1,4 +1,5 @@
 import { ClickhouseClient } from '@hyperdx/common-utils/dist/clickhouse/node';
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import {
   AlertChartConfig,
   AlertErrorType,
@@ -10,6 +11,7 @@ import {
 } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
 import ms from 'ms';
+import { type Mock, vi } from 'vitest';
 
 import * as config from '@/config';
 import { createAlert } from '@/controllers/alerts';
@@ -1218,7 +1220,7 @@ describe('checkAlerts', () => {
     // Create a mock metadata object with the necessary methods
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     const mockMetadata = {
-      getColumn: jest.fn().mockImplementation(({ column }) => {
+      getColumn: vi.fn().mockImplementation(({ column }) => {
         // Provide basic column definitions for common columns to avoid warnings
         const columnMap = {
           Timestamp: { name: 'Timestamp', type: 'DateTime' },
@@ -1228,23 +1230,23 @@ describe('checkAlerts', () => {
         };
         return Promise.resolve(columnMap[column]);
       }),
-      getColumns: jest.fn().mockResolvedValue([]),
-      getMapKeys: jest.fn().mockResolvedValue([]),
-      getMapValues: jest.fn().mockResolvedValue([]),
-      getAllFields: jest.fn().mockResolvedValue([]),
-      getTableMetadata: jest.fn().mockResolvedValue({}),
-      getClickHouseSettings: jest.fn().mockReturnValue({}),
-      setClickHouseSettings: jest.fn(),
-      getSkipIndices: jest.fn().mockResolvedValue([]),
-      getSetting: jest.fn().mockResolvedValue(undefined),
+      getColumns: vi.fn().mockResolvedValue([]),
+      getMapKeys: vi.fn().mockResolvedValue([]),
+      getMapValues: vi.fn().mockResolvedValue([]),
+      getAllFields: vi.fn().mockResolvedValue([]),
+      getTableMetadata: vi.fn().mockResolvedValue({}),
+      getClickHouseSettings: vi.fn().mockReturnValue({}),
+      setClickHouseSettings: vi.fn(),
+      getSkipIndices: vi.fn().mockResolvedValue([]),
+      getSetting: vi.fn().mockResolvedValue(undefined),
     } as any;
 
     // Create a mock clickhouse client
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     const mockClickhouseClient = {
-      query: jest.fn().mockResolvedValue({
-        json: jest.fn().mockResolvedValue({ data: [] }),
-        text: jest.fn().mockResolvedValue(''),
+      query: vi.fn().mockResolvedValue({
+        json: vi.fn().mockResolvedValue({ data: [] }),
+        text: vi.fn().mockResolvedValue(''),
       }),
     } as any;
 
@@ -1261,8 +1263,8 @@ describe('checkAlerts', () => {
       },
       source: {
         id: 'fake-source-id',
-        kind: SourceKind.Log,
-        team: 'team-123',
+        kind: SourceKind.Log as const,
+        team: new mongoose.Types.ObjectId(),
         from: {
           databaseName: 'default',
           tableName: 'otel_logs',
@@ -1274,7 +1276,7 @@ describe('checkAlerts', () => {
       },
       savedSearch: {
         _id: 'fake-saved-search-id' as any,
-        team: 'team-123' as any,
+        team: new mongoose.Types.ObjectId() as any,
         id: 'fake-saved-search-id',
         name: 'My Search',
         select: 'Body',
@@ -1313,7 +1315,7 @@ describe('checkAlerts', () => {
         id: 'id-123',
         name: 'My Dashboard',
         tiles: [testTile],
-        team: 'team-123' as any,
+        team: new mongoose.Types.ObjectId() as any,
         tags: ['test'],
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -1356,14 +1358,14 @@ describe('checkAlerts', () => {
     });
 
     beforeEach(async () => {
-      jest
-        .spyOn(slack, 'postMessageToWebhook')
-        .mockResolvedValueOnce(null as any);
+      vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValueOnce(
+        null as any,
+      );
     });
 
     afterEach(async () => {
       await server.clearDBs();
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     afterAll(async () => {
@@ -2033,34 +2035,16 @@ describe('checkAlerts', () => {
     });
 
     beforeEach(async () => {
-      const mockMetadata = {
-        getColumn: jest.fn().mockImplementation(({ column }) => {
-          const columnMap = {
-            Body: { name: 'Body', type: 'String' },
-            Timestamp: { name: 'Timestamp', type: 'DateTime' },
-            SeverityText: { name: 'SeverityText', type: 'String' },
-            ServiceName: { name: 'ServiceName', type: 'String' },
-          };
-          return Promise.resolve(columnMap[column]);
-        }),
-      };
+      vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValueOnce(
+        null as any,
+      );
 
-      // Mock the getMetadata function
-      jest.mock('@hyperdx/common-utils/dist/core/metadata', () => ({
-        ...jest.requireActual('@hyperdx/common-utils/dist/core/metadata'),
-        getMetadata: jest.fn().mockReturnValue(mockMetadata),
-      }));
-
-      jest
-        .spyOn(slack, 'postMessageToWebhook')
-        .mockResolvedValueOnce(null as any);
-
-      jest.spyOn(checkAlert, 'handleSendGenericWebhook');
+      vi.spyOn(checkAlert, 'handleSendGenericWebhook');
     });
 
     afterEach(async () => {
       await server.clearDBs();
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     afterAll(async () => {
@@ -2095,7 +2079,7 @@ describe('checkAlerts', () => {
       });
 
       const source = await Source.create({
-        kind: 'log',
+        kind: SourceKind.Log as const,
         team: team._id,
         from: {
           databaseName: 'default',
@@ -2160,17 +2144,21 @@ describe('checkAlerts', () => {
         'team',
         'savedSearch',
       ]);
+      const sourceProps =
+        source instanceof mongoose.Document
+          ? source.toJSON({ virtuals: true })
+          : source;
 
       return additionalDetails.taskType === AlertTaskType.SAVED_SEARCH
         ? {
             alert: enhancedAlert,
-            source: source!,
+            source: sourceProps!,
             previousMap: new Map(),
             ...additionalDetails,
           }
         : {
             alert: enhancedAlert,
-            source,
+            source: sourceProps,
             previousMap: new Map(),
             ...additionalDetails,
           };
@@ -2234,13 +2222,13 @@ describe('checkAlerts', () => {
         },
       );
 
-      const querySpy = jest.spyOn(clickhouseClient, 'queryChartConfig');
+      const querySpy = vi.spyOn(clickhouseClient, 'queryChartConfig');
 
       await processAlertAtTime(
         new Date('2023-11-16T22:12:00.000Z'),
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2283,13 +2271,13 @@ describe('checkAlerts', () => {
         },
       );
 
-      const querySpy = jest.spyOn(clickhouseClient, 'queryChartConfig');
+      const querySpy = vi.spyOn(clickhouseClient, 'queryChartConfig');
 
       await processAlertAtTime(
         new Date('2023-11-16T22:13:45.000Z'),
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2302,7 +2290,7 @@ describe('checkAlerts', () => {
         new Date('2023-11-16T22:18:31.000Z'),
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2381,7 +2369,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2393,7 +2381,7 @@ describe('checkAlerts', () => {
         later,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2405,7 +2393,7 @@ describe('checkAlerts', () => {
         nextWindow,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2417,7 +2405,7 @@ describe('checkAlerts', () => {
         nextNextWindow,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2556,7 +2544,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2600,7 +2588,7 @@ describe('checkAlerts', () => {
 
       try {
         const source = await Source.create({
-          kind: 'log',
+          kind: SourceKind.Log as const,
           team: team._id,
           from: {
             databaseName: DEFAULT_DATABASE,
@@ -2660,13 +2648,13 @@ describe('checkAlerts', () => {
           },
         ]);
 
-        const querySpy = jest.spyOn(clickhouseClient, 'queryChartConfig');
+        const querySpy = vi.spyOn(clickhouseClient, 'queryChartConfig');
 
         await processAlertAtTime(
           now,
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -2749,7 +2737,7 @@ describe('checkAlerts', () => {
                 },
               ],
               where: '',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               granularity: 'auto',
               source: source.id,
               groupBy: '',
@@ -2788,7 +2776,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2800,7 +2788,7 @@ describe('checkAlerts', () => {
         later,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2812,7 +2800,7 @@ describe('checkAlerts', () => {
         nextWindow,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2918,7 +2906,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2930,7 +2918,7 @@ describe('checkAlerts', () => {
         later,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2941,7 +2929,7 @@ describe('checkAlerts', () => {
         nextWindow,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -3005,7 +2993,7 @@ describe('checkAlerts', () => {
     it('INLINE alert (group by) - notifies per group', async () => {
       // Two groups fire, so two notifications go out (the shared beforeEach
       // only mocks a single call).
-      jest.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
+      vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
 
       const {
         team,
@@ -3064,7 +3052,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -3133,7 +3121,7 @@ describe('checkAlerts', () => {
           now,
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3202,7 +3190,7 @@ describe('checkAlerts', () => {
                   },
                 ],
                 where: '',
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 granularity: 'auto',
                 source: fixture.source.id,
                 groupBy: '',
@@ -3253,15 +3241,15 @@ describe('checkAlerts', () => {
           { $set: { state: AlertState.ALERT } },
         );
 
-        jest
-          .spyOn(clickhouseClient, 'queryChartConfig')
-          .mockRejectedValueOnce(new Error('clickhouse kaput'));
+        vi.spyOn(clickhouseClient, 'queryChartConfig').mockRejectedValueOnce(
+          new Error('clickhouse kaput'),
+        );
 
         await processAlertAtTime(
           new Date('2023-11-16T22:12:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3339,15 +3327,15 @@ describe('checkAlerts', () => {
           },
         );
 
-        jest
-          .spyOn(clickhouseClient, 'queryChartConfig')
-          .mockRejectedValueOnce(new Error('boom'));
+        vi.spyOn(clickhouseClient, 'queryChartConfig').mockRejectedValueOnce(
+          new Error('boom'),
+        );
 
         await processAlertAtTime(
           new Date('2023-11-16T22:12:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3399,15 +3387,15 @@ describe('checkAlerts', () => {
 
         // The exact message the ClickHouse client rejects with when
         // request_timeout elapses.
-        jest
-          .spyOn(clickhouseClient, 'queryChartConfig')
-          .mockRejectedValueOnce(new Error('Timeout error.'));
+        vi.spyOn(clickhouseClient, 'queryChartConfig').mockRejectedValueOnce(
+          new Error('Timeout error.'),
+        );
 
         await processAlertAtTime(
           new Date('2023-11-16T22:12:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3469,7 +3457,7 @@ describe('checkAlerts', () => {
           },
         );
 
-        const querySpy = jest
+        const querySpy = vi
           .spyOn(clickhouseClient, 'queryChartConfig')
           .mockRejectedValueOnce(new Error('boom 1'))
           .mockRejectedValueOnce(new Error('boom 2'))
@@ -3482,7 +3470,7 @@ describe('checkAlerts', () => {
           new Date('2023-11-16T22:12:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3490,7 +3478,7 @@ describe('checkAlerts', () => {
           new Date('2023-11-16T22:13:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3513,7 +3501,7 @@ describe('checkAlerts', () => {
           new Date('2023-11-16T22:16:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3583,15 +3571,15 @@ describe('checkAlerts', () => {
         );
 
         // First tick fails — records an ERROR row, no state/history change
-        jest
-          .spyOn(clickhouseClient, 'queryChartConfig')
-          .mockRejectedValueOnce(new Error('transient failure'));
+        vi.spyOn(clickhouseClient, 'queryChartConfig').mockRejectedValueOnce(
+          new Error('transient failure'),
+        );
 
         await processAlertAtTime(
           new Date('2023-11-16T22:12:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3606,7 +3594,7 @@ describe('checkAlerts', () => {
           new Date('2023-11-16T22:13:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3720,7 +3708,7 @@ describe('checkAlerts', () => {
           new Date('2023-11-16T22:10:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           // The alert still points at a webhook the team no longer has.
           new Map(),
@@ -3789,7 +3777,7 @@ describe('checkAlerts', () => {
           new Date('2023-11-16T22:10:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3852,14 +3840,14 @@ describe('checkAlerts', () => {
         );
 
         // Tick in the 22:10 window fails — ERROR row at 22:10
-        jest
-          .spyOn(clickhouseClient, 'queryChartConfig')
-          .mockRejectedValueOnce(new Error('transient failure'));
+        vi.spyOn(clickhouseClient, 'queryChartConfig').mockRejectedValueOnce(
+          new Error('transient failure'),
+        );
         await processAlertAtTime(
           new Date('2023-11-16T22:12:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3873,7 +3861,7 @@ describe('checkAlerts', () => {
           new Date('2023-11-16T22:17:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3933,7 +3921,7 @@ describe('checkAlerts', () => {
           new Date('2023-11-16T22:07:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3958,14 +3946,14 @@ describe('checkAlerts', () => {
 
         // Tick 2 (window 22:10) fails — ERROR row at 22:10, window not
         // marked evaluated.
-        jest
-          .spyOn(clickhouseClient, 'queryChartConfig')
-          .mockRejectedValueOnce(new Error('transient failure'));
+        vi.spyOn(clickhouseClient, 'queryChartConfig').mockRejectedValueOnce(
+          new Error('transient failure'),
+        );
         await processAlertAtTime(
           new Date('2023-11-16T22:12:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -3985,7 +3973,7 @@ describe('checkAlerts', () => {
           new Date('2023-11-16T22:17:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -4051,7 +4039,7 @@ describe('checkAlerts', () => {
           new Date('2023-11-16T22:12:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -4067,7 +4055,7 @@ describe('checkAlerts', () => {
           new Date('2023-11-16T22:27:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -4110,7 +4098,7 @@ describe('checkAlerts', () => {
           expectedErrorMessage,
         }) => {
           const redirectTarget = 'http://169.254.169.254/latest/meta-data/';
-          const fetchMock = jest.fn().mockImplementation(async () => {
+          const fetchMock = vi.fn().mockImplementation(async () => {
             return new Response(responseBody, {
               status,
               headers: status === 302 ? { Location: redirectTarget } : {},
@@ -4180,7 +4168,7 @@ describe('checkAlerts', () => {
             now,
             details,
             clickhouseClient,
-            connection.id,
+            connection,
             alertProvider,
             teamWebhooksById,
           );
@@ -4237,8 +4225,8 @@ describe('checkAlerts', () => {
       );
 
       it('records a WEBHOOK_ERROR without calling a generic webhook at a private IP', async () => {
-        const fetchMock = jest.fn();
-        global.fetch = jest.mocked(fetchMock);
+        const fetchMock = vi.fn();
+        global.fetch = vi.mocked(fetchMock);
 
         const {
           team,
@@ -4302,7 +4290,7 @@ describe('checkAlerts', () => {
           now,
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -4316,18 +4304,18 @@ describe('checkAlerts', () => {
       });
 
       it('sets state to OK and records a WEBHOOK_ERROR when a resolving webhook send fails', async () => {
-        const fetchMock = jest.fn();
+        const fetchMock = vi.fn();
         fetchMock
           .mockResolvedValueOnce({
             ok: true,
             status: 200,
-            text: jest.fn().mockResolvedValue(''),
+            text: vi.fn().mockResolvedValue(''),
           })
           // withRetry retries a 500 up to 3 times; mock all attempts
           .mockResolvedValue({
             ok: false,
             status: 500,
-            text: jest.fn().mockResolvedValue('resolve send failed'),
+            text: vi.fn().mockResolvedValue('resolve send failed'),
           });
         global.fetch = fetchMock as any;
 
@@ -4395,7 +4383,7 @@ describe('checkAlerts', () => {
           alertingNow,
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -4408,7 +4396,7 @@ describe('checkAlerts', () => {
           resolvingNow,
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -4486,7 +4474,7 @@ describe('checkAlerts', () => {
           now,
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -4499,10 +4487,10 @@ describe('checkAlerts', () => {
       it('records one WEBHOOK_ERROR per failing group for a grouped alert', async () => {
         // Every generic-webhook fetch fails. With two alerting groups in a
         // single execution, the alert should end up with two WEBHOOK_ERRORs.
-        const fetchMock = jest.fn().mockResolvedValue({
+        const fetchMock = vi.fn().mockResolvedValue({
           ok: false,
           status: 500,
-          text: jest.fn().mockResolvedValue('group webhook failed'),
+          text: vi.fn().mockResolvedValue('group webhook failed'),
         });
         global.fetch = fetchMock as any;
 
@@ -4579,7 +4567,7 @@ describe('checkAlerts', () => {
           now,
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -4688,7 +4676,7 @@ describe('checkAlerts', () => {
           now,
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           emptyWebhooksById,
         );
@@ -4763,7 +4751,7 @@ describe('checkAlerts', () => {
 
         // Force an unexpected (non-InvalidAlert) failure deep in processAlert
         // by making updateAlertState reject. This should end up as UNKNOWN.
-        const updateAlertStateSpy = jest
+        const updateAlertStateSpy = vi
           .spyOn(alertProvider, 'updateAlertState')
           .mockImplementationOnce(() => {
             throw new Error('secret internal detail');
@@ -4773,7 +4761,7 @@ describe('checkAlerts', () => {
           new Date('2023-11-16T22:12:00.000Z'),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
@@ -4791,9 +4779,9 @@ describe('checkAlerts', () => {
     });
 
     it('TILE alert (events) - generic webhook', async () => {
-      const fetchMock = jest.fn().mockResolvedValue({
+      const fetchMock = vi.fn().mockResolvedValue({
         ok: true,
-        text: jest.fn().mockResolvedValue(''),
+        text: vi.fn().mockResolvedValue(''),
       });
       global.fetch = fetchMock;
 
@@ -4868,7 +4856,7 @@ describe('checkAlerts', () => {
                 },
               ],
               where: '',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               granularity: 'auto',
               source: source.id,
               groupBy: '',
@@ -4908,7 +4896,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -4920,7 +4908,7 @@ describe('checkAlerts', () => {
         later,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -4932,7 +4920,7 @@ describe('checkAlerts', () => {
         nextWindow,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -4982,9 +4970,9 @@ describe('checkAlerts', () => {
       // API / MCP create paths (body is optional there; only the UI form
       // applies a default). sendGenericWebhook must not crash on
       // Handlebars.compile(undefined) — it falls back to the default template.
-      const fetchMock = jest.fn().mockResolvedValue({
+      const fetchMock = vi.fn().mockResolvedValue({
         ok: true,
-        text: jest.fn().mockResolvedValue(''),
+        text: vi.fn().mockResolvedValue(''),
       });
       global.fetch = fetchMock;
 
@@ -5037,7 +5025,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -5095,7 +5083,7 @@ describe('checkAlerts', () => {
             h: 4,
             config: {
               configType: 'sql',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sqlTemplate: RAW_SQL_ALERT_TEMPLATE,
               connection: connection.id,
             },
@@ -5255,7 +5243,7 @@ describe('checkAlerts', () => {
                 ],
                 where: 'ServiceName:$svc',
                 whereLanguage: 'lucene',
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 granularity: 'auto',
                 source: source.id,
                 groupBy: '',
@@ -5328,7 +5316,7 @@ describe('checkAlerts', () => {
                 ],
                 where: "$__conditionalAll(ServiceName = 'api', $svc)",
                 whereLanguage: 'sql',
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 granularity: 'auto',
                 source: source.id,
                 groupBy: '',
@@ -5409,7 +5397,7 @@ describe('checkAlerts', () => {
                 ],
                 where: "ServiceName = '$abc' OR ServiceName = '$hidden'",
                 whereLanguage: 'sql',
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 granularity: 'auto',
                 source: source.id,
                 groupBy: '',
@@ -5478,7 +5466,7 @@ describe('checkAlerts', () => {
               h: 4,
               config: {
                 configType: 'sql',
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 sqlTemplate,
                 connection: connection.id,
               },
@@ -5567,7 +5555,7 @@ describe('checkAlerts', () => {
             h: 4,
             config: {
               configType: 'sql',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sqlTemplate: groupedSqlTemplate,
               connection: connection.id,
             },
@@ -5681,7 +5669,7 @@ describe('checkAlerts', () => {
             h: 4,
             config: {
               configType: 'sql',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sqlTemplate: groupedSqlTemplate,
               connection: connection.id,
             },
@@ -5734,8 +5722,7 @@ describe('checkAlerts', () => {
       // rendered title/body must resolve {{attributes.ServiceName}} to the
       // firing group's value ("web"), not an empty string.
       expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(1);
-      const [, payload] = (slack.postMessageToWebhook as jest.Mock).mock
-        .calls[0];
+      const [, payload] = (slack.postMessageToWebhook as Mock).mock.calls[0];
 
       expect(payload.text).toContain('Errors for web');
 
@@ -5799,7 +5786,7 @@ describe('checkAlerts', () => {
             h: 4,
             config: {
               configType: 'sql',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sqlTemplate: multiSeriesSqlTemplate,
               connection: connection.id,
             },
@@ -5910,7 +5897,7 @@ describe('checkAlerts', () => {
             h: 4,
             config: {
               configType: 'sql',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sqlTemplate: macroSqlTemplate,
               connection: connection.id,
               source: source.id,
@@ -6011,7 +5998,7 @@ describe('checkAlerts', () => {
             h: 4,
             config: {
               configType: 'sql',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sqlTemplate: RAW_SQL_ALERT_TEMPLATE,
               connection: connection.id,
             },
@@ -6124,7 +6111,7 @@ describe('checkAlerts', () => {
             h: 4,
             config: {
               configType: 'sql',
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sqlTemplate: RAW_SQL_NUMBER_ALERT_TEMPLATE,
               connection: connection.id,
             },
@@ -6217,7 +6204,7 @@ describe('checkAlerts', () => {
             h: 4,
             config: {
               configType: 'sql',
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sqlTemplate: RAW_SQL_NUMBER_ALERT_TEMPLATE,
               connection: connection.id,
             },
@@ -6323,7 +6310,7 @@ describe('checkAlerts', () => {
             h: 4,
             config: {
               configType: 'sql',
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sqlTemplate: multiNumericSql,
               connection: connection.id,
             },
@@ -6442,7 +6429,7 @@ describe('checkAlerts', () => {
             h: 4,
             config: {
               configType: 'sql',
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sqlTemplate: groupBySql,
               connection: connection.id,
             },
@@ -6585,7 +6572,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -6612,7 +6599,7 @@ describe('checkAlerts', () => {
         nextWindow,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -6657,7 +6644,7 @@ describe('checkAlerts', () => {
       expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(4);
 
       // Verify the resolution notification was sent for service-b
-      const calls = (slack.postMessageToWebhook as jest.Mock).mock.calls;
+      const calls = (slack.postMessageToWebhook as Mock).mock.calls;
       const resolutionCall = calls.find(call =>
         call[1].text.includes('My Search'),
       );
@@ -6727,13 +6714,13 @@ describe('checkAlerts', () => {
       );
 
       // The sample fetch is the only CSV query in an evaluation.
-      const querySpy = jest.spyOn(clickhouseClient, 'query');
+      const querySpy = vi.spyOn(clickhouseClient, 'query');
 
       await processAlertAtTime(
         new Date('2023-11-16T22:12:00.000Z'),
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -6815,7 +6802,7 @@ describe('checkAlerts', () => {
         firstRun,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -6837,7 +6824,7 @@ describe('checkAlerts', () => {
         secondRun,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -6858,7 +6845,7 @@ describe('checkAlerts', () => {
         thirdRun,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -6928,7 +6915,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7003,7 +6990,7 @@ describe('checkAlerts', () => {
         firstRun,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7039,7 +7026,7 @@ describe('checkAlerts', () => {
         secondRun,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7144,7 +7131,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7171,7 +7158,7 @@ describe('checkAlerts', () => {
         nextWindow,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7216,7 +7203,7 @@ describe('checkAlerts', () => {
       expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(4);
 
       // Verify the resolution notification was sent for service-b
-      const calls = (slack.postMessageToWebhook as jest.Mock).mock.calls;
+      const calls = (slack.postMessageToWebhook as Mock).mock.calls;
       const resolutionCall = calls.find(call =>
         call[1].text.includes('My Search'),
       );
@@ -7272,13 +7259,13 @@ describe('checkAlerts', () => {
           new Date(at),
           details,
           clickhouseClient,
-          connection.id,
+          connection,
           alertProvider,
           teamWebhooksById,
         );
       }
 
-      const texts = jest
+      const texts = vi
         .mocked(slack.postMessageToWebhook)
         .mock.calls.map(call => call[1].text);
       expect(texts).toHaveLength(2);
@@ -7312,7 +7299,7 @@ describe('checkAlerts', () => {
       await bulkInsertMetricsGauge(gaugePointsA);
 
       const source = await Source.create({
-        kind: 'metric',
+        kind: SourceKind.Metric as const,
         team: team._id,
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -7348,7 +7335,7 @@ describe('checkAlerts', () => {
                 },
               ],
               where: '',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               source: source.id,
               groupBy: '',
             },
@@ -7387,7 +7374,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7399,7 +7386,7 @@ describe('checkAlerts', () => {
         later,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7411,7 +7398,7 @@ describe('checkAlerts', () => {
         nextWindow,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7510,7 +7497,7 @@ describe('checkAlerts', () => {
       await bulkInsertMetricsGauge(gaugePoints);
 
       const source = await Source.create({
-        kind: 'metric',
+        kind: SourceKind.Metric as const,
         team: team._id,
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -7547,7 +7534,7 @@ describe('checkAlerts', () => {
                 },
               ],
               where: '',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               source: source.id,
               groupBy: 'ServiceName',
             },
@@ -7585,7 +7572,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7610,7 +7597,7 @@ describe('checkAlerts', () => {
       expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(2);
 
       // Validate webhook messages contain correct group names
-      const calls = (slack.postMessageToWebhook as jest.Mock).mock.calls;
+      const calls = (slack.postMessageToWebhook as Mock).mock.calls;
       const messages = calls.map((call: any) => ({
         url: call[0],
         text: call[1].text,
@@ -7686,12 +7673,10 @@ describe('checkAlerts', () => {
 
       // Persistent mock: the beforeEach mockResolvedValueOnce only covers the
       // first call, and resolve notifications can trigger a second one.
-      jest
-        .spyOn(slack, 'postMessageToWebhook')
-        .mockResolvedValue({ text: 'ok' });
+      vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValue({ text: 'ok' });
 
       const source = await Source.create({
-        kind: 'metric',
+        kind: SourceKind.Metric as const,
         team: team._id,
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -7725,7 +7710,7 @@ describe('checkAlerts', () => {
               ...(formulas ? { formulas } : {}),
               ...(showOperandSeries !== undefined ? { showOperandSeries } : {}),
               where: '',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               source: source.id,
               groupBy: groupBy ?? '',
             },
@@ -7798,7 +7783,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7815,7 +7800,7 @@ describe('checkAlerts', () => {
 
       expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(1);
       expect(
-        jest.mocked(slack.postMessageToWebhook).mock.calls[0][1].text,
+        vi.mocked(slack.postMessageToWebhook).mock.calls[0][1].text,
       ).toContain('6 meets or exceeds 5');
 
       // Next window has no data -> resolves to OK.
@@ -7824,7 +7809,7 @@ describe('checkAlerts', () => {
         nextWindow,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7866,7 +7851,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7920,7 +7905,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7982,7 +7967,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -7999,7 +7984,7 @@ describe('checkAlerts', () => {
 
       expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(1);
       expect(
-        jest.mocked(slack.postMessageToWebhook).mock.calls[0][1].text,
+        vi.mocked(slack.postMessageToWebhook).mock.calls[0][1].text,
       ).toContain('5 meets or exceeds 4');
     });
 
@@ -8040,7 +8025,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -8055,7 +8040,7 @@ describe('checkAlerts', () => {
 
       expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(1);
       expect(
-        jest.mocked(slack.postMessageToWebhook).mock.calls[0][1].text,
+        vi.mocked(slack.postMessageToWebhook).mock.calls[0][1].text,
       ).toContain('5 meets or exceeds 4');
     });
 
@@ -8095,7 +8080,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -8130,9 +8115,7 @@ describe('checkAlerts', () => {
 
       // Persistent mock: the beforeEach mockResolvedValueOnce only covers the
       // first call, and resolve notifications can trigger a second one.
-      jest
-        .spyOn(slack, 'postMessageToWebhook')
-        .mockResolvedValue({ text: 'ok' });
+      vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValue({ text: 'ok' });
 
       const now = new Date('2023-11-16T22:12:00.000Z');
       // Alert window is [22:05, 22:10)
@@ -8187,7 +8170,7 @@ describe('checkAlerts', () => {
               formulas: [{ expression: 'A / B * 100', alias: 'Error rate' }],
               showOperandSeries: false,
               where: '',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               source: source.id,
               groupBy: '',
             },
@@ -8224,7 +8207,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -8241,7 +8224,7 @@ describe('checkAlerts', () => {
 
       expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(1);
       expect(
-        jest.mocked(slack.postMessageToWebhook).mock.calls[0][1].text,
+        vi.mocked(slack.postMessageToWebhook).mock.calls[0][1].text,
       ).toContain('25 meets or exceeds 20');
 
       // Next window has no data -> resolves to OK.
@@ -8250,7 +8233,7 @@ describe('checkAlerts', () => {
         nextWindow,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -8303,7 +8286,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -8312,7 +8295,7 @@ describe('checkAlerts', () => {
 
       const alertingHistories = await AlertHistory.find({
         alert: details.alert.id,
-        state: 'ALERT',
+        state: AlertState.ALERT,
       });
       expect(alertingHistories.length).toBe(1);
       expect(alertingHistories[0].group).toContain('service-a');
@@ -8325,7 +8308,7 @@ describe('checkAlerts', () => {
       // (0.125 -> "0.13"); the exact-value assertion above is the source of
       // truth for which ratio mode was evaluated.
       expect(
-        jest.mocked(slack.postMessageToWebhook).mock.calls[0][1].text,
+        vi.mocked(slack.postMessageToWebhook).mock.calls[0][1].text,
       ).toContain('meets or exceeds 0.12');
     });
 
@@ -8410,7 +8393,7 @@ describe('checkAlerts', () => {
       await new AlertHistory({
         alert: details.alert.id,
         createdAt: new Date('2023-11-16T22:00:00.000Z'),
-        state: 'OK',
+        state: AlertState.OK,
         counts: 0,
         lastValues: [],
       }).save();
@@ -8421,7 +8404,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -8485,7 +8468,7 @@ describe('checkAlerts', () => {
         nextRun,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -8627,7 +8610,7 @@ describe('checkAlerts', () => {
         {
           alert: details.alert.id,
           createdAt: new Date('2023-11-16T22:00:00.000Z'),
-          state: 'OK',
+          state: AlertState.OK,
           counts: 0,
           lastValues: [],
           group: 'ServiceName:service-a',
@@ -8635,7 +8618,7 @@ describe('checkAlerts', () => {
         {
           alert: details.alert.id,
           createdAt: new Date('2023-11-16T22:00:00.000Z'),
-          state: 'OK',
+          state: AlertState.OK,
           counts: 0,
           lastValues: [],
           group: 'ServiceName:service-b',
@@ -8648,7 +8631,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -8706,7 +8689,7 @@ describe('checkAlerts', () => {
         nextRun,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -8792,7 +8775,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -8824,7 +8807,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -8918,7 +8901,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -8948,7 +8931,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9040,7 +9023,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9070,7 +9053,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9180,7 +9163,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9216,7 +9199,7 @@ describe('checkAlerts', () => {
 
       // Verify that webhook was called for the alert
       expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(1);
-      jest.mocked(slack.postMessageToWebhook).mockReset();
+      vi.mocked(slack.postMessageToWebhook).mockReset();
 
       /**
        * Period 2
@@ -9227,7 +9210,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9263,7 +9246,7 @@ describe('checkAlerts', () => {
 
       // Verify that resolve webhook was called for the alert (app) and for the called for the resolution (api)
       expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(2);
-      jest.mocked(slack.postMessageToWebhook).mockReset();
+      vi.mocked(slack.postMessageToWebhook).mockReset();
 
       /**
        * Period 3 - api is still OK, app should be auto-resolved
@@ -9273,7 +9256,7 @@ describe('checkAlerts', () => {
         thirdRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9376,7 +9359,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9422,7 +9405,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9505,7 +9488,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9551,7 +9534,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9644,7 +9627,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9727,7 +9710,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9805,7 +9788,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9838,7 +9821,7 @@ describe('checkAlerts', () => {
       });
 
       const source = await Source.create({
-        kind: 'log',
+        kind: SourceKind.Log as const,
         team: team._id,
         from: {
           databaseName: 'default',
@@ -9914,7 +9897,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -9946,7 +9929,7 @@ describe('checkAlerts', () => {
       });
 
       const source = await Source.create({
-        kind: 'log',
+        kind: SourceKind.Log as const,
         team: team._id,
         from: {
           databaseName: 'default',
@@ -10011,7 +9994,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10045,7 +10028,7 @@ describe('checkAlerts', () => {
       });
 
       const source = await Source.create({
-        kind: 'log',
+        kind: SourceKind.Log as const,
         team: team._id,
         from: {
           databaseName: 'default',
@@ -10116,7 +10099,7 @@ describe('checkAlerts', () => {
         now,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10208,7 +10191,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10220,7 +10203,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10296,7 +10279,7 @@ describe('checkAlerts', () => {
                 },
               ],
               where: '',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               granularity: 'auto',
               source: source.id,
               groupBy: '',
@@ -10339,7 +10322,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10351,7 +10334,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10434,7 +10417,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10446,7 +10429,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10510,7 +10493,7 @@ describe('checkAlerts', () => {
                 },
               ],
               where: '',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               granularity: 'auto',
               source: source.id,
               groupBy: '',
@@ -10550,7 +10533,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10562,7 +10545,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10645,7 +10628,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10657,7 +10640,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10733,7 +10716,7 @@ describe('checkAlerts', () => {
                 },
               ],
               where: '',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               granularity: 'auto',
               source: source.id,
               groupBy: '',
@@ -10773,7 +10756,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10785,7 +10768,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10868,7 +10851,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10880,7 +10863,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -10956,7 +10939,7 @@ describe('checkAlerts', () => {
                 },
               ],
               where: '',
-              displayType: 'line',
+              displayType: DisplayType.Line,
               granularity: 'auto',
               source: source.id,
               groupBy: '',
@@ -10997,7 +10980,7 @@ describe('checkAlerts', () => {
         firstRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -11009,7 +10992,7 @@ describe('checkAlerts', () => {
         secondRunTime,
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -11050,11 +11033,11 @@ describe('checkAlerts', () => {
       // Prior OK history
       await new AlertHistory({
         alert: details.alert.id,
-        state: 'OK',
+        state: AlertState.OK,
         createdAt: new Date('2024-03-01T22:05:00Z'),
         counts: 0,
       }).save();
-      await Alert.findByIdAndUpdate(details.alert.id, { state: 'OK' });
+      await Alert.findByIdAndUpdate(details.alert.id, { state: AlertState.OK });
 
       // Buckets:
       // (3 errors, breach)
@@ -11099,7 +11082,7 @@ describe('checkAlerts', () => {
       expect((await Alert.findById(details.alert.id))!.state).toBe('OK');
       expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(2);
 
-      const calls = (slack.postMessageToWebhook as jest.Mock).mock.calls;
+      const calls = (slack.postMessageToWebhook as Mock).mock.calls;
       expect(JSON.stringify(calls[0][1])).toContain('Alert for');
       expect(JSON.stringify(calls[1][1])).toContain(
         'The alert has been resolved',
@@ -11169,9 +11152,7 @@ describe('checkAlerts', () => {
           clickhouseClient,
         } = await setupSavedSearchAlertTest();
 
-        jest
-          .spyOn(slack, 'postMessageToWebhook')
-          .mockResolvedValue(null as any);
+        vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
 
         const details = await createAlertDetails(
           team,
@@ -11270,9 +11251,7 @@ describe('checkAlerts', () => {
           clickhouseClient,
         } = await setupSavedSearchAlertTest();
 
-        jest
-          .spyOn(slack, 'postMessageToWebhook')
-          .mockResolvedValue(null as any);
+        vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
 
         const details = await createAlertDetails(
           team,
@@ -11357,9 +11336,7 @@ describe('checkAlerts', () => {
           clickhouseClient,
         } = await setupSavedSearchAlertTest();
 
-        jest
-          .spyOn(slack, 'postMessageToWebhook')
-          .mockResolvedValue(null as any);
+        vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValue(null as any);
 
         const details = await createAlertDetails(
           team,
@@ -11509,7 +11486,7 @@ describe('checkAlerts', () => {
       });
 
       const source = await Source.create({
-        kind: 'log',
+        kind: SourceKind.Log as const,
         team: team._id,
         from: {
           databaseName: 'default',
@@ -11558,7 +11535,10 @@ describe('checkAlerts', () => {
         clickhouseClient,
         webhook,
         savedSearch,
-        source,
+        source: {
+          ...source.toJSON({ virtuals: true }),
+          connection: connection.id,
+        },
         connection,
         teamWebhooksById,
       };
@@ -11570,17 +11550,17 @@ describe('checkAlerts', () => {
     });
 
     beforeEach(async () => {
-      jest
-        .spyOn(slack, 'postMessageToWebhook')
-        .mockResolvedValueOnce({ text: 'ok' });
+      vi.spyOn(slack, 'postMessageToWebhook').mockResolvedValueOnce({
+        text: 'ok',
+      });
 
-      jest.spyOn(checkAlert, 'handleSendGenericWebhook');
+      vi.spyOn(checkAlert, 'handleSendGenericWebhook');
     });
 
     afterEach(async () => {
       await server.clearDBs();
       await clearMV();
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     afterAll(async () => {
@@ -11662,7 +11642,7 @@ describe('checkAlerts', () => {
       ]);
 
       // Act - Run alerts twice to cover two periods
-      let previousMap = await getPreviousAlertHistories(
+      const previousMap = await getPreviousAlertHistories(
         [details.alert.id],
         now,
       );
@@ -11679,10 +11659,7 @@ describe('checkAlerts', () => {
       );
 
       const nextWindow = new Date('2023-11-16T22:15:00.000Z');
-      previousMap = await getPreviousAlertHistories(
-        [details.alert.id],
-        nextWindow,
-      );
+      await getPreviousAlertHistories([details.alert.id], nextWindow);
       await processAlert(
         nextWindow,
         details,
@@ -11806,7 +11783,7 @@ describe('checkAlerts', () => {
       ]);
 
       // Act - Run alerts twice to cover two periods
-      let previousMap = await getPreviousAlertHistories(
+      const previousMap = await getPreviousAlertHistories(
         [details.alert.id],
         now,
       );
@@ -11823,10 +11800,7 @@ describe('checkAlerts', () => {
       );
 
       const nextWindow = new Date('2023-11-16T22:15:00.000Z');
-      previousMap = await getPreviousAlertHistories(
-        [details.alert.id],
-        nextWindow,
-      );
+      await getPreviousAlertHistories([details.alert.id], nextWindow);
       await processAlert(
         nextWindow,
         details,
@@ -11871,7 +11845,7 @@ describe('checkAlerts', () => {
 
     afterEach(async () => {
       await server.clearDBs();
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     afterAll(async () => {
@@ -11980,7 +11954,7 @@ describe('checkAlerts', () => {
       await saveAlert(alert2Id, new Date('2025-01-01T00:10:00Z'));
       await saveAlert(alert2Id, new Date('2025-01-01T00:15:00Z'));
 
-      const aggregateSpy = jest.spyOn(AlertHistory, 'aggregate');
+      const aggregateSpy = vi.spyOn(AlertHistory, 'aggregate');
 
       const fakeAlertIds = Array(150)
         .fill(null)
@@ -12017,7 +11991,7 @@ describe('checkAlerts', () => {
 
     afterEach(async () => {
       await server.clearDBs();
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     afterAll(async () => {
@@ -12055,7 +12029,7 @@ describe('checkAlerts', () => {
       const alertId = new mongoose.Types.ObjectId();
       await saveHistory(alertId, new Date('2025-01-01T00:10:00Z'));
 
-      const aggregateSpy = jest.spyOn(AlertHistory, 'aggregate');
+      const aggregateSpy = vi.spyOn(AlertHistory, 'aggregate');
 
       const result = await getConsecutiveWindowHistories(
         [makeAlert(alertId, 1), makeAlert(new mongoose.Types.ObjectId())],

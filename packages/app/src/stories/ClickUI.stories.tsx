@@ -1,6 +1,6 @@
 import { Link, Text } from '@clickhouse/click-ui';
 import { Stack } from '@mantine/core';
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ContactSupportText } from '@/components/ContactSupportText';
 

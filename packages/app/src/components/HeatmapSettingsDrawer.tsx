@@ -65,7 +65,7 @@ export default function HeatmapSettingsDrawer({
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Stack gap="md">
           <HeatmapScaleControl
-            value={scaleType}
+            value={scaleType ?? 'linear'}
             onChange={v => form.setValue('scaleType', v)}
           />
 

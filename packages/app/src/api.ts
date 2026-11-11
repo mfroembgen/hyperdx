@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import Router from 'next/router';
 import type { HTTPError, Options, ResponsePromise } from 'ky';
-import ky from 'ky-universal';
+import ky from 'ky';
 import {
   buildLogComment,
   QUERY_ATTRIBUTION_HEADER,
@@ -59,7 +59,7 @@ type ServicesResponse = {
   >;
 };
 
-function loginHook(request: Request, options: any, response: Response) {
+function loginHook({ response }: { response: Response }) {
   // marketing pages
   const WHITELIST_PATHS = [
     '/',
@@ -80,7 +80,7 @@ function loginHook(request: Request, options: any, response: Response) {
 }
 
 const server = ky.create({
-  prefixUrl: '/api',
+  prefix: '/api',
   credentials: 'include',
   hooks: {
     afterResponse: [loginHook],
@@ -846,7 +846,7 @@ async function withPrometheusError<T>(request: () => Promise<T>): Promise<T> {
       try {
         const body = await e.response.json();
         if (body?.error) {
-          throw new Error(body.error);
+          throw new Error(body.error, { cause: e });
         }
       } catch (parseErr) {
         if (parseErr instanceof Error && parseErr.message !== e.message) {

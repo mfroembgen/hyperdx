@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import type { IacResourceRef } from '@hyperdx/common-utils/dist/iac';
 import { MantineProvider } from '@mantine/core';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -11,7 +12,7 @@ const TEAM_ID = '7a1c0de5b2f34c9d8e0a1b2c';
 // factory may close over it, and one test blanks it to stand in for a `me`
 // that has not resolved yet.
 let mockMeTeamId: string | undefined = TEAM_ID;
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useMe: () => ({
@@ -24,15 +25,19 @@ jest.mock('@/api', () => ({
 // this lets one test flip the gate without re-requiring React.
 let iacExportEnabled = true;
 let basePath = '';
-jest.mock('@/config', () => ({
-  ...jest.requireActual('@/config'),
-  get IS_IAC_EXPORT_ENABLED() {
-    return iacExportEnabled;
-  },
-  get BASE_PATH() {
-    return basePath;
-  },
-}));
+vi.mock('@/config', async () => {
+  const actualModule0 =
+    await vi.importActual<typeof import('@/config')>('@/config');
+  return {
+    ...actualModule0,
+    get IS_IAC_EXPORT_ENABLED() {
+      return iacExportEnabled;
+    },
+    get BASE_PATH() {
+      return basePath;
+    },
+  };
+});
 
 const DASHBOARD: IacResourceRef = {
   type: 'dashboard',
@@ -175,7 +180,7 @@ describe('ResourceTerraformPopover', () => {
     const toggle = await screen.findByText(/Show provider setup/);
     fireEvent.click(toggle);
 
-    expect(screen.getByText(/clickstack_endpoint/)).toHaveTextContent(
+    expect(await screen.findByText(/clickstack_endpoint/)).toHaveTextContent(
       '/hyperdx/api',
     );
   });
@@ -185,11 +190,10 @@ describe('ResourceTerraformPopover', () => {
   it('keeps the provider block collapsed behind a toggle', async () => {
     openPopover();
 
-    // Mantine's <Collapse> keeps the child mounted and animates max-height +
-    // visibility, and JSDOM runs no CSS transitions — so the canary is the
-    // toggle label, which flips synchronously with React state.
+    // Collapse prerenders hidden children through Activity. Wait for that
+    // content before checking visibility; the toggle label tracks open state.
     const toggle = await screen.findByText(/Show provider setup/);
-    expect(screen.getByText(/required_providers/)).not.toBeVisible();
+    expect(await screen.findByText(/required_providers/)).not.toBeVisible();
 
     fireEvent.click(toggle);
 

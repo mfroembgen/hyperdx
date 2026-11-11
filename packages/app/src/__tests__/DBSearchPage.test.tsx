@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { renderHook } from '@testing-library/react';
 
@@ -10,7 +11,7 @@ import * as metadataModule from '@/hooks/useMetadata';
 import * as sourceModule from '@/source';
 
 // Mock the dependencies
-jest.mock('@/layout', () => ({
+vi.mock('@/layout', () => ({
   withAppNav: (component: any) => component,
 }));
 
@@ -38,7 +39,7 @@ describe('buildSavedSearchNavigationUrl', () => {
 
 describe('useDefaultOrderBy', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('optimizeOrderBy function', () => {
@@ -205,13 +206,13 @@ describe('useDefaultOrderBy', () => {
             sorting_key: testCase.sortingKey,
           };
 
-          jest.spyOn(sourceModule, 'useSource').mockReturnValue({
+          vi.spyOn(sourceModule, 'useSource').mockReturnValue({
             data: mockSource,
             isLoading: false,
             error: null,
           } as any);
 
-          jest.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
+          vi.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
             data: mockTableMetadata,
             isLoading: false,
             error: null,
@@ -225,13 +226,13 @@ describe('useDefaultOrderBy', () => {
     });
 
     it('should handle null source ungracefully', () => {
-      jest.spyOn(sourceModule, 'useSource').mockReturnValue({
+      vi.spyOn(sourceModule, 'useSource').mockReturnValue({
         data: null,
         isLoading: false,
         error: null,
       } as any);
 
-      jest.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
+      vi.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
         data: null,
         isLoading: false,
         error: null,
@@ -243,13 +244,13 @@ describe('useDefaultOrderBy', () => {
     });
 
     it('should handle undefined sourceID ungracefully', () => {
-      jest.spyOn(sourceModule, 'useSource').mockReturnValue({
+      vi.spyOn(sourceModule, 'useSource').mockReturnValue({
         data: null,
         isLoading: false,
         error: null,
       } as any);
 
-      jest.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
+      vi.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
         data: null,
         isLoading: false,
         error: null,
@@ -271,13 +272,13 @@ describe('useDefaultOrderBy', () => {
         sorting_key: 'toStartOfMinute(Timestamp), Timestamp',
       };
 
-      jest.spyOn(sourceModule, 'useSource').mockReturnValue({
+      vi.spyOn(sourceModule, 'useSource').mockReturnValue({
         data: mockSource,
         isLoading: false,
         error: null,
       } as any);
 
-      jest.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
+      vi.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
         data: mockTableMetadata,
         isLoading: false,
         error: null,
@@ -299,13 +300,13 @@ describe('useDefaultOrderBy', () => {
         sorting_key: 'toStartOfHour(Timestamp), Timestamp',
       };
 
-      jest.spyOn(sourceModule, 'useSource').mockReturnValue({
+      vi.spyOn(sourceModule, 'useSource').mockReturnValue({
         data: mockSource,
         isLoading: false,
         error: null,
       } as any);
 
-      jest.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
+      vi.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
         data: mockTableMetadata,
         isLoading: false,
         error: null,
@@ -326,13 +327,13 @@ describe('useDefaultOrderBy', () => {
         sorting_key: 'toStartOfHour(Timestamp), Timestamp',
       };
 
-      jest.spyOn(sourceModule, 'useSource').mockReturnValue({
+      vi.spyOn(sourceModule, 'useSource').mockReturnValue({
         data: mockSource,
         isLoading: false,
         error: null,
       } as any);
 
-      jest.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
+      vi.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
         data: mockTableMetadata,
         isLoading: false,
         error: null,
@@ -354,13 +355,13 @@ describe('useDefaultOrderBy', () => {
           'toStartOfHour(toDateTime(timestamp_ms / 1000)), toDateTime(timestamp_ms / 1000)',
       };
 
-      jest.spyOn(sourceModule, 'useSource').mockReturnValue({
+      vi.spyOn(sourceModule, 'useSource').mockReturnValue({
         data: mockSource,
         isLoading: false,
         error: null,
       } as any);
 
-      jest.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
+      vi.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
         data: mockTableMetadata,
         isLoading: false,
         error: null,
@@ -382,15 +383,13 @@ describe('useDefaultOrderBy', () => {
         timestampValueExpression: 'timestamp2',
       };
 
-      const useSourceSpy = jest
-        .spyOn(sourceModule, 'useSource')
-        .mockReturnValue({
-          data: mockSource1,
-          isLoading: false,
-          error: null,
-        } as any);
+      const useSourceSpy = vi.spyOn(sourceModule, 'useSource').mockReturnValue({
+        data: mockSource1,
+        isLoading: false,
+        error: null,
+      } as any);
 
-      jest.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
+      vi.spyOn(metadataModule, 'useTableMetadata').mockReturnValue({
         data: undefined,
         isLoading: false,
         error: null,

@@ -1,12 +1,13 @@
+import { vi } from 'vitest';
 import { SourceKind, TSource } from '@hyperdx/common-utils/dist/types';
 
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 
 describe('TableSourceForm Bidirectional Linking', () => {
   describe('Bidirectional Source Linking Logic', () => {
     it('should establish bidirectional link when creating a log source with trace correlation', async () => {
-      const mockUpdateSourceMutateAsync = jest.fn();
-      const mockOnCreate = jest.fn();
+      const mockUpdateSourceMutateAsync = vi.fn();
+      const mockOnCreate = vi.fn();
 
       // Mock sources data
       const sources = [
@@ -80,8 +81,8 @@ describe('TableSourceForm Bidirectional Linking', () => {
     });
 
     it('should establish bidirectional link when creating a trace source with log correlation', async () => {
-      const mockUpdateSourceMutateAsync = jest.fn();
-      const mockOnCreate = jest.fn();
+      const mockUpdateSourceMutateAsync = vi.fn();
+      const mockOnCreate = vi.fn();
 
       // Mock sources data
       const sources = [
@@ -155,8 +156,8 @@ describe('TableSourceForm Bidirectional Linking', () => {
     });
 
     it('should not establish bidirectional link if target source already has a correlation', async () => {
-      const mockUpdateSourceMutateAsync = jest.fn();
-      const mockOnCreate = jest.fn();
+      const mockUpdateSourceMutateAsync = vi.fn();
+      const mockOnCreate = vi.fn();
 
       // Mock sources with existing correlations
       const sources = [

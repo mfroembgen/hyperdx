@@ -4,16 +4,16 @@
  * A fake `LanguageModel` is injected via `opts.model` so `resolveJudgeModel`
  * (and thus provider credentials) is never touched.
  */
-
 import type { LanguageModel } from 'ai';
+import { type MockedFunction, vi } from 'vitest';
 
-// Mock the AI SDK. jest.mock is hoisted, so keep the factory self-contained
+// Mock the AI SDK. vi.mock is hoisted, so keep the factory self-contained
 // and reach into the mock via requireMock below.
-jest.mock('ai', () => {
-  const actual = jest.requireActual('ai');
+vi.mock('ai', async () => {
+  const actual = await vi.importActual<typeof import('ai')>('ai');
   return {
     ...actual,
-    generateObject: jest.fn(),
+    generateObject: vi.fn(),
   };
 });
 
@@ -22,7 +22,7 @@ import { generateObject, NoObjectGeneratedError } from 'ai';
 import { judgeTrajectory } from '@/grading/judge';
 import type { Rubric } from '@/grading/types';
 
-const mockGenerateObject = generateObject as jest.MockedFunction<
+const mockGenerateObject = generateObject as MockedFunction<
   typeof generateObject
 >;
 

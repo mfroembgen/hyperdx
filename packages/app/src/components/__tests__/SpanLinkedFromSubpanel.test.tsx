@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 
 import { LinkedSpanDetails } from '@/components/linkedSpans';
@@ -43,7 +44,7 @@ describe('SpanLinkedFromSubpanel', () => {
   });
 
   it('calls onOpenTrace with the referencing trace/span pair', () => {
-    const onOpenTrace = jest.fn();
+    const onOpenTrace = vi.fn();
     renderWithMantine(
       <SpanLinkedFromSubpanel links={[LINK]} onOpenTrace={onOpenTrace} />,
     );

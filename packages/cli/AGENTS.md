@@ -267,23 +267,23 @@ screen).
 ## Development
 
 ```bash
-# Run in dev mode (tsx, no compile step)
+# Run in dev mode (Bun, no compile step)
 cd packages/cli
-yarn dev tui -a http://localhost:8080
+bun run dev tui -a http://localhost:8080
 
 # Type check
-npx tsc --noEmit
+bun run tsrs --noEmit
 
 # Bundle with tsup
-yarn build
+bun run build
 
 # Compile standalone binary (current platform)
-yarn compile
+bun run compile
 
 # Cross-compile
-yarn compile:macos        # macOS ARM64
-yarn compile:macos-x64    # macOS x64
-yarn compile:linux        # Linux x64
+bun run compile:macos        # macOS ARM64
+bun run compile:macos-x64    # macOS x64
+bun run compile:linux        # Linux x64
 ```
 
 ## Key Patterns

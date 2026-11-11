@@ -2,7 +2,6 @@ import React from 'react';
 import router from 'next/router';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   clampAlertDisplayName,
   clampAlertTags,
@@ -17,6 +16,7 @@ import {
   AlertThresholdType,
   Filter,
   isRangeThresholdType,
+  type SavedSearchAlertRead,
   scheduleStartAtSchema,
   SearchCondition,
   SearchConditionLanguage,
@@ -59,8 +59,9 @@ import {
   ALERT_THRESHOLD_TYPE_OPTIONS,
   intervalToMinutes,
   normalizeNoOpAlertScheduleFields,
-  toAlertChannels,
+  toFormAlertChannels,
 } from '@/utils/alerts';
+import { passthroughFormResolver } from '@/utils/formResolver';
 
 import { AlertDisplayFields } from './components/AlertDisplayFields';
 import { AlertNoteField } from './components/AlertNoteField';
@@ -116,7 +117,7 @@ const AlertForm = ({
   whereLanguage?: SearchConditionLanguage | null;
   filters?: Filter[] | null;
   select?: string | null;
-  defaultValues?: null | AlertWithCreatedBy;
+  defaultValues?: null | AlertWithCreatedBy | SavedSearchAlertRead;
   /** Seed values for a brand-new alert */
   prefill?: { displayName?: string; tags?: string[] };
   loading?: boolean;
@@ -138,7 +139,10 @@ const AlertForm = ({
     defaultValues: defaultValues
       ? {
           ...defaultValues,
-          channels: toAlertChannels(defaultValues),
+          channel: undefined,
+          source: undefined,
+          chartConfig: undefined,
+          channels: toFormAlertChannels(defaultValues),
           scheduleOffsetMinutes: defaultValues.scheduleOffsetMinutes ?? 0,
           scheduleStartAt: defaultValues.scheduleStartAt ?? null,
           // Persisted null -> undefined for the NumberInput.
@@ -157,7 +161,7 @@ const AlertForm = ({
           displayName: prefill?.displayName,
           tags: prefill?.tags,
         },
-    resolver: zodResolver(SavedSearchAlertFormSchema),
+    resolver: passthroughFormResolver<Alert>(SavedSearchAlertFormSchema),
   });
 
   const groupBy = useWatch({ control, name: 'groupBy' });

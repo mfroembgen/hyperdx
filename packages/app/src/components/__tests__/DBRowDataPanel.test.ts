@@ -1,3 +1,4 @@
+import { type Mock, vi } from 'vitest';
 import { ClickHouseQueryError } from '@hyperdx/common-utils/dist/clickhouse';
 import { SourceKind, TLogSource } from '@hyperdx/common-utils/dist/types';
 import { renderHook } from '@testing-library/react';
@@ -9,11 +10,11 @@ import {
 } from '@/components/DBRowDataPanel';
 import { useQueriedChartConfig } from '@/hooks/useChartConfig';
 
-jest.mock('@/hooks/useChartConfig', () => ({
-  useQueriedChartConfig: jest.fn(),
+vi.mock('@/hooks/useChartConfig', () => ({
+  useQueriedChartConfig: vi.fn(),
 }));
 
-const mockUseQueriedChartConfig = useQueriedChartConfig as jest.Mock;
+const mockUseQueriedChartConfig = useQueriedChartConfig as Mock;
 const showMaterializedAliasColumns = () =>
   localStorage.setItem('hdx-row-show-materialized-alias-columns', 'true');
 
@@ -30,7 +31,7 @@ describe('DBRowDataPanel', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     localStorage.clear();
     mockUseQueriedChartConfig.mockReturnValue({
       data: {

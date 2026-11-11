@@ -4,8 +4,8 @@ import { Types } from 'mongoose';
 import { getLoggedInAgent, getServer } from '@/fixtures';
 import { Source } from '@/models/source';
 
-const MOCK_SOURCE: Omit<Extract<TSource, { kind: 'log' }>, 'id'> = {
-  kind: SourceKind.Log,
+const MOCK_SOURCE: Omit<Extract<TSource, { kind: SourceKind.Log }>, 'id'> = {
+  kind: SourceKind.Log as const,
   name: 'Test Source',
   connection: new Types.ObjectId().toString(),
   from: { databaseName: 'test_db', tableName: 'test_table' },

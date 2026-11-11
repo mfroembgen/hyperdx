@@ -11,16 +11,17 @@ permissions:
   id-token: write
 jobs:
   check_changesets:
+    if: github.repository == 'hyperdxio/hyperdx'
     name: Check Changesets
     runs-on: ubuntu-24.04
     outputs:
       changeset_outputs_hasChangesets:
-        ${{ steps.changesets.outputs.hasChangesets }}
+        ${{ steps.changesets.outputs['has-changesets'] }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Fetch existing tags so `changeset tag` (run via `yarn release`)
+          # Fetch existing tags so `changeset tag` (run via `bun run release`)
           # skips packages whose current version is already tagged. With the
           # default shallow, tag-less checkout it re-creates ALL package tags
           # locally, and the changesets action's `git push origin <tag>` is
@@ -29,34 +30,21 @@ jobs:
           # See the 2.30.1 release failure (run 29261242580).
           fetch-depth: 0
           fetch-tags: true
-      - name: Setup node
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache-dependency-path: 'yarn.lock'
-          cache: 'yarn'
-          # Note: Do NOT set registry-url here — it creates a NODE_AUTH_TOKEN
-          # that conflicts with npm OIDC trusted publishing
+      - name: Setup Bun
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
       # npm OIDC trusted publishing requires npm >= 11.5.1 client-side. Node 22
       # LTS ships npm 10.x, which has no OIDC code path and falls back to
       # NODE_AUTH_TOKEN, failing ENEEDAUTH.
       - name: Upgrade npm for OIDC trusted publishing
-        # Pin to 11.x (not @latest): OIDC only needs npm >= 11.5.1, and floating
-        # tags drag in majors that raise the node floor / lack a stable GA and
-        # break CI. 11.x supports node 22.9+.
-        #
-        # NOTE: this bootstraps via the node-bundled npm, so the .nvmrc node
-        # version must ship a working npm. Node 22.22.2's bundled npm 10.9.7 has
-        # a broken module tree (missing promise-retry) and crashes here — see
-        # actions/runner-images#13883. 22.23.1 bundles npm 10.9.8, which works.
-        # Keep .nvmrc off 22.22.2.
-        run: npm install -g npm@11
+        # Pin the stable CLI so trusted publishing does not depend on a moving
+        # major. Supported on the Ubuntu 24.04 runner's Node 22.23.x runtime.
+        run: npm install -g npm@12.2.1
       - name: Configure npm registry
         run: npm config set registry https://registry.npmjs.org/
       - name: Install root dependencies
-        run: yarn install
+        run: bun ci
       # Build @hyperdx/common-utils before changesets publish runs.
-      # @hyperdx/cli's `prepublishOnly` runs `yarn build` (tsup), which bundles
+      # @hyperdx/cli's `prepublishOnly` runs `bun run build` (tsup), which bundles
       # imports from `@hyperdx/common-utils/dist/*`. Without this step those
       # paths fail to resolve and the npm publish for @hyperdx/cli is skipped
       # while the GitHub release/tag still succeeds. See HDX-4075.
@@ -88,7 +76,7 @@ jobs:
         # re-run, a documented recovery path here) would fail check_changesets
         # — the job every other job needs, and the one that publishes to npm.
         continue-on-error: true
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: prev-release-notes
           path: /tmp/prev-release-notes/
@@ -103,14 +91,14 @@ jobs:
       - name: Create Release Pull Request or Publish to npm
         if: always()
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          commit: 'chore(release): bump HyperDX app/package versions'
-          title: 'Release HyperDX'
-          version: yarn run version
-          publish: yarn release
+          commit-message: 'chore(release): bump HyperDX app/package versions'
+          pr-title: 'Release HyperDX'
+          version-script: bun run version
+          publish-script: bun run release
+          push-with-git-cli: true
         env:
-          YARN_ENABLE_IMMUTABLE_INSTALLS: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
 
@@ -140,7 +128,9 @@ jobs:
     name: Draft Root Changelog
     runs-on: ubuntu-24.04
     needs: [check_changesets]
-    if: needs.check_changesets.outputs.changeset_outputs_hasChangesets == 'true'
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' &&
+      (needs.check_changesets.outputs.changeset_outputs_hasChangesets == 'true')
     timeout-minutes: 20
     concurrency:
       # Queue rather than cancel. A cancelled job is not a failure and nothing
@@ -160,7 +150,7 @@ jobs:
       branch_sha: ${{ steps.meta.outputs.branch_sha }}
     steps:
       - name: Checkout release branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: changeset-release/main
           fetch-depth: 0
@@ -171,11 +161,8 @@ jobs:
       # The pinned CLI declares `node >=22`, and every other step here shells
       # out to `node`. Without this the job silently inherits whatever the
       # runner image ships, so an image bump could break a release.
-      - name: Setup node
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-
+      - name: Setup Bun
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
       - name: Compute release metadata
         id: meta
         run: |
@@ -185,9 +172,9 @@ jobs:
           # no-op under the runner's GNU sed, so the root version has been
           # frozen at 2.0.0 since Jan 2025 while app/api track releases.
           # Comparing root versions would make this job skip on every release.
-          VERSION="$(node -p "require('./packages/app/package.json').version")"
+          VERSION="$(bun -p "require('./packages/app/package.json').version")"
           PREV_VERSION="$(git show origin/main:packages/app/package.json \
-            | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")"
+            | bun -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")"
           # Only releases that bump the fixed group (app/api/otel-collector) get
           # a root changelog section. A CLI-only or common-utils-only release
           # leaves the version unchanged, and generating for it would overwrite
@@ -217,7 +204,7 @@ jobs:
       - name: Download previous release notes
         if: steps.meta.outputs.skip == 'false'
         continue-on-error: true
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: prev-release-notes
           path: /tmp/prev-release-notes
@@ -236,7 +223,7 @@ jobs:
           # as a cache miss it would degrade into "regenerate every release"
           # with nothing in the log to say edit reuse had stopped working.
           set +e
-          node .github/scripts/release-notes.mjs extract \
+          bun .github/scripts/release-notes.mjs extract \
             --changelog /tmp/prev-release-notes/CHANGELOG.md \
             --version "$VERSION" \
             --inputs "$INPUTS" \
@@ -257,9 +244,9 @@ jobs:
             #
             # Strip the generated package list first: it carries HTML comment
             # markers that the validator would otherwise flag.
-            node .github/scripts/release-notes.mjs strip-package-list \
+            bun .github/scripts/release-notes.mjs strip-package-list \
               --body /tmp/release-notes-body.md
-            if node .github/scripts/release-notes.mjs validate \
+            if bun .github/scripts/release-notes.mjs validate \
                 --body /tmp/release-notes-body.md; then
               echo "Reusing previous section (changeset set unchanged)"
               echo "hit=true" >> "$GITHUB_OUTPUT"
@@ -293,7 +280,7 @@ jobs:
           # Matched with --latest, not by version: a new changeset that raises
           # the bump level also changes the version, so a version-keyed lookup
           # would miss in exactly the case that triggers regeneration.
-          node .github/scripts/release-notes.mjs extract \
+          bun .github/scripts/release-notes.mjs extract \
             --changelog /tmp/prev-release-notes/CHANGELOG.md \
             --latest \
             > /tmp/previous-section.md \
@@ -308,7 +295,7 @@ jobs:
           # the case --latest exists to cover — the newest section is still this
           # cycle's work, just filed under a version we have since superseded.
           # Only a section matching the last RELEASED version is stale context.
-          if LATEST="$(node .github/scripts/release-notes.mjs latest-version \
+          if LATEST="$(bun .github/scripts/release-notes.mjs latest-version \
               --changelog /tmp/prev-release-notes/CHANGELOG.md)"; then
             if [ -f /tmp/previous-section.md ] && [ "$LATEST" = "$PREV_VERSION" ]; then
               echo "Newest captured section is the released ${PREV_VERSION}; generating from scratch"
@@ -517,7 +504,7 @@ jobs:
             if printf 'VERSION: %s\nREPO: %s\n\n%s\n' \
                 "$VERSION" "$REPO" \
                 'Read the instructions in /tmp/inputs/instructions.md and follow them exactly to write /tmp/release-notes-body.md for this release.' \
-                | npx --yes @anthropic-ai/claude-code@2.1.220 \
+                | bun --bun x --yes @anthropic-ai/claude-code@2.1.220 \
                     --print \
                     --setting-sources user \
                     --tools "Read" "Write" \
@@ -548,7 +535,7 @@ jobs:
         if:
           steps.meta.outputs.skip == 'false' &&
           steps.changesets_export.outputs.empty != 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-notes-body
           path: /tmp/release-notes-body.md
@@ -562,9 +549,10 @@ jobs:
     # `empty` guards the routine merged-mid-run case: the draft uploads no
     # artifact there, and download-artifact has no missing-artifact escape
     # hatch, so without this the job fails on the path the draft calls routine.
-    if:
-      needs.release_changelog_draft.outputs.skip == 'false' &&
-      needs.release_changelog_draft.outputs.empty != 'true'
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' &&
+      (needs.release_changelog_draft.outputs.skip == 'false' &&
+      needs.release_changelog_draft.outputs.empty != 'true')
     timeout-minutes: 10
     permissions:
       contents: write
@@ -600,7 +588,7 @@ jobs:
       # visible to the model, so a compromised draft job cannot alter what runs.
       - name: Checkout release branch
         if: steps.probe.outputs.exists == 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: changeset-release/main
           fetch-depth: 0
@@ -628,7 +616,7 @@ jobs:
             ${{ needs.release_changelog_draft.outputs.branch_sha }}
         run: |
           set -euo pipefail
-          VERSION="$(node -p "require('./packages/app/package.json').version")"
+          VERSION="$(bun -p "require('./packages/app/package.json').version")"
           INPUTS="$(.github/scripts/changeset-hash.sh origin/main)"
           BRANCH_SHA="$(git rev-parse HEAD)"
           if [ "$VERSION" != "$DRAFT_VERSION" ] \
@@ -642,7 +630,7 @@ jobs:
 
       - name: Download generated body
         if: steps.guard.outputs.stale == 'false'
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-notes-body
           path: /tmp
@@ -650,14 +638,14 @@ jobs:
       - name: Validate generated notes
         if: steps.guard.outputs.stale == 'false'
         # Every check lives in release-notes.mjs with a must-accept/must-reject
-        # corpus under `node --test`. It used to be inline greps here, which is
+        # corpus under `bun test`. It used to be inline greps here, which is
         # how several CommonMark constructs slipped past unnoticed. These checks
         # are fail-fast feedback, not the security boundary — that is
         # WhatsNewDrawer.tsx, which drops image nodes and allowlists link
         # targets on the parsed AST.
         run: |
           set -euo pipefail
-          node .github/scripts/release-notes.mjs validate \
+          bun .github/scripts/release-notes.mjs validate \
             --body /tmp/release-notes-body.md
 
       - name: Append package changelog list
@@ -672,7 +660,7 @@ jobs:
           # A reuse hit hands back the previously published body, which already
           # carries a package list; without stripping it first, every republish
           # would stack another copy.
-          node .github/scripts/release-notes.mjs strip-package-list \
+          bun .github/scripts/release-notes.mjs strip-package-list \
             --body /tmp/release-notes-body.md
           # A bullet list, not a GFM pipe table: the in-app modal renders this
           # with react-markdown and no remark-gfm, where a table degrades to
@@ -689,10 +677,10 @@ jobs:
             echo ""
             for pkg in packages/*/package.json; do
               dir="$(dirname "$pkg")"
-              name="$(node -p "require('./${pkg}').name")"
-              version="$(node -p "require('./${pkg}').version")"
+              name="$(bun -p "require('./${pkg}').name")"
+              version="$(bun -p "require('./${pkg}').version")"
               old="$(git show "origin/main:${pkg}" 2>/dev/null \
-                | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version" \
+                | bun -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version" \
                 || echo '')"
               if [ "$version" != "$old" ]; then
                 anchor="${version//./}"
@@ -710,7 +698,7 @@ jobs:
           INPUTS: ${{ needs.release_changelog_draft.outputs.inputs }}
         run: |
           set -euo pipefail
-          node .github/scripts/release-notes.mjs insert \
+          bun .github/scripts/release-notes.mjs insert \
             --changelog CHANGELOG.md \
             --body /tmp/release-notes-body.md \
             --version "$VERSION" \
@@ -763,17 +751,19 @@ jobs:
     name: Check if version exists
     needs: check_changesets
     runs-on: ubuntu-24.04
-    if:
-      needs.check_changesets.outputs.changeset_outputs_hasChangesets == 'false'
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' &&
+      (needs.check_changesets.outputs.changeset_outputs_hasChangesets ==
+      'false')
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
@@ -795,7 +785,9 @@ jobs:
   build-otel-collector:
     name: Build OTel Collector (${{ matrix.arch }})
     needs: [check_changesets, check_version]
-    if: needs.check_version.outputs.should_release == 'true'
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' &&
+      (needs.check_version.outputs.should_release == 'true')
     strategy:
       fail-fast: true
       matrix:
@@ -805,28 +797,28 @@ jobs:
             runner: ubuntu-latest
           - arch: arm64
             platform: linux/arm64
-            runner: ubuntu-latest-arm64
+            runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Build and Push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: ./docker/otel-collector/Dockerfile
@@ -840,21 +832,22 @@ jobs:
           cache-to: type=gha,mode=max,scope=otel-collector-${{ matrix.arch }}
 
   publish-otel-collector:
+    if: github.repository == 'hyperdxio/hyperdx'
     name: Publish OTel Collector Manifest
     needs: [check_version, build-otel-collector]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Create multi-arch manifests
         run: |
           VERSION="${{ env.IMAGE_VERSION }}${{ env.IMAGE_VERSION_SUB_TAG }}"
@@ -875,7 +868,9 @@ jobs:
   build-app:
     name: Build App (${{ matrix.arch }})
     needs: [check_changesets, check_version]
-    if: needs.check_version.outputs.should_release == 'true'
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' &&
+      (needs.check_version.outputs.should_release == 'true')
     strategy:
       fail-fast: true
       matrix:
@@ -889,32 +884,28 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Build and Push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           file: ./docker/hyperdx/Dockerfile
           platforms: ${{ matrix.platform }}
           target: prod
-          build-contexts: |
-            hyperdx=./docker/hyperdx
-            api=./packages/api
-            app=./packages/app
           build-args: |
             CODE_VERSION=${{ env.CODE_VERSION }}
           tags: |
@@ -926,6 +917,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=app-${{ matrix.arch }}
 
   publish-app:
+    if: github.repository == 'hyperdxio/hyperdx'
     name: Publish App Manifest
     needs: [check_version, build-app]
     runs-on: ubuntu-latest
@@ -933,16 +925,16 @@ jobs:
       app_was_pushed: 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Create multi-arch manifest
         run: |
           VERSION="${{ env.IMAGE_VERSION }}${{ env.IMAGE_VERSION_SUB_TAG }}"
@@ -962,7 +954,9 @@ jobs:
   build-local:
     name: Build Local (${{ matrix.arch }})
     needs: [check_changesets, check_version]
-    if: needs.check_version.outputs.should_release == 'true'
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' &&
+      (needs.check_version.outputs.should_release == 'true')
     strategy:
       fail-fast: true
       matrix:
@@ -976,34 +970,28 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Build and Push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           file: ./docker/hyperdx/Dockerfile
           platforms: ${{ matrix.platform }}
           target: all-in-one-noauth
-          build-contexts: |
-            clickhouse=./docker/clickhouse
-            otel-collector=./docker/otel-collector
-            hyperdx=./docker/hyperdx
-            api=./packages/api
-            app=./packages/app
           build-args: |
             CODE_VERSION=${{ env.CODE_VERSION }}
           tags: |
@@ -1020,17 +1008,18 @@ jobs:
   # on the artefact actually running, not just building. Reuses the per-arch tag
   # the build job already pushed (same reference the publish job merges below).
   smoke-local:
+    if: github.repository == 'hyperdxio/hyperdx'
     name: Smoke Test Local Image
     needs: [check_version, build-local]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
@@ -1039,21 +1028,22 @@ jobs:
           scripts/ci/smoke-all-in-one.sh "${{ env.LOCAL_IMAGE_NAME_DOCKERHUB }}:${{ env.IMAGE_VERSION }}${{ env.IMAGE_VERSION_SUB_TAG }}-amd64"
 
   publish-local:
+    if: github.repository == 'hyperdxio/hyperdx'
     name: Publish Local Manifest
     needs: [check_version, build-local, smoke-local]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Create multi-arch manifests
         run: |
           VERSION="${{ env.IMAGE_VERSION }}${{ env.IMAGE_VERSION_SUB_TAG }}"
@@ -1074,7 +1064,9 @@ jobs:
   build-all-in-one:
     name: Build All-in-One (${{ matrix.arch }})
     needs: [check_changesets, check_version]
-    if: needs.check_version.outputs.should_release == 'true'
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' &&
+      (needs.check_version.outputs.should_release == 'true')
     strategy:
       fail-fast: true
       matrix:
@@ -1088,34 +1080,28 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Build and Push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           file: ./docker/hyperdx/Dockerfile
           platforms: ${{ matrix.platform }}
           target: all-in-one-auth
-          build-contexts: |
-            clickhouse=./docker/clickhouse
-            otel-collector=./docker/otel-collector
-            hyperdx=./docker/hyperdx
-            api=./packages/api
-            app=./packages/app
           build-args: |
             CODE_VERSION=${{ env.CODE_VERSION }}
           tags: |
@@ -1135,17 +1121,18 @@ jobs:
   # booting, not just building. Reuses the per-arch tag the build job already
   # pushed (same reference the publish job merges below).
   smoke-all-in-one:
+    if: github.repository == 'hyperdxio/hyperdx'
     name: Smoke Test All-in-One Image
     needs: [check_version, build-all-in-one]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
@@ -1158,21 +1145,22 @@ jobs:
           scripts/ci/smoke-all-in-one.sh "${{ env.ALL_IN_ONE_IMAGE_NAME_DOCKERHUB }}:${{ env.IMAGE_VERSION }}${{ env.IMAGE_VERSION_SUB_TAG }}-amd64" --health-only
 
   publish-all-in-one:
+    if: github.repository == 'hyperdxio/hyperdx'
     name: Publish All-in-One Manifest
     needs: [check_version, build-all-in-one, smoke-all-in-one]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Create multi-arch manifests
         run: |
           VERSION="${{ env.IMAGE_VERSION }}${{ env.IMAGE_VERSION_SUB_TAG }}"
@@ -1195,29 +1183,23 @@ jobs:
   release-cli:
     name: Release CLI Binaries
     needs: [check_changesets, check_version]
-    if: needs.check_version.outputs.should_release == 'true'
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' &&
+      (needs.check_version.outputs.should_release == 'true')
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
-      - name: Setup node
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache-dependency-path: 'yarn.lock'
-          cache: 'yarn'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.4'
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
       - name: Install dependencies
-        run: yarn install
+        run: bun ci
       - name: Build common-utils
         run: make ci-build
       - name: Get CLI version
         id: cli_version
         run: |
-          CLI_VERSION=$(node -p "require('./packages/cli/package.json').version")
+          CLI_VERSION=$(bun -p "require('./packages/cli/package.json').version")
           echo "version=${CLI_VERSION}" >> $GITHUB_OUTPUT
           echo "CLI version: ${CLI_VERSION}"
       - name: Check if CLI release already exists
@@ -1236,9 +1218,9 @@ jobs:
         if: steps.check_cli_release.outputs.exists == 'false'
         working-directory: packages/cli
         run: |
-          yarn compile:linux
-          yarn compile:macos
-          yarn compile:macos-x64
+          bun run compile:linux
+          bun run compile:macos
+          bun run compile:macos-x64
       - name: Build release notes
         if: steps.check_cli_release.outputs.exists == 'false'
         run: |
@@ -1274,9 +1256,9 @@ jobs:
           npm install -g @hyperdx/cli
           ```
 
-          **Or run directly with npx:**
+          **Or run directly with bunx:**
           ```bash
-          npx @hyperdx/cli tui -s <your-hyperdx-api-url>
+          bun --bun x @hyperdx/cli tui -s <your-hyperdx-api-url>
           ```
 
           **Manual download (standalone binary, no Node.js required):**
@@ -1306,7 +1288,7 @@ jobs:
           cat /tmp/cli-release-notes.md
       - name: Create GitHub Release
         if: steps.check_cli_release.outputs.exists == 'false'
-        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: cli-v${{ steps.cli_version.outputs.version }}
           name: '@hyperdx/cli v${{ steps.cli_version.outputs.version }}'
@@ -1334,16 +1316,17 @@ jobs:
         publish-all-in-one,
       ]
     runs-on: ubuntu-24.04
-    if: |
-      needs.check_changesets.outputs.changeset_outputs_hasChangesets == 'false' &&
-      needs.publish-app.outputs.app_was_pushed == 'true'
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' &&
+      (needs.check_changesets.outputs.changeset_outputs_hasChangesets == 'false'
+      && needs.publish-app.outputs.app_was_pushed == 'true')
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Notify Helm-Charts Downstream
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         continue-on-error: true
         env:
           TAG: ${{ env.IMAGE_VERSION }}${{ env.IMAGE_VERSION_SUB_TAG }}
@@ -1373,24 +1356,25 @@ jobs:
       ]
     runs-on: ubuntu-24.04
     # Temporarily disabled:
-    if: false
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' && (false)
     # if: |
     #   needs.check_changesets.outputs.changeset_outputs_hasChangesets == 'false' &&
     #   needs.publish-app.outputs.app_was_pushed == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Get Downstream App Installation Token
         id: auth
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           app-id: ${{ secrets.DOWNSTREAM_CH_APP_ID }}
           private-key: ${{ secrets.DOWNSTREAM_CH_APP_PRIVATE_KEY }}
           owner: ${{ secrets.DOWNSTREAM_CH_OWNER }}
       - name: Notify CH Downstream
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         continue-on-error: true
         env:
           TAG: ${{ env.IMAGE_VERSION }}${{ env.IMAGE_VERSION_SUB_TAG }}
@@ -1417,16 +1401,18 @@ jobs:
         publish-local,
         publish-all-in-one,
       ]
-    if: needs.publish-app.outputs.app_was_pushed == 'true'
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' &&
+      (needs.publish-app.outputs.app_was_pushed == 'true')
     timeout-minutes: 5
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Load Environment Variables from .env
-        uses: xom9ikk/dotenv@v2
+        uses: xom9ikk/dotenv@d0a56edc74279820eabbe34477511327e710d0de # v2.4.0
       - name: Notify ClickHouse/clickhouse-clickstack Downstream
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         continue-on-error: true
         env:
           TAG: ${{ env.IMAGE_VERSION }}${{ env.IMAGE_VERSION_SUB_TAG }}
@@ -1463,11 +1449,12 @@ jobs:
         notify_clickhouse_clickstack,
       ]
     runs-on: ubuntu-24.04
-    if: failure()
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' && (failure())
     steps:
       - name: Get failed steps
         id: get_failed_steps
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -1489,7 +1476,7 @@ jobs:
 
             core.setOutput('failed_steps', failedSteps || 'unknown');
       - name: Slack Notification
-        uses: 8398a7/action-slack@v3
+        uses: 8398a7/action-slack@77eaa4f1c608a7d68b38af4e3f739dcd8cba273e # v3.19.0
         with:
           status: custom
           fields: repo,workflow
@@ -1527,7 +1514,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   otel-cicd-action:
-    if: always()
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' && (always())
     name: OpenTelemetry Export Trace
     runs-on: ubuntu-latest
     needs:
@@ -1545,7 +1533,7 @@ jobs:
       ]
     steps:
       - name: Export workflow
-        uses: corentinmusard/otel-cicd-action@v4
+        uses: corentinmusard/otel-cicd-action@4826b79d63662fa91657272e7711420cb6aea543 # v4.2.0
         with:
           otlpEndpoint: ${{ secrets.OTLP_ENDPOINT }}/v1/traces
           otlpHeaders: ${{ secrets.OTLP_HEADERS }}

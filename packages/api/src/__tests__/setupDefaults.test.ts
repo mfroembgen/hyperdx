@@ -1,12 +1,13 @@
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
+import { vi } from 'vitest';
 
 const configState = { IS_PROMQL_ENABLED: false };
 
-jest.mock('@/config', () => ({
+vi.mock('@/config', () => ({
   DEFAULT_CONNECTIONS: undefined,
   DEFAULT_SOURCES: JSON.stringify([
     {
-      kind: 'log',
+      kind: SourceKind.Log as const,
       name: 'Logs',
       connection: 'Local ClickHouse',
       from: { databaseName: 'default', tableName: 'otel_logs' },
@@ -14,7 +15,7 @@ jest.mock('@/config', () => ({
       defaultTableSelectExpression: 'Timestamp, Body',
     },
     {
-      kind: 'promql',
+      kind: SourceKind.Promql as const,
       name: 'PromQL',
       connection: 'Local ClickHouse',
       from: { databaseName: 'default', tableName: 'metrics_ts' },
@@ -26,39 +27,39 @@ jest.mock('@/config', () => ({
   },
 }));
 
-jest.mock('@/controllers/team', () => ({
-  getTeam: jest.fn().mockResolvedValue({ _id: 'team-1' }),
+vi.mock('@/controllers/team', () => ({
+  getTeam: vi.fn().mockResolvedValue({ _id: 'team-1' }),
 }));
-jest.mock('@/controllers/connection', () => ({
-  createConnection: jest.fn(),
-  getConnections: jest
+vi.mock('@/controllers/connection', () => ({
+  createConnection: vi.fn(),
+  getConnections: vi
     .fn()
     .mockResolvedValue([
       { _id: 'conn-1', team: 'team-1', name: 'Local ClickHouse' },
     ]),
 }));
-jest.mock('@/controllers/sources', () => ({
-  getSources: jest.fn().mockResolvedValue([]),
-  createSource: jest.fn(async (_teamId: string, source: { name: string }) => ({
+vi.mock('@/controllers/sources', () => ({
+  getSources: vi.fn().mockResolvedValue([]),
+  createSource: vi.fn(async (_teamId: string, source: { name: string }) => ({
     _id: `${source.name}-id`,
     toObject: () => source,
   })),
-  updateSource: jest.fn(),
+  updateSource: vi.fn(),
 }));
-jest.mock('@/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   __esModule: true,
-  default: { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
+  default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
 import { createSource } from '@/controllers/sources';
 import { setupTeamDefaults } from '@/setupDefaults';
 
 const createdKinds = () =>
-  jest.mocked(createSource).mock.calls.map(([, source]) => source.kind);
+  vi.mocked(createSource).mock.calls.map(([, source]) => source.kind);
 
 describe('setupTeamDefaults', () => {
   beforeEach(() => {
-    jest.mocked(createSource).mockClear();
+    vi.mocked(createSource).mockClear();
   });
 
   it('creates a default PromQL source when PromQL is enabled', async () => {
@@ -70,7 +71,7 @@ describe('setupTeamDefaults', () => {
     expect(createSource).toHaveBeenLastCalledWith(
       'team-1',
       expect.objectContaining({
-        kind: SourceKind.Promql,
+        kind: SourceKind.Promql as const,
         connection: 'conn-1',
         from: { databaseName: 'default', tableName: 'metrics_ts' },
       }),

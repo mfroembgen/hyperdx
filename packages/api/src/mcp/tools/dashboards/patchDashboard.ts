@@ -167,7 +167,7 @@ export function registerPatchDashboard({
           externalDashboardTileSchemaWithId.safeParse(mergedTile);
         if (!tileParse.success) {
           return mcpUserError(
-            `Validation error: ${JSON.stringify(tileParse.error.errors)}`,
+            `Validation error: ${JSON.stringify(tileParse.error.issues)}`,
           );
         }
 

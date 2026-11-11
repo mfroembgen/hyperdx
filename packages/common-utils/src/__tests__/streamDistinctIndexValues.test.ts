@@ -1,7 +1,9 @@
+import { vi } from 'vitest';
+
 import { ClickhouseClient } from '@/clickhouse/node';
 import { Metadata, MetadataCache, TableMetadata } from '@/core/metadata';
 
-const mockQuery = jest.fn();
+const mockQuery = vi.fn();
 const mockClickhouseClient = {
   query: mockQuery,
 } as unknown as ClickhouseClient;
@@ -41,8 +43,8 @@ function buildMetadata({
   tableMetadata?: TableMetadata | undefined;
 } = {}) {
   const metadata = new Metadata(mockClickhouseClient, new MetadataCache());
-  jest.spyOn(metadata, 'getServerVersion').mockResolvedValue(version);
-  jest.spyOn(metadata, 'getTableMetadata').mockResolvedValue(tableMetadata);
+  vi.spyOn(metadata, 'getServerVersion').mockResolvedValue(version);
+  vi.spyOn(metadata, 'getTableMetadata').mockResolvedValue(tableMetadata);
   return metadata;
 }
 
@@ -55,7 +57,7 @@ async function drain(iterable: AsyncIterable<string[]>) {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('Metadata.streamDistinctIndexValues', () => {

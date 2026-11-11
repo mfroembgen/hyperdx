@@ -102,7 +102,7 @@ export function AlertScheduleFields<T extends FieldValues>({
           </Text>
         </Group>
       </UnstyledButton>
-      <Collapse expanded={opened}>
+      <Collapse expanded={opened} keepMountedMode="display-none">
         <Box data-testid="alert-advanced-settings-panel">
           <Text size="xs" c="dimmed" mt="xs">
             Optional schedule controls for aligning alert windows.

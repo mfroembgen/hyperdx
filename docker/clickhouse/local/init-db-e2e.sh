@@ -485,5 +485,5 @@ TTL toDateTime(Timestamp) + toIntervalDay(30)
 SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1;
 
 -- PromQL fixture.
-CREATE TABLE IF NOT EXISTS ${DATABASE}.e2e_promql ENGINE = TimeSeries;
+CREATE TABLE IF NOT EXISTS ${DATABASE}.e2e_promql ENGINE = TimeSeries SETTINGS version = 2;
 EOFSQL

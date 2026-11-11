@@ -1,6 +1,11 @@
 import { ClickhouseClient } from '@hyperdx/common-utils/dist/clickhouse/node';
-import { AlertChartConfig, Tile } from '@hyperdx/common-utils/dist/types';
+import {
+  AlertChartConfig,
+  Tile,
+  TSource,
+} from '@hyperdx/common-utils/dist/types';
 import _ from 'lodash';
+import type ms from 'ms';
 
 import { ObjectId } from '@/models';
 import { IAlert, IAlertError } from '@/models/alert';
@@ -23,6 +28,10 @@ export enum AlertTaskType {
 // Discriminated union of possible alert channel types with populated channel data
 export type PopulatedAlertChannel = { type: 'webhook' } & { channel: IWebhook };
 
+// Populated connections are normalized to their string id by alert providers;
+// unpopulated source documents retain their BSON reference.
+export type AlertDataSource = ISource | (TSource & { team: ObjectId });
+
 // Details about the alert and the source for the alert. Depending on
 // the taskType either:
 //   1. the savedSearch field is required or
@@ -40,12 +49,12 @@ export type AlertDetails = {
 } & (
   | {
       taskType: AlertTaskType.SAVED_SEARCH;
-      source: ISource;
+      source: AlertDataSource;
       savedSearch: Omit<ISavedSearch, 'source'>;
     }
   | {
       taskType: AlertTaskType.TILE;
-      source?: ISource;
+      source?: AlertDataSource;
       tile: Tile;
       dashboard: IDashboard;
     }
@@ -54,7 +63,7 @@ export type AlertDetails = {
       // present for builder configs and optional for raw SQL configs (which
       // carry the connection directly).
       taskType: AlertTaskType.INLINE;
-      source?: ISource;
+      source?: AlertDataSource;
       chartConfig: AlertChartConfig;
     }
 );
@@ -83,7 +92,7 @@ export interface AlertProvider {
   buildChartLink(params: {
     dashboardId: string;
     endTime: Date;
-    granularity: string;
+    granularity: ms.StringValue;
     startTime: Date;
     tileId?: string;
   }): string;
@@ -96,7 +105,7 @@ export interface AlertProvider {
   buildChartExplorerLink(params: {
     chartConfig: AlertChartConfig;
     endTime: Date;
-    granularity: string;
+    granularity: ms.StringValue;
     startTime: Date;
   }): string;
 

@@ -1,10 +1,11 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import { SortPopover } from '@/components/SearchResultsToolbar/SortPopover';
 
-jest.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
+vi.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
   __esModule: true,
   default: ({
     value,
@@ -26,7 +27,7 @@ jest.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
 function renderPopover(
   props: Partial<React.ComponentProps<typeof SortPopover>> = {},
 ) {
-  const onApply = jest.fn();
+  const onApply = vi.fn();
   render(
     <MantineProvider>
       <SortPopover

@@ -1,3 +1,4 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import { MetricsDataType, SourceKind } from '@hyperdx/common-utils/dist/types';
 
 import { DEFAULT_DATABASE, DEFAULT_METRICS_TABLE } from '@/fixtures';
@@ -26,7 +27,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             w: 12,
             h: 4,
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -38,7 +39,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             w: 12,
             h: 4,
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -60,7 +61,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
         tile: {
           name: 'Patched Tile A',
           config: {
-            displayType: 'table',
+            displayType: DisplayType.Table,
             sourceId,
             select: [{ aggFn: 'count' }],
           },
@@ -108,7 +109,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             w: 8,
             h: 5,
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -129,7 +130,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
         tile: {
           name: 'Renamed Tile',
           config: {
-            displayType: 'line',
+            displayType: DisplayType.Line,
             sourceId,
             select: [{ aggFn: 'avg', valueExpression: 'Duration' }],
           },
@@ -200,7 +201,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           {
             name: 'A Tile',
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -217,7 +218,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
       tile: {
         name: 'Updated Tile',
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId,
           select: [{ aggFn: 'avg', valueExpression: 'Duration' }],
         },
@@ -271,7 +272,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           {
             name: 'Valid Tile',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -287,7 +288,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
       tile: {
         name: 'Bad Source',
         config: {
-          displayType: 'line',
+          displayType: DisplayType.Line,
           sourceId: '000000000000000000000000',
           select: [{ aggFn: 'count' }],
         },
@@ -310,7 +311,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           {
             name: 'Valid Tile',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -328,7 +329,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
         name: 'Filtered SQL',
         config: {
           configType: 'sql',
-          displayType: 'table',
+          displayType: DisplayType.Table,
           connectionId,
           sqlTemplate:
             'SELECT ServiceName, count() AS c FROM otel_traces WHERE $__timeFilter(Timestamp) AND $__filters GROUP BY ServiceName LIMIT 10',
@@ -362,7 +363,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           {
             name: 'Valid Tile',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -379,7 +380,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
         name: 'Filtered SQL',
         config: {
           configType: 'sql',
-          displayType: 'table',
+          displayType: DisplayType.Table,
           connectionId,
           sourceId,
           sqlTemplate:
@@ -408,7 +409,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             w: 6,
             h: 3,
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -420,7 +421,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             w: 6,
             h: 3,
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -432,7 +433,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             w: 12,
             h: 4,
             config: {
-              displayType: 'table',
+              displayType: DisplayType.Table,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -459,7 +460,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
         tile: {
           name: 'Tile A Patched',
           config: {
-            displayType: 'line',
+            displayType: DisplayType.Line,
             sourceId,
             select: [{ aggFn: 'avg', valueExpression: 'Duration' }],
           },
@@ -491,7 +492,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           {
             name: 'Original Title',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -511,7 +512,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
         tileId,
         tile: {
           config: {
-            displayType: 'table',
+            displayType: DisplayType.Table,
             sourceId,
             select: [{ aggFn: 'avg', valueExpression: 'Duration' }],
           },
@@ -545,7 +546,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           {
             name: 'Tile A',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -553,7 +554,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           {
             name: 'Tile B',
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -580,7 +581,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
         tile: {
           name: 'Patched A',
           config: {
-            displayType: 'line',
+            displayType: DisplayType.Line,
             sourceId,
             select: [{ aggFn: 'count' }],
           },
@@ -606,7 +607,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           {
             name: 'Original',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -624,7 +625,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
       tile: {
         name: 'Patched',
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId,
           select: [{ aggFn: 'avg', valueExpression: 'Duration' }],
           color: 'chart-blue',
@@ -671,7 +672,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             name: 'SLO',
             config: {
               configType: 'sql',
-              displayType: 'number',
+              displayType: DisplayType.Number,
               connectionId,
               sqlTemplate: 'SELECT 0.99 AS value LIMIT 1',
               color: 'chart-success',
@@ -725,7 +726,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           {
             name: 'Original',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -742,7 +743,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
       tile: {
         name: 'Patched',
         config: {
-          displayType: 'number',
+          displayType: DisplayType.Number,
           sourceId,
           select: [{ aggFn: 'avg', valueExpression: 'Duration' }],
           backgroundChart: { type: 'line', color: 'chart-blue' },
@@ -779,7 +780,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           {
             name: 'Original',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
               groupBy: 'SpanName',
@@ -825,7 +826,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
 
   it('should patch a series heatmap tile without losing its mode', async () => {
     const logSource = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: ctx.team._id,
       from: { databaseName: DEFAULT_DATABASE, tableName: 'otel_logs' },
       timestampValueExpression: 'Timestamp',
@@ -909,7 +910,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             {
               name: 'Builder Tile',
               config: {
-                displayType: 'number',
+                displayType: DisplayType.Number,
                 sourceId,
                 select: [{ aggFn: 'count' }],
               },
@@ -930,7 +931,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             name: 'Static SQL',
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sqlTemplate: 'SELECT 1 AS value LIMIT 1',
             },
@@ -967,7 +968,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             {
               name: 'Builder Tile',
               config: {
-                displayType: 'number',
+                displayType: DisplayType.Number,
                 sourceId,
                 select: [{ aggFn: 'count' }],
               },
@@ -988,7 +989,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             name: 'Macro SQL',
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sourceId,
               sqlTemplate:
@@ -1032,7 +1033,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             {
               name: 'Builder Tile',
               config: {
-                displayType: 'number',
+                displayType: DisplayType.Number,
                 sourceId,
                 select: [{ aggFn: 'count' }],
               },
@@ -1065,7 +1066,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             name: 'Errors',
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sourceId,
               sqlTemplate: macroSql('tenant'),
@@ -1096,7 +1097,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           tile: {
             name: 'Requests',
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [
                 {
@@ -1133,7 +1134,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             name: 'Errors',
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sourceId,
               sqlTemplate: macroSql('service'),
@@ -1159,7 +1160,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             {
               name: 'Builder Tile',
               config: {
-                displayType: 'number',
+                displayType: DisplayType.Number,
                 sourceId,
                 select: [{ aggFn: 'count' }],
               },
@@ -1188,7 +1189,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             name: 'Errors',
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sourceId,
               sqlTemplate: macroSql('env'),
@@ -1210,7 +1211,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             name: 'Errors',
             config: {
               configType: 'sql',
-              displayType: 'table',
+              displayType: DisplayType.Table,
               connectionId,
               sourceId,
               sqlTemplate: macroSql('tenant'),
@@ -1248,7 +1249,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
 
     const createMetricSource = () =>
       Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: ctx.team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: '' },
         metricTables: {
@@ -1269,7 +1270,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
             {
               name: 'Error rate',
               config: {
-                displayType: 'line',
+                displayType: DisplayType.Line,
                 sourceId,
                 select: metricSelect(),
                 formulas: [{ expression: 'A / B * 100', alias: 'Rate %' }],
@@ -1297,7 +1298,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           tileId: dashboard.tiles[0].id,
           tile: {
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: metricSelect(),
               formulas: [{ expression: 'A / C' }],
@@ -1323,7 +1324,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           tileId: dashboard.tiles[0].id,
           tile: {
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: metricSelect(),
               formulas: [{ expression: 'A / B' }],
@@ -1350,7 +1351,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           tileId: dashboard.tiles[0].id,
           tile: {
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: metricSelect(),
             },
@@ -1378,7 +1379,7 @@ describe('MCP Dashboard Tools - clickstack_patch_dashboard', () => {
           tileId: dashboard.tiles[0].id,
           tile: {
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: metricSelect(),
               formulas,

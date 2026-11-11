@@ -8,10 +8,7 @@ import {
   type QueryAttribution,
   ResponseJSON,
 } from '@hyperdx/common-utils/dist/clickhouse';
-import {
-  ClickhouseClient,
-  withQueryAttribution,
-} from '@hyperdx/common-utils/dist/clickhouse/node';
+import { ClickhouseClient } from '@hyperdx/common-utils/dist/clickhouse/node';
 import { tryOptimizeConfigWithMaterializedView } from '@hyperdx/common-utils/dist/core/materializedViews';
 import {
   getMetadata,
@@ -51,8 +48,8 @@ import {
 } from '@hyperdx/common-utils/dist/types';
 import * as fns from 'date-fns';
 import { isString, pick } from 'lodash';
-import { ObjectId } from 'mongoose';
 import mongoose from 'mongoose';
+import { ObjectId } from 'mongoose';
 import ms from 'ms';
 import { performance } from 'perf_hooks';
 import { serializeError } from 'serialize-error';
@@ -65,7 +62,6 @@ import AlertHistory, {
 } from '@/models/alertHistory';
 import { IDashboard } from '@/models/dashboard';
 import { ISavedSearch } from '@/models/savedSearch';
-import { ISource } from '@/models/source';
 import { IWebhook } from '@/models/webhook';
 import {
   isClientTimeoutOrAbortError,
@@ -76,12 +72,11 @@ import {
   WebhookNotFoundError,
   WebhookRedirectError,
 } from '@/tasks/checkAlerts/errors';
+import type { AlertDataSource } from '@/tasks/checkAlerts/providers';
 import {
   AlertDetails,
   AlertProvider,
-  AlertTask,
   AlertTaskType,
-  loadProvider,
 } from '@/tasks/checkAlerts/providers';
 import {
   AlertMessageTemplateDefaultView,
@@ -93,8 +88,6 @@ import {
   RenderedAlert,
 } from '@/tasks/checkAlerts/template';
 import { handleSendGenericWebhook } from '@/tasks/checkAlerts/transports';
-import { tasksTracer } from '@/tasks/tracer';
-import { CheckAlertsTaskArgs, HdxTask } from '@/tasks/types';
 import {
   calcAlertDateRange,
   roundDownToXMinutes,
@@ -106,9 +99,6 @@ import {
   getCounter,
   type OperationOutcome,
   recordOperationOutcome,
-  setBusinessContext,
-  SpanStatusCode,
-  withSpan,
 } from '@/utils/instrumentation';
 import logger from '@/utils/logger';
 
@@ -129,10 +119,6 @@ const alertProcessFailuresCounter = getCounter(
       'Count of alert evaluations that threw an unexpected error during processing.',
   },
 );
-const alertBatchFailuresCounter = getCounter('hyperdx.alerts.batch_failures', {
-  description:
-    'Count of alert batches (one per connection) that failed before their alerts could be evaluated, e.g. a ClickHouse connection failure.',
-});
 
 /**
  * Determine if an alert has group-by behavior.
@@ -159,7 +145,7 @@ export const alertHasGroupBy = (details: AlertDetails): boolean => {
  */
 export async function computeAliasWithClauses(
   savedSearch: Pick<ISavedSearch, 'select' | 'where' | 'whereLanguage'>,
-  source: ISource,
+  source: AlertDataSource,
   metadata: Metadata,
 ): Promise<BuilderChartConfigWithOptDateRange['with']> {
   const resolvedSelect =
@@ -218,7 +204,7 @@ const makeAlertError = (
   message: (HARDCODED_ALERT_ERROR_MESSAGES[type] ?? message).slice(0, 10000),
 });
 
-const getErrorMessage = (e: unknown): string => {
+export const getErrorMessage = (e: unknown): string => {
   if (e instanceof Error) {
     return e.message;
   }
@@ -487,7 +473,7 @@ const fireChannelEvent = async ({
   isGroupedAlert: boolean;
   metadata: Metadata;
   savedSearch?: ISavedSearch | null;
-  source?: ISource | null;
+  source?: AlertDataSource | null;
   startTime: Date;
   state: AlertState;
   totalCount: number;
@@ -689,7 +675,7 @@ const buildAlertChartConfigFromSavedConfig = ({
   // AlertChartConfig (an inline alert's persisted config) is assignable here:
   // its members are the tile config types minus the embedded alert field.
   savedConfig: SavedChartConfig;
-  source?: ISource;
+  source?: AlertDataSource;
   connection: string;
   dateRange: [Date, Date];
   windowSizeInMins: number;
@@ -798,19 +784,22 @@ const getChartConfigFromAlert = (
     // task, the alert preview chart, and the main app search page all
     // assemble saved-search chart configs identically — keeping source-level
     // fields like `tableFilterExpression` applied uniformly across paths.
-    return buildSearchChartConfig(source, {
-      where: savedSearch.where,
-      whereLanguage: savedSearch.whereLanguage,
-      filters: savedSearch.filters?.map(f => ({ ...f })),
-      groupBy: alert.groupBy,
-      select: ALERT_COUNT_DEFAULT_SELECT,
-      displayType: DisplayType.Line,
-      connection,
-      dateRange,
-      dateRangeStartInclusive: true,
-      dateRangeEndInclusive: false,
-      granularity: `${windowSizeInMins} minute`,
-    });
+    return buildSearchChartConfig(
+      { ...source, connection: source.connection.toString() },
+      {
+        where: savedSearch.where,
+        whereLanguage: savedSearch.whereLanguage,
+        filters: savedSearch.filters?.map(f => ({ ...f })),
+        groupBy: alert.groupBy,
+        select: ALERT_COUNT_DEFAULT_SELECT,
+        displayType: DisplayType.Line,
+        connection,
+        dateRange,
+        dateRangeStartInclusive: true,
+        dateRangeEndInclusive: false,
+        granularity: `${windowSizeInMins} minute`,
+      },
+    );
   } else if (details.taskType === AlertTaskType.TILE) {
     // Substitute empty selections for each variable the dashboard defines
     const variables = getDashboardVariableDeclarations(
@@ -1581,13 +1570,11 @@ export const processAlert = async (
 
         const zeroValueIsAlert = doesExceedThreshold(alert, 0);
 
-        const hasAlertsInPreviousMap = previousMap
-          .values()
-          .some(
-            history =>
-              history.state === AlertState.ALERT ||
-              history.state === AlertState.PENDING,
-          );
+        const hasAlertsInPreviousMap = Array.from(previousMap.values()).some(
+          history =>
+            history.state === AlertState.ALERT ||
+            history.state === AlertState.PENDING,
+        );
 
         if (zeroValueIsAlert) {
           const history = getOrCreateHistory('');
@@ -2001,188 +1988,4 @@ export const getConsecutiveWindowHistories = async (
   return map;
 };
 
-export default class CheckAlertTask implements HdxTask {
-  private provider!: AlertProvider;
-  private task_queue: PQueue;
-
-  constructor(private args: CheckAlertsTaskArgs) {
-    const concurrency = this.args.concurrency;
-    this.task_queue = new PQueue({
-      autoStart: true,
-      ...(concurrency ? { concurrency } : null),
-    });
-  }
-
-  /**
-   * Schedules every alert in one connection's batch onto the task queue.
-   *
-   * @returns true if the batch was scheduled, false if it failed.
-   */
-  async processAlertTask(
-    alertTask: AlertTask,
-    teamWebhooksById: Map<string, IWebhook>,
-  ): Promise<boolean> {
-    return tasksTracer.startActiveSpan('processAlertTask', async span => {
-      setBusinessContext({ teamId: alertTask.conn.team.toString() });
-      try {
-        span.setAttribute(
-          'hyperdx.alerts.team.id',
-          alertTask.conn.team.toString(),
-        );
-        span.setAttribute('hyperdx.alerts.connection.id', alertTask.conn.id);
-        span.setAttribute('hyperdx.alerts.batch.size', alertTask.alerts.length);
-
-        const { alerts, conn } = alertTask;
-        logger.info(
-          {
-            alertCount: alerts.length,
-          },
-          'Processing alerts in batch',
-        );
-
-        const clickhouseClient = await this.provider.getClickHouseClient(
-          conn,
-          this.args.sourceTimeoutMs,
-        );
-
-        for (const alert of alerts) {
-          this.task_queue.add(async () =>
-            // withSpan (not a hand-rolled tracer) so exceptions and status are
-            // recorded the same way as everywhere else — see agent_docs/observability.md.
-            withSpan(
-              'processAlert',
-              async () => {
-                setBusinessContext({ teamId: conn.team.toString() });
-                // Set once here, so the alert's own query, the EXPLAIN
-                // probes and the notification's sample rows all get tagged.
-                await withQueryAttribution(
-                  alertQueryAttribution(alert),
-                  async () =>
-                    processAlert(
-                      alertTask.now,
-                      alert,
-                      clickhouseClient,
-                      conn.id,
-                      this.provider,
-                      teamWebhooksById,
-                    ),
-                );
-              },
-              {
-                attributes: {
-                  'hyperdx.alert.id': alert.alert.id,
-                  'hyperdx.team.id': conn.team.toString(),
-                  'hyperdx.alert.source': alert.alert.source ?? 'unknown',
-                },
-              },
-            ),
-          );
-        }
-        return true;
-      } catch (e) {
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: getErrorMessage(e),
-        });
-        span.recordException(e instanceof Error ? e : new Error(String(e)));
-        alertBatchFailuresCounter.add(1);
-        logger.error(
-          {
-            connectionId: alertTask.conn.id,
-            teamId: alertTask.conn.team.toString(),
-            alertCount: alertTask.alerts.length,
-            error: serializeError(e),
-          },
-          'Failed to process alert batch, skipping its alerts for this cycle',
-        );
-        return false;
-      } finally {
-        span.end();
-      }
-    });
-  }
-
-  async execute(): Promise<void> {
-    if (this.args.taskName !== 'check-alerts') {
-      throw new Error(
-        `CheckAlertTask can only handle 'check-alerts' tasks, received: ${this.args.taskName}`,
-      );
-    }
-
-    this.provider = await loadProvider(this.args.provider);
-    await this.provider.init();
-    logger.debug(
-      {
-        provider: this.provider.constructor.name,
-        args: this.args,
-      },
-      'finished provider initialization',
-    );
-
-    const alertTasks = await this.provider.getAlertTasks();
-    const taskCount = alertTasks.length;
-    logger.debug(
-      {
-        taskCount,
-        args: this.args,
-      },
-      `Fetched ${taskCount} alert tasks to process`,
-    );
-
-    const teams = new Set(alertTasks.map(t => t.conn.team.toString()));
-    const teamToWebhooks = new Map<string, Map<string, IWebhook>>();
-    for (const teamId of teams) {
-      const teamWebhooksById = await this.provider.getWebhooks(teamId);
-      teamToWebhooks.set(teamId, teamWebhooksById);
-    }
-    logger.debug(
-      {
-        args: this.args,
-        teamCount: teams.size,
-        teamWebhookCount: teamToWebhooks.size,
-      },
-      `Obtained teams and webhooks for all alertTasks`,
-    );
-
-    let failedBatchCount = 0;
-    for (const task of alertTasks) {
-      const teamWebhooksById =
-        teamToWebhooks.get(task.conn.team.toString()) ?? new Map();
-      this.task_queue.add(async () => {
-        const success = await this.processAlertTask(task, teamWebhooksById);
-        if (!success) {
-          failedBatchCount++;
-        }
-      });
-    }
-    logger.debug(
-      {
-        args: this.args,
-      },
-      'finished scheduling alert tasks on the task_queue',
-    );
-
-    // make sure to await here to drain the work queue and allow
-    // functions to execute. if not, execute will terminate without
-    // executing all checks
-    await this.task_queue.onIdle();
-    logger.info(
-      {
-        args: this.args,
-        taskCount,
-        failedBatchCount,
-      },
-      'finished processing all tasks on task_queue',
-    );
-  }
-
-  name(): string {
-    return this.args.taskName;
-  }
-
-  async asyncDispose(): Promise<void> {
-    if (this.provider) {
-      await this.provider.asyncDispose();
-    }
-  }
-}
+export { default } from './task';

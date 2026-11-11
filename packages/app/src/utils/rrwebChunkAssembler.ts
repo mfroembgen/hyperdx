@@ -35,10 +35,7 @@ export type RRWebStreamRow = {
 
 export type RRWebAssemblerErrorInfo = {
   reason:
-    | 'parse-error'
-    | 'incomplete-event'
-    | 'duplicate-chunk'
-    | 'buffer-overflow';
+    'parse-error' | 'incomplete-event' | 'duplicate-chunk' | 'buffer-overflow';
   eventId?: number;
   chunksReceived: number;
   totalChunks: number;

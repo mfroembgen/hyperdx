@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -27,13 +28,13 @@ function makeRule(
 describe('ColorRulesEditor', () => {
   describe('Add rule button', () => {
     it('renders an "Add rule" button', () => {
-      renderWithMantine(<ColorRulesEditor value={[]} onChange={jest.fn()} />);
+      renderWithMantine(<ColorRulesEditor value={[]} onChange={vi.fn()} />);
       expect(screen.getByTestId('color-rules-add-button')).toBeInTheDocument();
     });
 
     it('appends a new rule when "Add rule" is clicked', async () => {
       const user = userEvent.setup();
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       renderWithMantine(<ColorRulesEditor value={[]} onChange={onChange} />);
       await user.click(screen.getByTestId('color-rules-add-button'));
       expect(onChange).toHaveBeenCalledTimes(1);
@@ -48,7 +49,7 @@ describe('ColorRulesEditor', () => {
 
     it('disables "Add rule" when there are already 10 rules', async () => {
       const user = userEvent.setup();
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const rules = Array.from({ length: 10 }, (_, i) =>
         makeRule({ value: i }, `id-${i}`),
       );
@@ -63,7 +64,7 @@ describe('ColorRulesEditor', () => {
   describe('Delete rule', () => {
     it('removes the correct rule when delete is clicked', async () => {
       const user = userEvent.setup();
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const rules = [
         makeRule({ value: 10 }, 'a'),
         makeRule({ value: 20 }, 'b'),
@@ -82,7 +83,7 @@ describe('ColorRulesEditor', () => {
       renderWithMantine(
         <ColorRulesEditor
           value={[makeRule({ operator: 'gte', value: 50 }, 'r1')]}
-          onChange={jest.fn()}
+          onChange={vi.fn()}
         />,
       );
       const select = screen.getByTestId('color-rule-operator-0');
@@ -98,7 +99,7 @@ describe('ColorRulesEditor', () => {
               'r1',
             ) as ColorRuleWithId,
           ]}
-          onChange={jest.fn()}
+          onChange={vi.fn()}
         />,
       );
       expect(screen.getByLabelText('Rule 1 lower bound')).toBeInTheDocument();
@@ -107,7 +108,7 @@ describe('ColorRulesEditor', () => {
 
     it('shows a single number input for ordered operators', () => {
       for (const op of ['gt', 'gte', 'lt', 'lte'] as const) {
-        const onChange = jest.fn();
+        const onChange = vi.fn();
         const { unmount } = renderWithMantine(
           <ColorRulesEditor
             value={[makeRule({ operator: op, value: 5 }, 'r1')]}
@@ -125,7 +126,7 @@ describe('ColorRulesEditor', () => {
           value={[
             makeRule({ operator: 'eq', value: 0 }, 'r1') as ColorRuleWithId,
           ]}
-          onChange={jest.fn()}
+          onChange={vi.fn()}
         />,
       );
       expect(screen.getByLabelText('Rule 1 value')).toBeInTheDocument();
@@ -137,7 +138,7 @@ describe('ColorRulesEditor', () => {
           value={[
             makeRule({ operator: 'neq', value: '' }, 'r1') as ColorRuleWithId,
           ]}
-          onChange={jest.fn()}
+          onChange={vi.fn()}
         />,
       );
       expect(screen.getByLabelText('Rule 1 value')).toBeInTheDocument();
@@ -147,9 +148,7 @@ describe('ColorRulesEditor', () => {
   describe('Color swatch', () => {
     it('renders a color swatch trigger for each rule', () => {
       const rules = [makeRule({}, 'a'), makeRule({}, 'b')];
-      renderWithMantine(
-        <ColorRulesEditor value={rules} onChange={jest.fn()} />,
-      );
+      renderWithMantine(<ColorRulesEditor value={rules} onChange={vi.fn()} />);
       // ColorSwatchInput renders one trigger per rule
       expect(screen.getAllByTestId('color-swatch-input-trigger')).toHaveLength(
         2,
@@ -164,16 +163,14 @@ describe('ColorRulesEditor', () => {
         makeRule({ value: 20 }, 'b'),
         makeRule({ value: 30 }, 'c'),
       ];
-      renderWithMantine(
-        <ColorRulesEditor value={rules} onChange={jest.fn()} />,
-      );
+      renderWithMantine(<ColorRulesEditor value={rules} onChange={vi.fn()} />);
       expect(screen.getByTestId('color-rule-row-0')).toBeInTheDocument();
       expect(screen.getByTestId('color-rule-row-1')).toBeInTheDocument();
       expect(screen.getByTestId('color-rule-row-2')).toBeInTheDocument();
     });
 
     it('renders empty state with only the Add button', () => {
-      renderWithMantine(<ColorRulesEditor value={[]} onChange={jest.fn()} />);
+      renderWithMantine(<ColorRulesEditor value={[]} onChange={vi.fn()} />);
       expect(screen.queryByTestId('color-rule-row-0')).not.toBeInTheDocument();
       expect(screen.getByTestId('color-rules-add-button')).toBeInTheDocument();
     });

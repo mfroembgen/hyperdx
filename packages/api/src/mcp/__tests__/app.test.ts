@@ -3,11 +3,11 @@ import request from 'supertest';
 
 import mcpRouter from '@/mcp/app';
 
-jest.mock('@/middleware/auth', () => ({
-  ...jest.requireActual<typeof import('@/middleware/auth')>(
+vi.mock('@/middleware/auth', async () => ({
+  ...(await vi.importActual<typeof import('@/middleware/auth')>(
     '@/middleware/auth',
-  ),
-  validateMcpUser: jest.fn((_req, _res, next) => next()),
+  )),
+  validateMcpUser: vi.fn((_req, _res, next) => next()),
 }));
 
 // The MCP transport is stateless, so GET (standalone SSE stream) and DELETE

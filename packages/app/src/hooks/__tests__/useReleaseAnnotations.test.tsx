@@ -1,4 +1,5 @@
 import { isValidElement } from 'react';
+import { type Mock, vi } from 'vitest';
 import {
   BuilderChartConfigWithDateRange,
   DerivedColumn,
@@ -22,16 +23,16 @@ import {
 } from '@/hooks/useReleaseAnnotations';
 import { getChartColorInfo } from '@/utils';
 
-jest.mock('@/hooks/useChartConfig', () => ({
-  useQueriedChartConfig: jest.fn(),
+vi.mock('@/hooks/useChartConfig', () => ({
+  useQueriedChartConfig: vi.fn(),
 }));
-jest.mock('@mantine/notifications', () => ({
-  notifications: { show: jest.fn() },
+vi.mock('@mantine/notifications', () => ({
+  notifications: { show: vi.fn() },
 }));
 // A getter (rather than a plain value) so individual tests can flip
 // `mockIsLocalMode` without re-mocking the module.
 let mockIsLocalMode = false;
-jest.mock('@/config', () => ({
+vi.mock('@/config', () => ({
   __esModule: true,
   get IS_LOCAL_MODE() {
     return mockIsLocalMode;
@@ -41,12 +42,15 @@ jest.mock('@/config', () => ({
 // Untyped handle on the mocked hook. Going through the module object keeps the
 // mock's argument and return types loose, so the fixtures below don't need
 // wide casts to stand in for a full react-query result.
-const chartConfigModule: { useQueriedChartConfig: jest.Mock } =
-  jest.requireMock('@/hooks/useChartConfig');
+const chartConfigModule: { useQueriedChartConfig: Mock } = await vi.importMock<
+  typeof import('@/hooks/useChartConfig')
+>('@/hooks/useChartConfig');
 const mockedUseQueriedChartConfig = chartConfigModule.useQueriedChartConfig;
 
-const notificationsModule: { notifications: { show: jest.Mock } } =
-  jest.requireMock('@mantine/notifications');
+const notificationsModule: { notifications: { show: Mock } } =
+  await vi.importMock<typeof import('@mantine/notifications')>(
+    '@mantine/notifications',
+  );
 const mockedNotificationsShow = notificationsModule.notifications.show;
 
 /**
@@ -600,14 +604,17 @@ describe('useReleaseAnnotations', () => {
   const lastCall = (): [
     BuilderChartConfigWithDateRange,
     { enabled: boolean },
-  ] =>
-    mockedUseQueriedChartConfig.mock.calls[
-      mockedUseQueriedChartConfig.mock.calls.length - 1
-    ];
+  ] => {
+    const call = mockedUseQueriedChartConfig.mock.calls.at(-1);
+    if (!call) throw new Error('Expected chart query');
+    return [call[0], call[1]];
+  };
 
-  beforeEach(() => mockQuery([]));
+  beforeEach(() => {
+    mockQuery([]);
+  });
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockIsLocalMode = false;
   });
 

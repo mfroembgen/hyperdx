@@ -1,5 +1,6 @@
 import React from 'react';
 import { Provider } from 'jotai';
+import { vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -7,14 +8,14 @@ import userEvent from '@testing-library/user-event';
 import { DBRowJsonViewer } from '@/components/DBRowJsonViewer';
 import { RowSidePanelContext } from '@/components/DBRowSidePanel';
 
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   __esModule: true,
-  default: { push: jest.fn() },
+  default: { push: vi.fn() },
 }));
 
-jest.mock('@/useFormatTime', () => ({
+vi.mock('@/useFormatTime', () => ({
   useFormatTime: () => (time: unknown) => String(time),
-  FormatTime: jest.fn(() => null),
+  FormatTime: vi.fn(() => null),
 }));
 
 const VIEWER_OPTIONS_KEY = 'hdx_json_viewer_options';

@@ -1,14 +1,15 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { act, fireEvent, renderHook, screen } from '@testing-library/react';
 
 import { SearchNumRows, useSearchTelemetry } from '@/DBSearchPage';
 
-jest.mock('@/layout', () => ({
+vi.mock('@/layout', () => ({
   withAppNav: (component: unknown) => component,
 }));
 
-const mockAddAction = jest.fn();
-jest.mock('@hyperdx/browser', () => ({
+const mockAddAction = vi.fn();
+vi.mock('@hyperdx/browser', () => ({
   __esModule: true,
   default: { addAction: (...args: unknown[]) => mockAddAction(...args) },
 }));
@@ -17,7 +18,7 @@ let mockExplainData: unknown[] | undefined = undefined;
 let mockExplainIsLoading = false;
 let mockExplainError: Error | null = null;
 
-jest.mock('@/hooks/useExplainQuery', () => ({
+vi.mock('@/hooks/useExplainQuery', () => ({
   useExplainQuery: () => ({
     data: mockExplainData,
     isLoading: mockExplainIsLoading,
@@ -27,7 +28,7 @@ jest.mock('@/hooks/useExplainQuery', () => ({
 
 // Capture the last rendered config so we can assert on it without fighting portals
 let lastSQLPreviewConfig: unknown = undefined;
-jest.mock('../components/ChartSQLPreview', () => ({
+vi.mock('../components/ChartSQLPreview', () => ({
   __esModule: true,
   default: (props: { config: unknown }) => {
     lastSQLPreviewConfig = props.config;
@@ -37,8 +38,11 @@ jest.mock('../components/ChartSQLPreview', () => ({
 }));
 
 // Render Mantine Modal content inline (no portal / no transition) so jsdom can see it
-jest.mock('@mantine/core', () => {
-  const actual = jest.requireActual('@mantine/core');
+vi.mock('@mantine/core', async () => {
+  const actualModule0 =
+    await vi.importActual<typeof import('@mantine/core')>('@mantine/core');
+
+  const actual = actualModule0;
   return {
     ...actual,
     Modal: ({ opened, onClose, title, children }: any) =>
@@ -58,7 +62,7 @@ jest.mock('@mantine/core', () => {
 
 describe('useSearchTelemetry', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('emits "search executed" action with latency_ms and source_id when a search completes', async () => {

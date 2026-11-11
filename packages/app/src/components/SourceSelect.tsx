@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo } from 'react';
+import type { FieldPath, FieldValues } from 'react-hook-form';
 import { UseControllerProps, useWatch } from 'react-hook-form';
 import { SourceKind, TSource } from '@hyperdx/common-utils/dist/types';
 import {
@@ -151,7 +152,10 @@ export const SourceManagementMenu = ({
   );
 };
 
-function SourceSelectControlledComponent({
+function SourceSelectControlledComponent<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({
   size,
   onCreate,
   onEdit,
@@ -174,7 +178,7 @@ function SourceSelectControlledComponent({
   connectionId?: string;
   /** Extra per-source gate for restrictions a kind can't express. */
   isSourceAllowed?: (source: TSource) => boolean;
-} & UseControllerProps<any> &
+} & UseControllerProps<TFieldValues, TName> &
   SelectProps) {
   const { data } = useSources();
   const selectedSourceId = useWatch({
@@ -270,4 +274,6 @@ function SourceSelectControlledComponent({
   );
 }
 
-export const SourceSelectControlled = memo(SourceSelectControlledComponent);
+export const SourceSelectControlled = memo(
+  SourceSelectControlledComponent,
+) as typeof SourceSelectControlledComponent;

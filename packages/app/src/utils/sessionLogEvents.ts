@@ -37,8 +37,7 @@ export type SessionLogEvents = {
 
 /** What a click on an event list row opens. */
 export type SessionEventOpen =
-  | { kind: 'span'; row: SessionRow }
-  | { kind: 'log'; event: SessionLogEvent };
+  { kind: 'span'; row: SessionRow } | { kind: 'log'; event: SessionLogEvent };
 
 /** Set when the event lives on a log source rather than the trace source. */
 type SessionLogEventTarget = {

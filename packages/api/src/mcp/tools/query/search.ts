@@ -123,8 +123,7 @@ export function registerSearch({ context, registerTool }: ToolRegistrar) {
 
       const resultData = parsed.result;
       const rows = (resultData as Record<string, unknown> | undefined)?.data as
-        | Record<string, unknown>[]
-        | undefined;
+        Record<string, unknown>[] | undefined;
       if (!rows || !Array.isArray(rows) || rows.length === 0) {
         return result;
       }

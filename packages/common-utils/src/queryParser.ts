@@ -1214,12 +1214,7 @@ const KV_ITEMS_STRATEGIES = [
 export function skipIndexMatches(
   idx: SkipIndexMetadata,
   expectedType:
-    | 'text'
-    | 'bloom_filter'
-    | 'minmax'
-    | 'tokenbf_v1'
-    | 'set'
-    | 'ngrambf_v1',
+    'text' | 'bloom_filter' | 'minmax' | 'tokenbf_v1' | 'set' | 'ngrambf_v1',
   options?: {
     tokenizer?: string;
   },

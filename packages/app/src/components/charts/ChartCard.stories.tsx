@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Flex, SegmentedControl, Text } from '@mantine/core';
-import type { Meta } from '@storybook/nextjs';
+import type { Meta } from '@storybook/react-vite';
 
 import { ChartCard } from './ChartCard';
 import ChartContainer from './ChartContainer';

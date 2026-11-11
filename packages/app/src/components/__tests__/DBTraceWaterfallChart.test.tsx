@@ -1,4 +1,5 @@
 import React from 'react';
+import { type Mock, vi } from 'vitest';
 import {
   SourceKind,
   TLogSource,
@@ -28,11 +29,11 @@ import useRowWhere from '@/hooks/useRowWhere';
 import { getChartColorError, getChartColorSuccess } from '@/utils';
 
 // Mock setup
-jest.mock('@/components/traceWaterfallLimits', () => ({
+vi.mock('@/components/traceWaterfallLimits', () => ({
   TRACE_WATERFALL_ROW_LIMIT: 3,
   TRACE_WATERFALL_FETCH_LIMIT: 4,
 }));
-jest.mock('@/components/TimelineChart', () => {
+vi.mock('@/components/TimelineChart', () => {
   const flattenText = (value: React.ReactNode): string => {
     if (value == null || typeof value === 'boolean') {
       return '';
@@ -77,21 +78,26 @@ jest.mock('@/components/TimelineChart', () => {
   return { TimelineChart: mockComponent, TimelineMinimap: MockTimelineMinimap };
 });
 
-jest.mock('@/hooks/useOffsetPaginatedQuery');
-jest.mock('@/hooks/useRowWhere');
-jest.mock('@/hooks/useMetadata', () => ({
-  ...jest.requireActual('@/hooks/useMetadata'),
-  useColumns: jest.fn(),
-}));
-jest.mock('../DBRowDataPanel', () => ({
-  getJSONColumnNames: jest.fn().mockReturnValue([]),
+vi.mock('@/hooks/useOffsetPaginatedQuery');
+vi.mock('@/hooks/useRowWhere');
+vi.mock('@/hooks/useMetadata', async () => {
+  const actualModule0 = await vi.importActual<
+    typeof import('@/hooks/useMetadata')
+  >('@/hooks/useMetadata');
+  return {
+    ...actualModule0,
+    useColumns: vi.fn(),
+  };
+});
+vi.mock('../DBRowDataPanel', () => ({
+  getJSONColumnNames: vi.fn().mockReturnValue([]),
 }));
 
 // Lightweight stub: the real SearchWhereInput renders SearchInputV2, which
 // pulls in useMe()/metadata hooks that require a QueryClientProvider not present
 // in this harness. We only care that the right inputs render, so stub it to a
 // plain element carrying the data-testid.
-jest.mock('@/components/SearchInput/SearchWhereInput', () => ({
+vi.mock('@/components/SearchInput/SearchWhereInput', () => ({
   __esModule: true,
   default: ({ 'data-testid': dataTestId, name }: any) => (
     <div data-testid={dataTestId ?? `${name}-input`}>{name}</div>
@@ -104,25 +110,23 @@ const makeWaterfallSearchState = () => ({
   logWhere: '',
   traceWhereLanguage: '',
   logWhereLanguage: '',
-  clear: jest.fn(),
+  clear: vi.fn(),
   isFilterActive: false,
   isFilterExpanded: false,
-  setIsFilterExpanded: jest.fn(),
-  onSubmit: jest.fn(),
+  setIsFilterExpanded: vi.fn(),
+  onSubmit: vi.fn(),
 });
 
-const mockUseWaterfallSearchState: jest.Mock = jest.fn(
-  makeWaterfallSearchState,
-);
+const mockUseWaterfallSearchState: Mock = vi.fn(makeWaterfallSearchState);
 
-jest.mock('@/hooks/useWaterfallSearchState', () => ({
+vi.mock('@/hooks/useWaterfallSearchState', () => ({
   __esModule: true,
   default: (...args: any[]) => mockUseWaterfallSearchState(...args),
 }));
 
-const mockUseOffsetPaginatedQuery = useOffsetPaginatedQuery as jest.Mock;
-const mockUseRowWhere = useRowWhere as jest.Mock;
-const mockUseColumns = useColumns as jest.Mock;
+const mockUseOffsetPaginatedQuery = useOffsetPaginatedQuery as Mock;
+const mockUseRowWhere = useRowWhere as Mock;
+const mockUseColumns = useColumns as Mock;
 const MockTimelineChart = TimelineChart as any;
 
 // Mirrors useColumns, which is disabled, so never loading, without a table.
@@ -214,7 +218,7 @@ describe('DBTraceWaterfallChartContainer', () => {
 
   // Reset mocks before each test
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseRowWhere.mockReturnValue(() => ({ where: 'row-id', aliasWith: [] }));
     MockTimelineChart.latestProps = {};
     mockUseWaterfallSearchState.mockReturnValue(makeWaterfallSearchState());
@@ -1084,7 +1088,7 @@ describe('useEventsAroundFocus', () => {
   const mockTraceId = 'test-trace-id';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseRowWhere.mockReturnValue(() => ({ where: 'row-id', aliasWith: [] }));
   });
 
@@ -1133,7 +1137,7 @@ describe('useEventsAroundFocus', () => {
   it.each([true, false])(
     'selects SeverityNumber from a log source only with the flag (%p), never in row ids',
     selectSeverityNumber => {
-      const getRowWhere = jest.fn(() => ({ where: 'row-id', aliasWith: [] }));
+      const getRowWhere = vi.fn(() => ({ where: 'row-id', aliasWith: [] }));
       mockUseRowWhere.mockReturnValue(getRowWhere);
 
       const result = testEventsAroundFocus({

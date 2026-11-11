@@ -70,14 +70,12 @@ function normalizeParsedDate(
   // If all of the time components have been inferred, set the time components of now
   // to match the parsed time components. This ensures that the comparison later on uses
   // the same point in time when only worrying about dates.
-  if (
-    !(
-      parsed.isCertain('hour') ||
-      parsed.isCertain('minute') ||
-      parsed.isCertain('second') ||
-      parsed.isCertain('millisecond')
-    )
-  ) {
+  if (!(
+    parsed.isCertain('hour') ||
+    parsed.isCertain('minute') ||
+    parsed.isCertain('second') ||
+    parsed.isCertain('millisecond')
+  )) {
     now.setUTCHours(
       parsed.get('hour') || 0,
       parsed.get('minute') || 0,
@@ -176,8 +174,7 @@ export const LIVE_TAIL_TIME_QUERY = 'Live Tail' as const;
 export const LIVE_TAIL_DURATION_MS = ms('15m');
 
 export const RELATIVE_TIME_OPTIONS: (
-  | [label: string, duration: number, relativeSupport?: boolean]
-  | 'divider'
+  [label: string, duration: number, relativeSupport?: boolean] | 'divider'
 )[] = [
   // ['Last 15 seconds', '15s'],
   // ['Last 30 seconds', '30s'],

@@ -488,7 +488,7 @@ describe('alerts router', () => {
 
   it('derives displayName from the chart config for inline alerts', async () => {
     const source = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: team._id,
       from: { databaseName: 'default', tableName: 'otel_logs' },
       timestampValueExpression: 'Timestamp',
@@ -925,7 +925,10 @@ describe('alerts router', () => {
       tiles: [tile],
     });
 
-    const tileAlert = async (dashboardId: unknown, tileId: string) =>
+    const tileAlert = async (
+      dashboardId: mongoose.Types.ObjectId | string,
+      tileId: string,
+    ) =>
       Alert.create({
         team: team._id,
         channel: { type: 'webhook', webhookId: webhook._id.toString() },
@@ -1914,7 +1917,7 @@ describe('alerts router', () => {
         password: '',
       });
       const source = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         from: { databaseName: 'default', tableName: 'otel_logs' },
         timestampValueExpression: 'Timestamp',

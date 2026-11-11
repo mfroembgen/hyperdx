@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 
 import { FormatPodStatus } from '@/components/KubeComponents';
@@ -5,14 +6,19 @@ import { KubePhase } from '@/types';
 
 // click-ui encodes state only in hashed CSS module class names, so the mock
 // exposes the prop as an attribute to assert on.
-jest.mock('@clickhouse/click-ui', () => ({
-  ...jest.requireActual('@clickhouse/click-ui'),
-  Badge: ({ text, state }: { text: React.ReactNode; state?: string }) => (
-    <span data-testid="badge" data-state={state}>
-      {text}
-    </span>
-  ),
-}));
+vi.mock('@clickhouse/click-ui', async () => {
+  const actualModule0 = await vi.importActual<
+    typeof import('@clickhouse/click-ui')
+  >('@clickhouse/click-ui');
+  return {
+    ...actualModule0,
+    Badge: ({ text, state }: { text: React.ReactNode; state?: string }) => (
+      <span data-testid="badge" data-state={state}>
+        {text}
+      </span>
+    ),
+  };
+});
 
 describe('FormatPodStatus', () => {
   it.each([

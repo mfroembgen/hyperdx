@@ -2,7 +2,7 @@ import type {
   McpServer,
   ToolCallback,
 } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { AnyZodObject } from 'zod';
+import type { ZodObject } from 'zod';
 
 import type { McpContext, RegisterToolFn } from '@/mcp/tools/types';
 
@@ -20,15 +20,15 @@ export function createRegisterTool(
 ): RegisterToolFn {
   return (name, config, handler) => {
     // Wrap with tracing, then register.  The explicit InputArgs generic
-    // binds the SDK's own type parameter to AnyZodObject so TypeScript
+    // binds the SDK's own type parameter to ZodObject so TypeScript
     // resolves ToolCallback via the AnySchema branch of BaseToolCallback.
     // This lets it accept our traced callback without a type assertion —
-    // both sides reduce to (args: SchemaOutput<AnyZodObject>, extra) => ….
-    const traced: ToolCallback<AnyZodObject> = withToolTracing(
+    // both sides reduce to (args: SchemaOutput<ZodObject>, extra) => ….
+    const traced: ToolCallback<ZodObject> = withToolTracing(
       name,
       context,
       handler,
     );
-    server.registerTool<AnyZodObject, AnyZodObject>(name, config, traced);
+    server.registerTool<ZodObject, ZodObject>(name, config, traced);
   };
 }

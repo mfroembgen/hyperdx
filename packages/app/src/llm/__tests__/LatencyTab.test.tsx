@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 
 import { makeTraceSource } from '@/llm/__fixtures__/sources';
@@ -6,7 +7,7 @@ import { getLLMExpressions, isLLMAttributeKey } from '@/llm/lib/expressions';
 
 // Capture the props handed to the heatmap + delta composite.
 const heatmapChartProps: any[] = [];
-jest.mock('@/components/Search/DBSearchHeatmapChart', () => ({
+vi.mock('@/components/Search/DBSearchHeatmapChart', () => ({
   DBSearchHeatmapChart: (props: unknown) => {
     heatmapChartProps.push(props);
     return <div data-testid="search-heatmap-chart" />;
@@ -15,7 +16,7 @@ jest.mock('@/components/Search/DBSearchHeatmapChart', () => ({
 
 // Controls the JSON-column lookup per test (undefined = still loading).
 let mockJsonColumns: string[] | undefined = [];
-jest.mock('@/hooks/useMetadata', () => ({
+vi.mock('@/hooks/useMetadata', () => ({
   useJsonColumns: () => ({ data: mockJsonColumns }),
 }));
 
@@ -28,14 +29,14 @@ const baseProps = {
   dateRange: [new Date(0), new Date(1000)] as [Date, Date],
   where: '',
   whereLanguage: 'sql' as const,
-  onWhereChange: jest.fn(),
+  onWhereChange: vi.fn(),
 };
 
 describe('LatencyTab', () => {
   beforeEach(() => {
     heatmapChartProps.length = 0;
     mockJsonColumns = [];
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('scopes the heatmap to LLM spans (and session/user) without the cost alias', () => {

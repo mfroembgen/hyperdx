@@ -1,5 +1,5 @@
 import React from 'react';
-import * as metadataModule from '@hyperdx/app/src/metadata';
+import { vi } from 'vitest';
 import { ColumnMeta, JSDataType } from '@hyperdx/common-utils/dist/clickhouse';
 import { ClickhouseClient } from '@hyperdx/common-utils/dist/clickhouse/browser';
 import {
@@ -21,6 +21,7 @@ import {
   useMultipleAllFields,
   useMultipleGetKeyValues,
 } from '@/hooks/useMetadata';
+import * as metadataModule from '@/metadata';
 import { useSources } from '@/source';
 
 // Create a mock ChartConfig based on the Zod schema
@@ -40,8 +41,8 @@ const createMockChartConfig = (
 const createMockMetadata = () =>
   new Metadata({} as ClickhouseClient, {} as MetadataCache);
 
-jest.mock('@/source', () => ({
-  useSources: jest.fn().mockReturnValue({
+vi.mock('@/source', () => ({
+  useSources: vi.fn().mockReturnValue({
     data: [
       { id: 'source1' },
       { id: 'source2' },
@@ -67,11 +68,11 @@ describe('useGetKeyValues', () => {
 
   beforeEach(() => {
     // Reset mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // initialize metadata object
     mockMetadata = createMockMetadata();
-    jest.spyOn(metadataModule, 'getMetadata').mockReturnValue(mockMetadata);
+    vi.spyOn(metadataModule, 'getMetadata').mockReturnValue(mockMetadata);
 
     // Create a new QueryClient for each test
     queryClient = new QueryClient({
@@ -101,9 +102,9 @@ describe('useGetKeyValues', () => {
       },
     ];
 
-    jest
-      .spyOn(mockMetadata, 'getKeyValuesWithMVs')
-      .mockResolvedValue(mockKeyValues);
+    vi.spyOn(mockMetadata, 'getKeyValuesWithMVs').mockResolvedValue(
+      mockKeyValues,
+    );
 
     // Act
     const { result } = renderHook(
@@ -140,8 +141,7 @@ describe('useGetKeyValues', () => {
       'ResourceAttributes.environment',
     ];
 
-    jest
-      .spyOn(mockMetadata, 'getKeyValuesWithMVs')
+    vi.spyOn(mockMetadata, 'getKeyValuesWithMVs')
       .mockResolvedValueOnce([
         {
           key: "ResourceAttributes['service.name']",
@@ -178,9 +178,9 @@ describe('useGetKeyValues', () => {
         value: ['production', 'staging'],
       },
     ]);
-    expect(
-      jest.spyOn(mockMetadata, 'getKeyValuesWithMVs'),
-    ).toHaveBeenCalledTimes(2);
+    expect(vi.spyOn(mockMetadata, 'getKeyValuesWithMVs')).toHaveBeenCalledTimes(
+      2,
+    );
   });
 
   // Test case: Handling empty keys
@@ -201,7 +201,7 @@ describe('useGetKeyValues', () => {
     // Assert
     expect(result.current.isFetched).toBe(false);
     expect(
-      jest.spyOn(mockMetadata, 'getKeyValuesWithMVs'),
+      vi.spyOn(mockMetadata, 'getKeyValuesWithMVs'),
     ).not.toHaveBeenCalled();
   });
 
@@ -218,9 +218,9 @@ describe('useGetKeyValues', () => {
       },
     ];
 
-    jest
-      .spyOn(mockMetadata, 'getKeyValuesWithMVs')
-      .mockResolvedValue(mockKeyValues);
+    vi.spyOn(mockMetadata, 'getKeyValuesWithMVs').mockResolvedValue(
+      mockKeyValues,
+    );
 
     // Act
     const { result } = renderHook(
@@ -244,9 +244,9 @@ describe('useGetKeyValues', () => {
     const mockChartConfig = createMockChartConfig();
     const mockKeys = ['ResourceAttributes.service.name'];
 
-    jest
-      .spyOn(mockMetadata, 'getKeyValuesWithMVs')
-      .mockRejectedValue(new Error('Fetch failed'));
+    vi.spyOn(mockMetadata, 'getKeyValuesWithMVs').mockRejectedValue(
+      new Error('Fetch failed'),
+    );
 
     // Act
     const { result } = renderHook(
@@ -302,7 +302,7 @@ describe('useGetKeyValues', () => {
   type LookupOutcome = KeyValues[] | Error;
   const mockLookups = {
     all: (...outcomes: LookupOutcome[]) => {
-      const spy = jest.spyOn(mockMetadata, 'streamAllKeyValues');
+      const spy = vi.spyOn(mockMetadata, 'streamAllKeyValues');
       for (const outcome of outcomes) {
         spy.mockImplementationOnce(async function* () {
           if (outcome instanceof Error) throw outcome;
@@ -312,7 +312,7 @@ describe('useGetKeyValues', () => {
       return spy;
     },
     exact: (...outcomes: LookupOutcome[]) => {
-      const spy = jest.spyOn(mockMetadata, 'getKeyValuesWithMVs');
+      const spy = vi.spyOn(mockMetadata, 'getKeyValuesWithMVs');
       for (const outcome of outcomes) {
         if (outcome instanceof Error) spy.mockRejectedValueOnce(outcome);
         else spy.mockResolvedValueOnce(outcome);
@@ -353,8 +353,7 @@ describe('useGetKeyValues', () => {
     const slowSource = new Promise<void>(resolve => {
       releaseSlowSource = resolve;
     });
-    jest
-      .spyOn(mockMetadata, 'streamAllKeyValues')
+    vi.spyOn(mockMetadata, 'streamAllKeyValues')
       .mockImplementationOnce(async function* () {
         yield [{ key: keys[0], value: ['api'] }];
       })
@@ -386,8 +385,7 @@ describe('useGetKeyValues', () => {
       releaseSlowQuery = resolve;
     });
     let isSlowQueryWaiting = false;
-    jest
-      .spyOn(mockMetadata, 'streamAllKeyValues')
+    vi.spyOn(mockMetadata, 'streamAllKeyValues')
       .mockImplementationOnce(async function* () {
         yield [{ key: keys[0], value: ['api'] }];
       })
@@ -511,7 +509,7 @@ describe('useGetKeyValues', () => {
 
   it('applies the filter key limit to each Map column separately', async () => {
     queryClient.setQueryData(['me'], { team: { filterKeysFetchLimit: 2 } });
-    const getKeyValuesWithMVs = jest
+    const getKeyValuesWithMVs = vi
       .spyOn(mockMetadata, 'getKeyValuesWithMVs')
       .mockResolvedValue([]);
     const conditionFor = (key: string): FilterState => ({
@@ -554,7 +552,7 @@ describe('useGetKeyValues', () => {
   });
 
   it('passes no keyConditions when none are given', async () => {
-    const getKeyValuesWithMVs = jest
+    const getKeyValuesWithMVs = vi
       .spyOn(mockMetadata, 'getKeyValuesWithMVs')
       .mockResolvedValue([]);
 
@@ -583,7 +581,7 @@ describe('useGetKeyValues', () => {
   });
 
   it('should be in a loading state while fetching sources', async () => {
-    jest.mocked(useSources).mockReturnValue({
+    vi.mocked(useSources).mockReturnValue({
       data: undefined,
       isLoading: true,
       isFetching: true,
@@ -605,7 +603,7 @@ describe('useGetKeyValues', () => {
 
     // Assert
     expect(
-      jest.spyOn(mockMetadata, 'getKeyValuesWithMVs'),
+      vi.spyOn(mockMetadata, 'getKeyValuesWithMVs'),
     ).not.toHaveBeenCalled();
     await waitFor(() => expect(result.current.isLoading).toBe(true));
   });
@@ -657,22 +655,20 @@ describe('useMultipleAllFields', () => {
   let team: { fieldMetadataDisabled?: boolean };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     team = {};
     mockMetadata = createMockMetadata();
-    jest.spyOn(metadataModule, 'getMetadata').mockReturnValue(mockMetadata);
-    jest.spyOn(api, 'useMe').mockImplementation(
+    vi.spyOn(metadataModule, 'getMetadata').mockReturnValue(mockMetadata);
+    vi.spyOn(api, 'useMe').mockImplementation(
       () =>
         ({
           data: { team },
           isFetched: true,
         }) as any,
     );
-    jest
-      .spyOn(mockMetadata, 'getColumns')
-      .mockImplementation(async ({ tableName }) =>
-        tableName === 'table_a' ? columnsA : columnsB,
-      );
+    vi.spyOn(mockMetadata, 'getColumns').mockImplementation(
+      async ({ tableName }) => (tableName === 'table_a' ? columnsA : columnsB),
+    );
 
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -683,9 +679,8 @@ describe('useMultipleAllFields', () => {
   });
 
   it('returns the other table connections and no error when only some fail', async () => {
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest
-      .spyOn(mockMetadata, 'getAllFields')
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(mockMetadata, 'getAllFields')
       .mockResolvedValueOnce(fieldsA)
       .mockRejectedValueOnce(new Error('connection refused'));
 
@@ -706,7 +701,7 @@ describe('useMultipleAllFields', () => {
   });
 
   it('falls back to each connection timestampValueExpression when none is passed', async () => {
-    const getAllFields = jest
+    const getAllFields = vi
       .spyOn(mockMetadata, 'getAllFields')
       .mockResolvedValue(fieldsA);
 
@@ -732,8 +727,7 @@ describe('useMultipleAllFields', () => {
   });
 
   it('should deduplicate fields across successful connections', async () => {
-    jest
-      .spyOn(mockMetadata, 'getAllFields')
+    vi.spyOn(mockMetadata, 'getAllFields')
       .mockResolvedValueOnce(fieldsA)
       .mockResolvedValueOnce(fieldsB);
 
@@ -752,8 +746,7 @@ describe('useMultipleAllFields', () => {
   });
 
   it('should return empty array when all connections fail', async () => {
-    jest
-      .spyOn(mockMetadata, 'getAllFields')
+    vi.spyOn(mockMetadata, 'getAllFields')
       .mockRejectedValueOnce(new Error('fail 1'))
       .mockRejectedValueOnce(new Error('fail 2'));
 
@@ -770,10 +763,9 @@ describe('useMultipleAllFields', () => {
   });
 
   it('should log a warning for each failed connection', async () => {
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    jest
-      .spyOn(mockMetadata, 'getAllFields')
+    vi.spyOn(mockMetadata, 'getAllFields')
       .mockResolvedValueOnce(fieldsA)
       .mockRejectedValueOnce(new Error('timeout'));
 
@@ -792,7 +784,7 @@ describe('useMultipleAllFields', () => {
   });
 
   it('should skip deduplication for a single connection', async () => {
-    jest.spyOn(mockMetadata, 'getAllFields').mockResolvedValueOnce(fieldsA);
+    vi.spyOn(mockMetadata, 'getAllFields').mockResolvedValueOnce(fieldsA);
 
     const { result } = renderHook(() => useMultipleAllFields([tcA]), {
       wrapper,
@@ -807,7 +799,7 @@ describe('useMultipleAllFields', () => {
   // while the source is still loading, so an unpopulated connection must never
   // reach `getAllFields` — it would issue `DESCRIBE .` with no connection id.
   it('should not fetch for an unpopulated table connection', async () => {
-    const getAllFields = jest.spyOn(mockMetadata, 'getAllFields');
+    const getAllFields = vi.spyOn(mockMetadata, 'getAllFields');
 
     const { result } = renderHook(
       () =>
@@ -822,7 +814,7 @@ describe('useMultipleAllFields', () => {
   });
 
   it('should not fetch for an unpopulated table connection even when the caller passes enabled: true', async () => {
-    const getAllFields = jest.spyOn(mockMetadata, 'getAllFields');
+    const getAllFields = vi.spyOn(mockMetadata, 'getAllFields');
 
     const { result } = renderHook(
       () =>
@@ -838,7 +830,7 @@ describe('useMultipleAllFields', () => {
   });
 
   it('should still honor a caller opting out with enabled: false', async () => {
-    const getAllFields = jest
+    const getAllFields = vi
       .spyOn(mockMetadata, 'getAllFields')
       .mockResolvedValue(fieldsA);
 
@@ -852,11 +844,9 @@ describe('useMultipleAllFields', () => {
   });
 
   it('returns the fields and columns of each table connection in input order', async () => {
-    jest
-      .spyOn(mockMetadata, 'getAllFields')
-      .mockImplementation(async ({ tableName }) =>
-        tableName === 'table_a' ? fieldsA : fieldsB,
-      );
+    vi.spyOn(mockMetadata, 'getAllFields').mockImplementation(
+      async ({ tableName }) => (tableName === 'table_a' ? fieldsA : fieldsB),
+    );
 
     const { result } = renderHook(() => useMultipleAllFields([tcA, tcB]), {
       wrapper,
@@ -880,13 +870,13 @@ describe('useMultipleAllFields', () => {
   });
 
   it('fails closed when intersecting and one table connection fails', async () => {
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest
-      .spyOn(mockMetadata, 'getAllFields')
-      .mockImplementation(async ({ tableName }) => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(mockMetadata, 'getAllFields').mockImplementation(
+      async ({ tableName }) => {
         if (tableName === 'table_b') throw new Error('timeout');
         return fieldsA;
-      });
+      },
+    );
 
     const { result } = renderHook(
       () => useMultipleAllFields([tcA, tcB], { intersect: true }),
@@ -899,7 +889,7 @@ describe('useMultipleAllFields', () => {
 
   it('returns only columns when the team disables field metadata', async () => {
     team = { fieldMetadataDisabled: true };
-    const getAllFields = jest.spyOn(mockMetadata, 'getAllFields');
+    const getAllFields = vi.spyOn(mockMetadata, 'getAllFields');
 
     const { result } = renderHook(() => useMultipleAllFields([tcA]), {
       wrapper,
@@ -913,11 +903,9 @@ describe('useMultipleAllFields', () => {
   });
 
   it('keeps the same data reference across re-renders', async () => {
-    jest
-      .spyOn(mockMetadata, 'getAllFields')
-      .mockImplementation(async ({ tableName }) =>
-        tableName === 'table_a' ? fieldsA : fieldsB,
-      );
+    vi.spyOn(mockMetadata, 'getAllFields').mockImplementation(
+      async ({ tableName }) => (tableName === 'table_a' ? fieldsA : fieldsB),
+    );
     const tableConnections = [tcA, tcB];
 
     const { result, rerender } = renderHook(
@@ -935,7 +923,7 @@ describe('useMultipleAllFields', () => {
   });
 
   it('should fetch a populated table connection when the caller passes enabled: true', async () => {
-    jest.spyOn(mockMetadata, 'getAllFields').mockResolvedValueOnce(fieldsA);
+    vi.spyOn(mockMetadata, 'getAllFields').mockResolvedValueOnce(fieldsA);
 
     const { result } = renderHook(
       () => useMultipleAllFields([tcA], { enabled: true }),

@@ -4,6 +4,7 @@ import {
   DashboardContainer,
   DashboardFilter,
   DashboardFilterValue,
+  DashboardSchema,
   DashboardWithoutId,
   isPersistableUserId,
   OnboardingTaskId,
@@ -232,7 +233,7 @@ export function useDashboard({
 
   const [localDashboard, setLocalDashboard] = useQueryState(
     'dashboard',
-    parseAsJson<Dashboard>(),
+    parseAsJson<Dashboard>(DashboardSchema.passthrough().parse),
   );
 
   const updateDashboard = useUpdateDashboard();
@@ -254,7 +255,7 @@ export function useDashboard({
       enabled: dashboardId != null,
     });
 
-  const [isSetting, setIsSettingDashboard] = useState(false);
+  const [isSetting, setIsSetting] = useState(false);
 
   const isLocalDashboard = dashboardId == null;
 
@@ -293,14 +294,14 @@ export function useDashboard({
         }
         onSuccess?.();
       } else {
-        setIsSettingDashboard(true);
+        setIsSetting(true);
         return updateDashboard.mutate(newDashboard, {
           onSuccess: () => {
-            setIsSettingDashboard(false);
+            setIsSetting(false);
             onSuccess?.();
           },
           onError: e => {
-            setIsSettingDashboard(false);
+            setIsSetting(false);
             notifications.show({
               color: 'red',
               title: 'Unable to save dashboard',
@@ -349,12 +350,12 @@ export function useDeleteDashboard() {
   const invalidateTags = useInvalidateTags();
 
   return useMutation({
-    mutationFn: (id: string) => {
+    mutationFn: async (id: string) => {
       if (IS_LOCAL_MODE) {
         localDashboards.delete(id);
-        return Promise.resolve();
+        return;
       }
-      return hdxServer(`dashboards/${id}`, { method: 'DELETE' }).json<void>();
+      await hdxServer(`dashboards/${id}`, { method: 'DELETE' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dashboards'] });

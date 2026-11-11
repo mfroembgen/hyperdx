@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import request, { SuperAgentTest } from 'supertest';
+import request, { Agent } from 'supertest';
 
 import { getLoggedInAgent, getServer } from '@/fixtures';
 import Connection from '@/models/connection';
@@ -17,7 +17,7 @@ const MOCK_CONNECTION = {
 
 describe('External API v2 Connections', () => {
   const server = getServer();
-  let agent: SuperAgentTest;
+  let agent: Agent;
   let team: ITeam;
   let user: IUser;
 

@@ -981,7 +981,9 @@ export function DBTraceWaterfallChartContainer({
     aliasWith: WithClause[];
   };
 
-  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [showSpanEvents, setShowSpanEvents] = useState(true);
   const [showSpans, setShowSpans] = useState(true);
   const [showLogs, setShowLogs] = useState(true);

@@ -16,35 +16,41 @@ import z from 'zod';
 import { objectIdSchema } from '@/utils/zod';
 
 // ISource is a discriminated union (inherits from TSource) with team added
-// and connection widened to ObjectId | string for Mongoose.
+// and stored team/connection references represented as BSON ObjectIds.
 // Omit and & distribute over the union, preserving the discriminated structure.
 // Schema exists purely to derive ISource / ISourceInput via `typeof` below; the
 // runtime value is intentionally never parsed, so no-unused-vars is a false positive here.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ISourceSchema = z.discriminatedUnion('kind', [
+
+const storedObjectId = objectIdSchema
+  .or(z.instanceof(mongoose.Types.ObjectId))
+  .transform(value =>
+    typeof value === 'string' ? new mongoose.Types.ObjectId(value) : value,
+  );
+
+const _ISourceSchema = z.discriminatedUnion('kind', [
   LogSourceSchema.omit({ connection: true }).extend({
-    team: objectIdSchema,
-    connection: objectIdSchema.or(z.string()),
+    team: storedObjectId,
+    connection: storedObjectId,
   }),
   TraceSourceSchema.omit({ connection: true }).extend({
-    team: objectIdSchema,
-    connection: objectIdSchema.or(z.string()),
+    team: storedObjectId,
+    connection: storedObjectId,
   }),
   SessionSourceSchema.omit({ connection: true }).extend({
-    team: objectIdSchema,
-    connection: objectIdSchema.or(z.string()),
+    team: storedObjectId,
+    connection: storedObjectId,
   }),
   MetricSourceSchema.omit({ connection: true }).extend({
-    team: objectIdSchema,
-    connection: objectIdSchema.or(z.string()),
+    team: storedObjectId,
+    connection: storedObjectId,
   }),
   PromqlSourceSchema.omit({ connection: true }).extend({
-    team: objectIdSchema,
-    connection: objectIdSchema.or(z.string()),
+    team: storedObjectId,
+    connection: storedObjectId,
   }),
 ]);
-export type ISource = z.infer<typeof ISourceSchema>;
-export type ISourceInput = z.input<typeof ISourceSchema>;
+export type ISource = z.infer<typeof _ISourceSchema>;
+export type ISourceInput = z.input<typeof _ISourceSchema>;
 
 export type SourceDocument = mongoose.HydratedDocument<ISource>;
 

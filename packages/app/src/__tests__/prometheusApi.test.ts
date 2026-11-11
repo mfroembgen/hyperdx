@@ -1,13 +1,13 @@
-const get = jest.fn();
-const post = jest.fn();
+import { vi } from 'vitest';
+const { get, post } = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
 
 // The suite-wide ky mock answers every verb with an empty object, which is
 // enough for callers that ignore the response but not for reading back the
 // request this module builds.
-jest.mock('ky-universal', () => {
-  const ky = jest.fn();
+vi.mock('ky', () => {
+  const ky = vi.fn();
   Object.assign(ky, { create: () => ({ get, post }), extend: () => ky });
-  return ky;
+  return { default: ky };
 });
 
 import { prometheusApi } from '@/api';

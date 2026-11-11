@@ -1,4 +1,5 @@
 import { WebhookService } from '@hyperdx/common-utils/dist/types';
+import { vi } from 'vitest';
 
 import { createHandlebarsWithHelpers } from '@/tasks/checkAlerts/transports';
 import * as validators from '@/utils/validators';
@@ -129,23 +130,23 @@ describe('validators', () => {
   });
 
   describe('validateWebhookUrl', () => {
-    const loadValidatorsWithConfig = (config: {
+    const loadValidatorsWithConfig = async (config: {
       clickhouseHost?: string;
       hostnameAllowlist?: string;
-    }): typeof validators => {
+    }): Promise<typeof validators> => {
       let isolatedValidators: typeof validators | undefined;
 
-      jest.isolateModules(() => {
-        jest.doMock('@/config', () => ({
+      {
+        vi.resetModules();
+        vi.doMock('@/config', () => ({
           CLICKHOUSE_HOST: config.clickhouseHost,
           MONGO_URI: undefined,
           WEBHOOK_HOSTNAME_ALLOWLIST: config.hostnameAllowlist ?? '',
         }));
 
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, n/no-missing-require
-        isolatedValidators = require('@/utils/validators');
-      });
-      jest.dontMock('@/config');
+        isolatedValidators = await import('@/utils/validators.js');
+      }
+      vi.doUnmock('@/config');
 
       return isolatedValidators!;
     };
@@ -225,8 +226,8 @@ describe('validators', () => {
       );
     });
 
-    it('blocks an exact configured host, including its port', () => {
-      const isolatedValidators = loadValidatorsWithConfig({
+    it('blocks an exact configured host, including its port', async () => {
+      const isolatedValidators = await loadValidatorsWithConfig({
         clickhouseHost: 'http://localhost:8123',
         hostnameAllowlist: 'localhost',
       });
@@ -246,8 +247,8 @@ describe('validators', () => {
       ).not.toThrow();
     });
 
-    it('allows a configured hostname and its subdomains regardless of URL port or path', () => {
-      const isolatedValidators = loadValidatorsWithConfig({
+    it('allows a configured hostname and its subdomains regardless of URL port or path', async () => {
+      const isolatedValidators = await loadValidatorsWithConfig({
         hostnameAllowlist: 'HOOKS.LOCALHOST.',
       });
 
@@ -265,8 +266,8 @@ describe('validators', () => {
       }
     });
 
-    it('allows exact private IP literals regardless of URL port or path', () => {
-      const isolatedValidators = loadValidatorsWithConfig({
+    it('allows exact private IP literals regardless of URL port or path', async () => {
+      const isolatedValidators = await loadValidatorsWithConfig({
         hostnameAllowlist: '10.0.0.1, fd00::1',
       });
 
@@ -283,8 +284,8 @@ describe('validators', () => {
       }
     });
 
-    it('does not confuse hostname prefixes or URL paths with an allowlisted domain', () => {
-      const isolatedValidators = loadValidatorsWithConfig({
+    it('does not confuse hostname prefixes or URL paths with an allowlisted domain', async () => {
+      const isolatedValidators = await loadValidatorsWithConfig({
         hostnameAllowlist: 'hooks.localhost',
       });
 
@@ -302,8 +303,8 @@ describe('validators', () => {
       }
     });
 
-    it('does not confuse IP prefixes or URL paths with an allowlisted IP', () => {
-      const isolatedValidators = loadValidatorsWithConfig({
+    it('does not confuse IP prefixes or URL paths with an allowlisted IP', async () => {
+      const isolatedValidators = await loadValidatorsWithConfig({
         hostnameAllowlist: '10.0.0.1, fd00::1',
       });
 

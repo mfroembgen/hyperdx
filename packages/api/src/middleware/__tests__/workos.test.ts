@@ -14,7 +14,7 @@ import User from '@/models/user';
 import type { WorkosConfig } from '@/utils/workosConfig';
 import { resolveWorkosUser } from '@/utils/workosIdentity';
 
-const fixture = {
+const fixture = vi.hoisted(() => ({
   settings: {
     apiKey: 'fixture-key',
     clientId: 'client_app',
@@ -29,22 +29,16 @@ const fixture = {
       'https://app.example.com/.well-known/oauth-protected-resource/api/mcp',
   } satisfies WorkosConfig,
   enabled: true,
-  getUser: jest.fn(),
-};
-jest.mock('@/config', () => ({
-  ...jest.requireActual<typeof import('@/config')>('@/config'),
+  getUser: vi.fn(),
+}));
+vi.mock('@/config', async () => ({
+  ...(await vi.importActual<typeof import('@/config')>('@/config')),
   get WORKOS() {
     return fixture.enabled ? fixture.settings : undefined;
   },
 }));
-jest.mock('@/utils/workosClient', () => ({
-  workos: {
-    userManagement: {
-      get getUser() {
-        return fixture.getUser;
-      },
-    },
-  },
+vi.mock('@/utils/workosClient', () => ({
+  workos: { userManagement: { getUser: fixture.getUser } },
 }));
 
 describe('WorkOS identity and MCP boundary', () => {
@@ -55,10 +49,10 @@ describe('WorkOS identity and MCP boundary', () => {
     workosIssuer: 'https://identity.example.com',
     workosSubject: 'user_member',
   });
-  const find = jest.spyOn(User, 'findOne');
-  const bind = jest.spyOn(User, 'findOneAndUpdate');
-  const team = jest.spyOn(Team, 'exists');
-  jest.spyOn(User, 'init').mockResolvedValue(user);
+  const find = vi.spyOn(User, 'findOne');
+  const bind = vi.spyOn(User, 'findOneAndUpdate');
+  const team = vi.spyOn(Team, 'exists');
+  vi.spyOn(User, 'init').mockResolvedValue(user);
   let privateKey: CryptoKey;
   let forged: CryptoKey;
   const app = express();
@@ -93,18 +87,16 @@ describe('WorkOS identity and MCP boundary', () => {
     privateKey = keys.privateKey;
     forged = (await generateKeyPair('RS256')).privateKey;
     const jwk = await exportJWK(keys.publicKey);
-    jest.mocked(global.fetch).mockImplementation(
+    vi.mocked(global.fetch).mockImplementation(
       async () =>
         new Response(
-          JSON.stringify({
-            keys: [{ ...jwk, kid: 'fixture', alg: 'RS256' }],
-          }),
+          JSON.stringify({ keys: [{ ...jwk, kid: 'fixture', alg: 'RS256' }] }),
         ),
     );
   });
   beforeEach(() => {
     fixture.enabled = true;
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     find.mockReset().mockResolvedValue(user);
     bind.mockReset().mockResolvedValue(null);
     team.mockReset().mockResolvedValue({ _id: teamId });

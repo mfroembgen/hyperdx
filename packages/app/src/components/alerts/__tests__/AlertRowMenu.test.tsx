@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { vi } from 'vitest';
 import {
   AlertSource,
   AlertThresholdType,
@@ -11,9 +12,9 @@ import userEvent from '@testing-library/user-event';
 import { AlertRowMenu } from '@/components/alerts/AlertRowMenu';
 import type { AlertsPageItem } from '@/types';
 
-const mutateAsync = jest.fn().mockResolvedValue({});
+const mutateAsync = vi.fn().mockResolvedValue({});
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useDeleteAlert: () => ({ mutateAsync }),
@@ -23,29 +24,30 @@ jest.mock('@/api', () => ({
   },
 }));
 
-jest.mock('@/config', () => ({
+vi.mock('@/config', () => ({
   IS_IAC_EXPORT_ENABLED: true,
+  IS_DEV: false,
   BASE_PATH: '',
 }));
 
 // The edit modal pulls in the whole alert form (queries, editors, target
 // picker); this suite is about the menu, so stub it down to an open/closed
 // marker.
-jest.mock('@/components/alerts/EditAlertModal', () => ({
+vi.mock('@/components/alerts/EditAlertModal', () => ({
   EditAlertModal: ({ opened }: { opened: boolean }) =>
     opened ? <div data-testid="edit-alert-modal" /> : null,
 }));
 
 // The inline editor mounts the whole chart editor; this suite only cares
 // which of the two modals the menu opens.
-jest.mock('@/components/alerts/EditInlineAlertModal', () => ({
+vi.mock('@/components/alerts/EditInlineAlertModal', () => ({
   EditInlineAlertModal: ({ opened }: { opened: boolean }) =>
     opened ? <div data-testid="edit-inline-alert-modal" /> : null,
 }));
 
-const confirm = jest.fn().mockResolvedValue(true);
-jest.mock('@/useConfirm', () => ({ useConfirm: () => confirm }));
-jest.mock('@/theme/ThemeProvider', () => ({
+const confirm = vi.fn().mockResolvedValue(true);
+vi.mock('@/useConfirm', () => ({ useConfirm: () => confirm }));
+vi.mock('@/theme/ThemeProvider', () => ({
   useBrandDisplayName: () => 'HyperDX',
 }));
 

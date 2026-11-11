@@ -45,11 +45,17 @@ export class FilterComponent {
   }
 
   /**
-   * Open/expand a filter group (toggles — may close if already open)
+   * Open a filter group without toggling a value when it is already expanded.
    */
   async openFilterGroup(filterName: string) {
-    const group = this.getFilterGroup(filterName);
-    await group.click();
+    await this.openGroup(this.getFilterGroup(filterName));
+  }
+
+  private async openGroup(group: Locator) {
+    const control = group.locator('[data-accordion-control]').first();
+    if ((await control.getAttribute('aria-expanded')) !== 'true') {
+      await control.click();
+    }
     // The group animates open or closed. A row scrolled into view mid-animation
     // can slide back out of the panel, hiding any menu anchored to it, so wait
     // until the group's height holds still.
@@ -350,7 +356,7 @@ export class FilterComponent {
           : `filter-checkbox-${columnName}-${sampleValue}`;
       const child = this.page.getByTestId(childTestid);
       if (!(await child.isVisible().catch(() => false))) {
-        await this.page.getByTestId(groupTestids[i]).click();
+        await this.openGroup(this.page.getByTestId(groupTestids[i]));
         await child.waitFor({ state: 'visible', timeout: 10000 });
       }
     }

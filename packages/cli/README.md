@@ -14,12 +14,12 @@ browser.
 ## Install
 
 ```bash
-npm install -g @hyperdx/cli    # installs the `hdx` binary
+bun add --global @hyperdx/cli    # installs the `hdx` binary
 # or run without installing:
-npx @hyperdx/cli --help
+bunx --bun @hyperdx/cli --help
 ```
 
-Requires Node.js >= 22.16.
+Requires Bun >= 1.4.4.
 
 ## Quickstart
 
@@ -220,7 +220,7 @@ Upload JavaScript source maps to HyperDX for stack trace de-obfuscation. Run it
 in your build pipeline:
 
 ```bash
-npx @hyperdx/cli upload-sourcemaps \
+bunx --bun @hyperdx/cli upload-sourcemaps \
   --serviceKey "$HYPERDX_API_ACCESS_KEY" \
   --apiUrl "$HYPERDX_API_URL" \
   --path .next \

@@ -14,7 +14,6 @@ import crypto from 'crypto';
 import express from 'express';
 import pick from 'lodash/pick';
 import { z } from 'zod';
-import { processRequest, validateRequest } from 'zod-express-middleware';
 
 import {
   getTags,
@@ -30,6 +29,7 @@ import {
   findUsersByTeam,
 } from '@/controllers/user';
 import { getNonNullUserWithTeam } from '@/middleware/auth';
+import { processRequest, validateRequest } from '@/middleware/validation';
 import TeamInvite from '@/models/teamInvite';
 import { sendJson } from '@/utils/serialization';
 import { objectIdSchema } from '@/utils/zod';

@@ -1,12 +1,14 @@
+import { SourceKind } from '@hyperdx/common-utils/dist/types';
+import { vi } from 'vitest';
 // Mock heavy dependencies that break in unit-test context (no ClickHouse/Mongo)
-jest.mock('@/models/source', () => ({}));
-jest.mock('@/controllers/sources', () => ({}));
-jest.mock('@/controllers/connection', () => ({}));
-jest.mock('@/utils/trimToolResponse', () => ({
+vi.mock('@/models/source', () => ({}));
+vi.mock('@/controllers/sources', () => ({}));
+vi.mock('@/controllers/connection', () => ({}));
+vi.mock('@/utils/trimToolResponse', () => ({
   trimToolResponse: (data: unknown) => ({ data, isTrimmed: false }),
 }));
 
-import { ClickHouseError } from '@clickhouse/client-common';
+import { ClickHouseError } from '@clickhouse/client';
 import {
   MacroExpansionError,
   UnknownVariableError,
@@ -1310,7 +1312,7 @@ describe('annotateIncreaseTopNHint', () => {
 
 describe('assertSourceKindMatchesSelect', () => {
   it('returns null when metric select runs against a metric source', () => {
-    const source = { kind: 'metric' };
+    const source = { kind: SourceKind.Metric as const };
     const select = [
       {
         aggFn: 'avg',
@@ -1322,13 +1324,13 @@ describe('assertSourceKindMatchesSelect', () => {
   });
 
   it('returns null when non-metric select runs against a trace source', () => {
-    const source = { kind: 'trace' };
+    const source = { kind: SourceKind.Trace as const };
     const select = [{ aggFn: 'count' }];
     expect(assertSourceKindMatchesSelect(source, select)).toBeNull();
   });
 
   it('errors when metric params target a non-metric source', () => {
-    const source = { kind: 'trace' };
+    const source = { kind: SourceKind.Trace as const };
     const select = [
       {
         aggFn: 'avg',
@@ -1343,7 +1345,7 @@ describe('assertSourceKindMatchesSelect', () => {
   });
 
   it('errors when a metric source receives select items without metricType', () => {
-    const source = { kind: 'metric' };
+    const source = { kind: SourceKind.Metric as const };
     const select = [{ aggFn: 'avg', valueExpression: 'Value' }];
     const result = assertSourceKindMatchesSelect(source, select);
     expect(result?.isError).toBe(true);
@@ -1352,7 +1354,7 @@ describe('assertSourceKindMatchesSelect', () => {
   });
 
   it('counts only items whose metricType is a non-empty string', () => {
-    const source = { kind: 'trace' };
+    const source = { kind: SourceKind.Trace as const };
     // Items with empty/missing metricType should not trip the check
     expect(
       assertSourceKindMatchesSelect(source, [
@@ -1366,15 +1368,23 @@ describe('assertSourceKindMatchesSelect', () => {
     // Raw-string selects bypass the metric-annotation check; the
     // renderer handles them directly.
     expect(
-      assertSourceKindMatchesSelect({ kind: 'metric' }, 'count()'),
+      assertSourceKindMatchesSelect(
+        { kind: SourceKind.Metric as const },
+        'count()',
+      ),
     ).toBeNull();
   });
 
   it('returns null when select is not an array', () => {
     expect(
-      assertSourceKindMatchesSelect({ kind: 'trace' }, undefined),
+      assertSourceKindMatchesSelect(
+        { kind: SourceKind.Trace as const },
+        undefined,
+      ),
     ).toBeNull();
-    expect(assertSourceKindMatchesSelect({ kind: 'trace' }, null)).toBeNull();
+    expect(
+      assertSourceKindMatchesSelect({ kind: SourceKind.Trace as const }, null),
+    ).toBeNull();
   });
 });
 

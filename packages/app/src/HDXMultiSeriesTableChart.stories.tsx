@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Meta } from '@storybook/nextjs';
+import type { Meta } from '@storybook/react-vite';
 
 import { TooltipItem } from './HDXMultiSeriesTimeChart';
 

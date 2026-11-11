@@ -1,5 +1,5 @@
 import React from 'react';
-import produce from 'immer';
+import { produce } from 'immer';
 import { useAtom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -9,7 +10,7 @@ describe('HiddenSeriesIndicator', () => {
       <HiddenSeriesIndicator
         hiddenSeriesCount={0}
         renderedSeriesCount={100}
-        onLoadAll={jest.fn()}
+        onLoadAll={vi.fn()}
       />,
     );
     // No warning icon/button when nothing is hidden.
@@ -27,7 +28,7 @@ describe('HiddenSeriesIndicator', () => {
   });
 
   it('renders a clickable load-all button and fires onLoadAll', async () => {
-    const onLoadAll = jest.fn();
+    const onLoadAll = vi.fn();
     renderWithMantine(
       <HiddenSeriesIndicator
         hiddenSeriesCount={900}

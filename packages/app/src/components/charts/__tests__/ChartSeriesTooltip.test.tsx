@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -50,7 +51,7 @@ describe('ChartSeriesTooltip', () => {
   });
 
   it('renders a clickable load-all button and fires onLoadAllSeries', async () => {
-    const onLoadAllSeries = jest.fn();
+    const onLoadAllSeries = vi.fn();
     renderWithMantine(
       <ChartSeriesTooltip
         {...baseProps}
@@ -168,8 +169,8 @@ describe('ChartSeriesTooltip', () => {
   });
 
   it('focuses a series and dismisses the tooltip when Focus is clicked', () => {
-    const onFocusSeries = jest.fn();
-    const onDismiss = jest.fn();
+    const onFocusSeries = vi.fn();
+    const onDismiss = vi.fn();
 
     renderWithMantine(
       <ChartSeriesTooltip
@@ -208,15 +209,15 @@ describe('ChartSeriesTooltip', () => {
       <ChartSeriesTooltip
         {...baseProps}
         activePayload={multiSeriesPayload}
-        onShowAllSeries={jest.fn()}
+        onShowAllSeries={vi.fn()}
       />,
     );
     expect(screen.getByTestId('chart-show-all-series')).toBeInTheDocument();
   });
 
   it('clears the focus and dismisses when "Show All Series" is clicked', () => {
-    const onShowAllSeries = jest.fn();
-    const onDismiss = jest.fn();
+    const onShowAllSeries = vi.fn();
+    const onDismiss = vi.fn();
 
     renderWithMantine(
       <ChartSeriesTooltip
@@ -245,8 +246,8 @@ describe('ChartSeriesTooltip', () => {
       dataKey ? entriesByKey[dataKey] : undefined;
 
     it('filters on a series and dismisses the tooltip', () => {
-      const onFilterSeries = jest.fn();
-      const onDismiss = jest.fn();
+      const onFilterSeries = vi.fn();
+      const onDismiss = vi.fn();
       renderWithMantine(
         <ChartSeriesTooltip
           {...baseProps}
@@ -263,7 +264,7 @@ describe('ChartSeriesTooltip', () => {
     });
 
     it('offers exclude only for a series with one entry', () => {
-      const onFilterSeries = jest.fn();
+      const onFilterSeries = vi.fn();
       renderWithMantine(
         <ChartSeriesTooltip
           {...baseProps}
@@ -287,7 +288,7 @@ describe('ChartSeriesTooltip', () => {
           {...baseProps}
           activePayload={multiSeriesPayload}
           getSeriesFilters={() => undefined}
-          onFilterSeries={jest.fn()}
+          onFilterSeries={vi.fn()}
         />,
       );
       expect(screen.queryByTestId('chart-filter-series-error')).toBeNull();
@@ -309,7 +310,7 @@ describe('ChartSeriesTooltip', () => {
           {...baseProps}
           activePayload={singleSeriesPayload}
           getSeriesFilters={() => [{ key: 'ServiceName', value: 'api' }]}
-          onFilterSeries={jest.fn()}
+          onFilterSeries={vi.fn()}
         />,
       );
 

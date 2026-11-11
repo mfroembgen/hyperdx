@@ -1,3 +1,4 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import { MetricsDataType, SourceKind } from '@hyperdx/common-utils/dist/types';
 
 import {
@@ -39,7 +40,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
           {
             name: 'My Tile',
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -69,7 +70,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
           {
             name: 'Tile',
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -100,7 +101,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
           {
             name: 'Count Tile',
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -124,7 +125,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
 
   it('should save and query a metric formula tile', async () => {
     const metricSource = await Source.create({
-      kind: SourceKind.Metric,
+      kind: SourceKind.Metric as const,
       team: ctx.team._id,
       from: { databaseName: DEFAULT_DATABASE, tableName: '' },
       metricTables: {
@@ -162,7 +163,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
           {
             name: 'Error rate',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId: metricSource._id.toString(),
               select: [
                 {
@@ -218,7 +219,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
     // metric formulas (inline single-scan SELECT vs the composed query),
     // so cover them end-to-end: save → round-trip → query_tile.
     const logSource = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: ctx.team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -256,7 +257,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
           {
             name: 'Log error rate',
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId: logSource._id.toString(),
               select: [
                 {
@@ -299,7 +300,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
 
   it('should reject a formula tile on a formula-incapable source kind', async () => {
     const sessionSource = await Source.create({
-      kind: SourceKind.Session,
+      kind: SourceKind.Session as const,
       team: ctx.team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -317,7 +318,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
         {
           name: 'Formula on sessions',
           config: {
-            displayType: 'line',
+            displayType: DisplayType.Line,
             sourceId: sessionSource._id.toString(),
             select: [
               { aggFn: 'count', alias: 'A' },
@@ -337,7 +338,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
 
   it('should reject a formula referencing an unknown series', async () => {
     const metricSource = await Source.create({
-      kind: SourceKind.Metric,
+      kind: SourceKind.Metric as const,
       team: ctx.team._id,
       from: { databaseName: DEFAULT_DATABASE, tableName: '' },
       metricTables: {
@@ -354,7 +355,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
         {
           name: 'Unknown ref',
           config: {
-            displayType: 'line',
+            displayType: DisplayType.Line,
             sourceId: metricSource._id.toString(),
             select: [
               {
@@ -375,7 +376,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
 
   it('should save and query an exponential histogram tile', async () => {
     const metricSource = await Source.create({
-      kind: SourceKind.Metric,
+      kind: SourceKind.Metric as const,
       team: ctx.team._id,
       from: { databaseName: DEFAULT_DATABASE, tableName: '' },
       metricTables: {
@@ -407,7 +408,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
           {
             name: 'P95 Duration',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId: metricSource._id.toString(),
               select: [
                 {
@@ -440,7 +441,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
 
   it('returns time-bucketed rows for a series-mode heatmap tile', async () => {
     const logSource = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: ctx.team._id,
       from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
       timestampValueExpression: 'Timestamp',
@@ -514,7 +515,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
 
     it('queries a grouped bar tile over an exponential histogram', async () => {
       const metricSource = await Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: ctx.team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: '' },
         metricTables: {
@@ -551,7 +552,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
             {
               name: 'P95 by route',
               config: {
-                displayType: 'bar',
+                displayType: DisplayType.Bar,
                 sourceId: metricSource._id.toString(),
                 groupBy: "Attributes['route']",
                 select: [
@@ -596,7 +597,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
 
     it('queries a grouped bar tile over a (regular) histogram', async () => {
       const metricSource = await Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: ctx.team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: '' },
         metricTables: {
@@ -639,7 +640,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
             {
               name: 'P95 by route',
               config: {
-                displayType: 'bar',
+                displayType: DisplayType.Bar,
                 sourceId: metricSource._id.toString(),
                 groupBy: "Attributes['route']",
                 select: [
@@ -690,7 +691,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
               name: 'Static SQL',
               config: {
                 configType: 'sql',
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 connectionId,
                 // Runs fine against ClickHouse but uses no time-range /
                 // filter / source macros.
@@ -735,7 +736,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
               name: 'Macro SQL',
               config: {
                 configType: 'sql',
-                displayType: 'table',
+                displayType: DisplayType.Table,
                 connectionId,
                 sourceId,
                 sqlTemplate:
@@ -771,7 +772,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
 
     beforeEach(async () => {
       const logSource = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: ctx.team._id,
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -838,7 +839,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
       name: 'Rows by service',
       config: {
         configType: 'sql',
-        displayType: 'table',
+        displayType: DisplayType.Table,
         connectionId: ctx.connection._id.toString(),
         sourceId: logSourceId,
         sqlTemplate:
@@ -852,7 +853,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
     const builderTile = () => ({
       name: 'Rows by service (builder)',
       config: {
-        displayType: 'table',
+        displayType: DisplayType.Table,
         sourceId: logSourceId,
         groupBy: 'ServiceName',
         select: [
@@ -1048,7 +1049,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
           name: 'Typo',
           config: {
             configType: 'sql',
-            displayType: 'table',
+            displayType: DisplayType.Table,
             connectionId: ctx.connection._id.toString(),
             sourceId: logSourceId,
             sqlTemplate:
@@ -1094,7 +1095,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
         name: 'Rows by service (static)',
         config: {
           configType: 'sql',
-          displayType: 'table',
+          displayType: DisplayType.Table,
           connectionId: ctx.connection._id.toString(),
           sourceId: logSourceId,
           sqlTemplate:
@@ -1207,7 +1208,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
 
     beforeEach(async () => {
       const logSource = await Source.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: ctx.team._id,
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -1337,7 +1338,7 @@ describe('MCP Dashboard Tools - clickstack_query_tile', () => {
 
     it('applies a custom orderBy to a pie tile with a limit', async () => {
       const dashboard = await saveCategoricalDashboard({
-        displayType: 'pie',
+        displayType: DisplayType.Pie,
         limit: 3,
         orderBy: 'ServiceName DESC',
       });

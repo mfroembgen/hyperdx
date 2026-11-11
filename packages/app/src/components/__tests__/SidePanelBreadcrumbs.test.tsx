@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { MantineProvider } from '@mantine/core';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -6,7 +7,7 @@ import SidePanelBreadcrumbs, {
   BreadcrumbItem,
 } from '@/components/SidePanelBreadcrumbs';
 
-function renderCrumbs(items: BreadcrumbItem[], onBack = jest.fn()) {
+function renderCrumbs(items: BreadcrumbItem[], onBack = vi.fn()) {
   const utils = render(
     <MantineProvider>
       <SidePanelBreadcrumbs items={items} onBack={onBack} />
@@ -32,14 +33,14 @@ describe('SidePanelBreadcrumbs', () => {
   });
 
   it('invokes onClick for a non-last (ancestor) breadcrumb', () => {
-    const onClick = jest.fn();
+    const onClick = vi.fn();
     renderCrumbs([{ label: 'Ancestor', onClick }, { label: 'Current' }]);
     fireEvent.click(screen.getByText('Ancestor'));
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   it('does not make the last (current) item clickable', () => {
-    const onClick = jest.fn();
+    const onClick = vi.fn();
     // Even though onClick is supplied, the leaf is the current view.
     renderCrumbs([{ label: 'Ancestor' }, { label: 'Current', onClick }]);
     fireEvent.click(screen.getByText('Current'));

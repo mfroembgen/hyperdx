@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import {
   DashboardFilter,
   PromqlLabelDashboardFilter,
@@ -11,34 +12,37 @@ import { renderHook, waitFor } from '@testing-library/react';
 
 import { useDashboardFilterValues } from '@/hooks/useDashboardFilterValues';
 
-const mockGetKeyValues = jest.fn();
-const mockLabelValues = jest.fn();
+const mockGetKeyValues = vi.fn();
+const mockLabelValues = vi.fn();
 let mockSourcesData: Partial<TSource>[];
 
 // Only the PromQL client is stubbed; the rest of the module stays real,
 // since the ClickHouse client below reads `api.useMe` from it.
-jest.mock('@/api', () => ({
-  __esModule: true,
-  ...jest.requireActual('@/api'),
-  prometheusApi: {
-    labelValues: (...args: unknown[]) => mockLabelValues(...args),
-  },
-}));
+vi.mock('@/api', async () => {
+  const actualModule0 = await vi.importActual<typeof import('@/api')>('@/api');
+  return {
+    __esModule: true,
+    ...actualModule0,
+    prometheusApi: {
+      labelValues: (...args: unknown[]) => mockLabelValues(...args),
+    },
+  };
+});
 
 // Untyped factories, so partial mocks need no unsafe type assertions.
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   useSources: () => ({ data: mockSourcesData, isLoading: false }),
 }));
-jest.mock('../useMetadata', () => ({
+vi.mock('../useMetadata', () => ({
   useMetadataWithSettings: () => ({ getKeyValues: mockGetKeyValues }),
 }));
-jest.mock('@hyperdx/common-utils/dist/core/materializedViews', () => ({
-  optimizeGetKeyValuesCalls: jest
+vi.mock('@hyperdx/common-utils/dist/core/materializedViews', () => ({
+  optimizeGetKeyValuesCalls: vi
     .fn()
     .mockImplementation(async ({ keys, chartConfig }) => [
       { keys, chartConfig },
     ]),
-  optimizeFacetedKeyValuesConfig: jest
+  optimizeFacetedKeyValuesConfig: vi
     .fn()
     .mockImplementation(async ({ chartConfig }) => chartConfig),
 }));

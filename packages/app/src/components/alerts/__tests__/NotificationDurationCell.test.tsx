@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -27,8 +28,8 @@ describe('NotificationDurationCell', () => {
   // Aggregation keys on the webhook id, so two webhooks sharing a display
   // name are two legitimate entries. React only complains about the duplicate
   // key through console.error, so watch for it directly.
-  it('renders same-named targets as distinct rows without key collisions', () => {
-    const consoleError = jest
+  it('renders same-named targets as distinct rows without key collisions', async () => {
+    const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
     renderWithMantine(
@@ -55,7 +56,7 @@ describe('NotificationDurationCell', () => {
       />,
     );
 
-    expect(screen.getAllByText('Ops webhook')).toHaveLength(2);
+    expect(await screen.findAllByText('Ops webhook')).toHaveLength(2);
     // Scan every call rather than matching an argument list: React passes the
     // message as a format string plus substitutions, so a fixed-arity
     // toHaveBeenCalledWith matcher never matches and passes vacuously.
@@ -84,10 +85,8 @@ describe('NotificationDurationCell', () => {
     ).not.toBeInTheDocument();
   });
 
-  // Mantine's Collapse keeps its children mounted and hides them with height,
-  // so the breakdown is in the DOM either way — asserting on its content alone
-  // would pass without ever clicking. aria-expanded is the part jsdom can see
-  // change.
+  // Collapse prerenders its hidden children through Activity, so content alone
+  // does not prove it was expanded. aria-expanded tracks the toggle's state.
   it('toggles expansion', async () => {
     renderWithMantine(<NotificationDurationCell analytics={analytics} />);
     const toggle = screen.getByTestId('notification-duration-toggle');
@@ -99,10 +98,12 @@ describe('NotificationDurationCell', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('renders a row per target with its own duration', () => {
+  it('renders a row per target with its own duration', async () => {
     renderWithMantine(<NotificationDurationCell analytics={analytics} />);
 
-    const breakdown = screen.getByTestId('notification-duration-breakdown');
+    const breakdown = await screen.findByTestId(
+      'notification-duration-breakdown',
+    );
     expect(breakdown).toHaveTextContent('Team Slack');
     expect(breakdown).toHaveTextContent('Ops webhook');
     // The slow target's own time, which the collapsed total hides behind a
@@ -117,7 +118,7 @@ describe('NotificationDurationCell', () => {
   // The parent row toggles its own expansion on click, so the cell's expander
   // must not bubble into it.
   it('does not propagate the toggle click to the row', async () => {
-    const onRowClick = jest.fn();
+    const onRowClick = vi.fn();
     renderWithMantine(
       <div onClick={onRowClick}>
         <NotificationDurationCell analytics={analytics} />

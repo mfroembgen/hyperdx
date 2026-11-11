@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import produce from 'immer';
+import { produce } from 'immer';
 import { useHotkeys } from '@mantine/hooks';
 
 import { Dashboard } from '@/dashboard';

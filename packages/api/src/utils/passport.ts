@@ -24,7 +24,7 @@ passport.deserializeUser(function (id: string, done) {
       }
       done(null, user as UserDocument);
     })
-    .catch(done);
+    .catch(error => done(error));
 });
 
 // Use local passport strategy via passport-local-mongoose plugin

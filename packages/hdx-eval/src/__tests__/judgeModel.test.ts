@@ -1,6 +1,7 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
 import type { LanguageModel } from 'ai';
+import { type MockedFunction, vi } from 'vitest';
 
 import {
   DEFAULT_JUDGE_MODEL,
@@ -13,21 +14,23 @@ import {
 
 // Spy on the provider factories to capture the apiKey each judge is built with.
 // This lets us assert key-precedence without exposing secrets on the model.
-jest.mock('@ai-sdk/anthropic', () => {
-  const actual = jest.requireActual('@ai-sdk/anthropic');
-  return { ...actual, createAnthropic: jest.fn(actual.createAnthropic) };
+vi.mock('@ai-sdk/anthropic', async () => {
+  const actual =
+    await vi.importActual<typeof import('@ai-sdk/anthropic')>(
+      '@ai-sdk/anthropic',
+    );
+  return { ...actual, createAnthropic: vi.fn(actual.createAnthropic) };
 });
-jest.mock('@ai-sdk/openai', () => {
-  const actual = jest.requireActual('@ai-sdk/openai');
-  return { ...actual, createOpenAI: jest.fn(actual.createOpenAI) };
+vi.mock('@ai-sdk/openai', async () => {
+  const actual =
+    await vi.importActual<typeof import('@ai-sdk/openai')>('@ai-sdk/openai');
+  return { ...actual, createOpenAI: vi.fn(actual.createOpenAI) };
 });
 
-const mockCreateAnthropic = createAnthropic as jest.MockedFunction<
+const mockCreateAnthropic = createAnthropic as MockedFunction<
   typeof createAnthropic
 >;
-const mockCreateOpenAI = createOpenAI as jest.MockedFunction<
-  typeof createOpenAI
->;
+const mockCreateOpenAI = createOpenAI as MockedFunction<typeof createOpenAI>;
 
 function anthropicApiKeyArg(): string | undefined {
   return mockCreateAnthropic.mock.calls.at(-1)?.[0]?.apiKey;

@@ -1,5 +1,8 @@
+import { buildSearchChartConfig } from '@hyperdx/common-utils/dist/core/searchChartConfig';
+import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
+import { vi } from 'vitest';
 
 import { createAlert } from '@/controllers/alerts';
 import { createTeam } from '@/controllers/team';
@@ -25,13 +28,13 @@ const MOCK_SAVED_SEARCH: any = {
 };
 
 // Mock logger to suppress error output in tests for this file
-jest.mock('@/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   __esModule: true,
   default: {
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   },
 }));
 describe('DefaultAlertProvider', () => {
@@ -76,7 +79,7 @@ describe('DefaultAlertProvider', () => {
       const source = await Source.create({
         team: team._id,
         name: 'Test Source',
-        kind: 'log',
+        kind: SourceKind.Log as const,
         from: {
           databaseName: 'default',
           tableName: 'logs',
@@ -125,6 +128,19 @@ describe('DefaultAlertProvider', () => {
       // Type narrowing for SAVED_SEARCH alert
       if (result[0].alerts[0].taskType === AlertTaskType.SAVED_SEARCH) {
         expect(result[0].alerts[0].savedSearch.name).toBe('Test Search');
+        const taskSource = result[0].alerts[0].source;
+        const chartConfig = buildSearchChartConfig(
+          { ...taskSource, connection: taskSource.connection.toString() },
+          { where: savedSearch.where, select: savedSearch.select },
+        );
+        expect(chartConfig.from).toEqual({
+          databaseName: 'default',
+          tableName: 'logs',
+        });
+        expect(chartConfig.timestampValueExpression).toBe('timestamp');
+        expect(taskSource.id).toBe(source.id);
+        expect(taskSource.team.toString()).toBe(team.id);
+        expect(taskSource.connection).toBe(connection.id);
       }
     });
 
@@ -144,7 +160,7 @@ describe('DefaultAlertProvider', () => {
       const source = await Source.create({
         team: team._id,
         name: 'Test Source',
-        kind: 'log',
+        kind: SourceKind.Log as const,
         from: {
           databaseName: 'default',
           tableName: 'logs',
@@ -272,7 +288,7 @@ describe('DefaultAlertProvider', () => {
       const source = await Source.create({
         team: team._id,
         name: 'Test Source',
-        kind: 'log',
+        kind: SourceKind.Log as const,
         from: {
           databaseName: 'default',
           tableName: 'logs',
@@ -372,7 +388,7 @@ describe('DefaultAlertProvider', () => {
       const source1 = await Source.create({
         team: team._id,
         name: 'Source 1',
-        kind: 'log',
+        kind: SourceKind.Log as const,
         from: {
           databaseName: 'default',
           tableName: 'logs',
@@ -384,7 +400,7 @@ describe('DefaultAlertProvider', () => {
       const source2 = await Source.create({
         team: team._id,
         name: 'Source 2',
-        kind: 'log',
+        kind: SourceKind.Log as const,
         from: {
           databaseName: 'default',
           tableName: 'logs',
@@ -551,7 +567,7 @@ describe('DefaultAlertProvider', () => {
       const source = await Source.create({
         team: team._id,
         name: 'Test Source',
-        kind: 'log',
+        kind: SourceKind.Log as const,
         from: {
           databaseName: 'default',
           tableName: 'logs',
@@ -625,7 +641,7 @@ describe('DefaultAlertProvider', () => {
       const source = await Source.create({
         team: team._id,
         name: 'Test Source',
-        kind: 'log',
+        kind: SourceKind.Log as const,
         from: {
           databaseName: 'default',
           tableName: 'logs',
@@ -687,7 +703,7 @@ describe('DefaultAlertProvider', () => {
       const source = await Source.create({
         team: team._id,
         name: 'Test Source',
-        kind: 'log',
+        kind: SourceKind.Log as const,
         from: {
           databaseName: 'default',
           tableName: 'logs',
@@ -749,7 +765,7 @@ describe('DefaultAlertProvider', () => {
       const source = await Source.create({
         team: team._id,
         name: 'Test Source',
-        kind: 'log',
+        kind: SourceKind.Log as const,
         from: {
           databaseName: 'default',
           tableName: 'logs',
@@ -819,7 +835,7 @@ describe('DefaultAlertProvider', () => {
       const source = await Source.create({
         team: team._id,
         name: 'Test Source',
-        kind: 'log',
+        kind: SourceKind.Log as const,
         from: {
           databaseName: 'default',
           tableName: 'logs',

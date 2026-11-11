@@ -1,9 +1,10 @@
+import { vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 
 import { TimePicker } from '@/components/TimePicker';
 
 let mockTimeZone: string | undefined;
-jest.mock('@/useDisplayTimeZone', () => ({
+vi.mock('@/useDisplayTimeZone', () => ({
   useDisplayTimeZone: () => mockTimeZone,
 }));
 
@@ -14,9 +15,9 @@ describe('TimePicker time zone', () => {
 
   beforeEach(() => {
     // Only fake the clock: Mantine's popover relies on real timers.
-    jest.useFakeTimers({
+    vi.useFakeTimers({
       now: new Date('2026-10-22T15:00:00Z'),
-      doNotFake: [
+      toNotFake: [
         'setTimeout',
         'clearTimeout',
         'setInterval',
@@ -32,16 +33,16 @@ describe('TimePicker time zone', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   function renderPicker(timeZone: string | undefined, inputValue: string) {
     mockTimeZone = timeZone;
-    const onSearch = jest.fn();
+    const onSearch = vi.fn();
     renderWithMantine(
       <TimePicker
         inputValue={inputValue}
-        setInputValue={jest.fn()}
+        setInputValue={vi.fn()}
         onSearch={onSearch}
       />,
     );

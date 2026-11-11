@@ -1,7 +1,7 @@
 import React from 'react';
 import { http, HttpResponse } from 'msw';
 import { Box } from '@mantine/core';
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import IacMigrationSection from './IacMigrationSection';
 

@@ -11,7 +11,7 @@
 # from a warning on stderr for a bad HDX_SLOT_FROM), so it is safe to use while
 # a dev stack is running.
 #
-#   . scripts/slots.sh && hdx_dev_ports    # dev stack (yarn dev)
+#   . scripts/slots.sh && hdx_dev_ports    # dev stack (bun run dev)
 #   . scripts/slots.sh && hdx_ci_ports     # integration tests (make dev-int)
 #   . scripts/slots.sh && hdx_e2e_ports    # E2E tests (make e2e)
 #
@@ -20,7 +20,7 @@
 #
 # The slot (0-99) is the cksum of the worktree's folder name, mod 100, and each
 # service's port is its base plus the slot. Override the slot per stack with
-# HDX_DEV_SLOT, HDX_CI_SLOT, or HDX_E2E_SLOT, e.g. `HDX_DEV_SLOT=5 yarn dev`.
+# HDX_DEV_SLOT, HDX_CI_SLOT, or HDX_E2E_SLOT, e.g. `HDX_DEV_SLOT=5 bun run dev`.
 #
 # If your worktrees share a folder name (a/hyperdx, b/hyperdx), set
 # HDX_SLOT_FROM=path, e.g. in your shell profile, to hash the worktree's full
@@ -48,7 +48,7 @@ _hdx_default_slot() {
   printf '%s' "$_hdx_key" | cksum | awk '{print $1 % 100}'
 }
 
-# Dev stack (yarn dev): 30100-31199.
+# Dev stack (bun run dev): 30100-31199.
 hdx_dev_ports() {
   HDX_DEV_SLOT="${HDX_DEV_SLOT:-$(_hdx_default_slot "$1")}"
   HYPERDX_API_PORT=$((30100 + HDX_DEV_SLOT))

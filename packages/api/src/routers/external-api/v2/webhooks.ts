@@ -6,8 +6,8 @@ import {
   deleteWebhook,
   updateWebhook,
 } from '@/controllers/webhook';
-import { WebhookDocument } from '@/models/webhook';
 import Webhook from '@/models/webhook';
+import { WebhookDocument } from '@/models/webhook';
 import { processRequestWithEnhancedErrors as validateRequest } from '@/utils/enhancedErrors';
 import { isDuplicateKeyError } from '@/utils/errors';
 import { getCounter } from '@/utils/instrumentation';

@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
-exports[`renderBuilderConfigAsSqlTemplate compiles event formulas into the single-scan template projection 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > compiles event formulas into the single-scan template projection 1`] = `
 "SELECT
   countIf(ServiceName = 'api') AS "api",
   count() AS "total",
@@ -25,7 +25,7 @@ ORDER BY
   $__timeInterval(timestamp) AS \`__hdx_time_bucket\`"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate full SQL output per display type generates the full macro-based SQL for a line chart 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > full SQL output per display type > generates the full macro-based SQL for a line chart 1`] = `
 "WITH
   \`__hdx_series_limit\` AS (
     SELECT
@@ -84,7 +84,7 @@ ORDER BY
   $__timeInterval(timestamp) AS \`__hdx_time_bucket\`"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate full SQL output per display type generates the full macro-based SQL for a number chart 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > full SQL output per display type > generates the full macro-based SQL for a number chart 1`] = `
 "SELECT
   count()
 FROM
@@ -98,7 +98,7 @@ WHERE
   AND $__filters"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate full SQL output per display type generates the full macro-based SQL for a pie chart 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > full SQL output per display type > generates the full macro-based SQL for a pie chart 1`] = `
 "SELECT
   count(),
   ServiceName
@@ -115,7 +115,7 @@ GROUP BY
   ServiceName"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate full SQL output per display type generates the full macro-based SQL for a stacked_bar chart 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > full SQL output per display type > generates the full macro-based SQL for a stacked_bar chart 1`] = `
 "WITH
   \`__hdx_series_limit\` AS (
     SELECT
@@ -174,7 +174,7 @@ ORDER BY
   $__timeInterval(timestamp) AS \`__hdx_time_bucket\`"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate full SQL output per display type generates the full macro-based SQL for a stacked_line chart 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > full SQL output per display type > generates the full macro-based SQL for a stacked_line chart 1`] = `
 "WITH
   \`__hdx_series_limit\` AS (
     SELECT
@@ -233,7 +233,7 @@ ORDER BY
   $__timeInterval(timestamp) AS \`__hdx_time_bucket\`"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate full SQL output per display type generates the full macro-based SQL for a table chart 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > full SQL output per display type > generates the full macro-based SQL for a table chart 1`] = `
 "SELECT
   count(),
   AVG(toFloat64OrDefault(toString(Duration))),
@@ -257,7 +257,7 @@ LIMIT
   200"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate generates a macro-based template for a line chart with group-by and lucene where 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > generates a macro-based template for a line chart with group-by and lucene where 1`] = `
 "SELECT
   count(),
   ServiceName,
@@ -278,7 +278,7 @@ ORDER BY
   $__timeInterval(timestamp) AS \`__hdx_time_bucket\`"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate macro-izes the series-limit CTE and inlines its LIMIT 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > macro-izes the series-limit CTE and inlines its LIMIT 1`] = `
 "WITH
   \`__hdx_series_limit\` AS (
     SELECT
@@ -336,7 +336,7 @@ ORDER BY
   $__timeInterval(timestamp) AS \`__hdx_time_bucket\`"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate metric charts generates a macro-based template for a single-series gauge metric line chart 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > metric charts > generates a macro-based template for a single-series gauge metric line chart 1`] = `
 "WITH
   Source AS (
     SELECT
@@ -397,7 +397,7 @@ SETTINGS
   short_circuit_function_evaluation = 'force_enable'"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate metric charts generates a macro-based template for a single-series histogram metric line chart 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > metric charts > generates a macro-based template for a single-series histogram metric line chart 1`] = `
 "WITH
   source AS (
     SELECT
@@ -519,7 +519,7 @@ SETTINGS
   short_circuit_function_evaluation = 'force_enable'"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate metric charts generates a macro-based template for a single-series sum metric line chart 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > metric charts > generates a macro-based template for a single-series sum metric line chart 1`] = `
 "WITH
   Source AS (
     SELECT
@@ -636,7 +636,7 @@ ORDER BY
   $__timeInterval(\`__hdx_time_bucket2\`) AS \`__hdx_time_bucket\`"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate metric charts multi-series and formula metric charts compiles formulas into the composed template projection 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > metric charts > multi-series and formula metric charts > compiles formulas into the composed template projection 1`] = `
 "SELECT
   anyOrNullIf(\`__hdx_value\`, \`__hdx_series_idx\` = 0) AS "avg(my.metric)",
   anyOrNullIf(\`__hdx_value\`, \`__hdx_series_idx\` = 1) AS "avg(my.other.metric)",
@@ -796,7 +796,7 @@ SETTINGS
   short_circuit_function_evaluation = 'force_enable'"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate metric charts multi-series and formula metric charts generates a composed macro-based template for a two-gauge line chart 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > metric charts > multi-series and formula metric charts > generates a composed macro-based template for a two-gauge line chart 1`] = `
 "SELECT
   anyOrNullIf(\`__hdx_value\`, \`__hdx_series_idx\` = 0) AS "avg(my.metric)",
   anyOrNullIf(\`__hdx_value\`, \`__hdx_series_idx\` = 1) AS "avg(my.other.metric)",
@@ -937,7 +937,7 @@ SETTINGS
   short_circuit_function_evaluation = 'force_enable'"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate series-level WHERE (aggCondition → -If combinators) keeps -If per series but does not push to WHERE when only some series are filtered 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > series-level WHERE (aggCondition → -If combinators) > keeps -If per series but does not push to WHERE when only some series are filtered 1`] = `
 "SELECT
   countIf((ServiceName ILIKE '%api%')),
   AVG(toFloat64OrDefault(toString(value))),
@@ -958,7 +958,7 @@ ORDER BY
   $__timeInterval(timestamp) AS \`__hdx_time_bucket\`"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate series-level WHERE (aggCondition → -If combinators) renders a single filtered series as an -If combinator 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > series-level WHERE (aggCondition → -If combinators) > renders a single filtered series as an -If combinator 1`] = `
 "SELECT
   countIf((ServiceName ILIKE '%api%')),
   ServiceName,
@@ -979,7 +979,7 @@ ORDER BY
   $__timeInterval(timestamp) AS \`__hdx_time_bucket\`"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate series-level WHERE (aggCondition → -If combinators) renders one -If per series and OR-pushes conditions when every series is filtered 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > series-level WHERE (aggCondition → -If combinators) > renders one -If per series and OR-pushes conditions when every series is filtered 1`] = `
 "SELECT
   countIf((ServiceName ILIKE '%api%')),
   avgIf(
@@ -1008,7 +1008,7 @@ ORDER BY
   $__timeInterval(timestamp) AS \`__hdx_time_bucket\`"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate series-level WHERE (aggCondition → -If combinators) supports a sql-language series aggCondition 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > series-level WHERE (aggCondition → -If combinators) > supports a sql-language series aggCondition 1`] = `
 "SELECT
   countIf(ServiceName = 'api'),
   ServiceName,
@@ -1029,7 +1029,7 @@ ORDER BY
   $__timeInterval(timestamp) AS \`__hdx_time_bucket\`"
 `;
 
-exports[`renderBuilderConfigAsSqlTemplate series-level WHERE (aggCondition → -If combinators) tightens the two argument lists of a parametric combinator 1`] = `
+exports[`renderBuilderConfigAsSqlTemplate > series-level WHERE (aggCondition → -If combinators) > tightens the two argument lists of a parametric combinator 1`] = `
 "SELECT
   quantileIf(0.95)(
     toFloat64OrDefault(toString(value)),

@@ -1,20 +1,17 @@
 import * as React from 'react';
 import cx from 'classnames';
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
+import { ColumnDef, flexRender, useTable } from '@tanstack/react-table';
 
+import type { AppTableFeatures } from '@/tableFeatures';
+import { tableFeatures } from '@/tableFeatures';
 import { UNDEFINED_WIDTH } from '@/tableUtils';
 
 import styles from './Table.module.scss';
 
 type TableProps<T extends Record<string, unknown> | string[]> = {
   data?: T[];
-  columns: ColumnDef<T>[];
+  columns: ColumnDef<AppTableFeatures, T>[];
   emptyMessage?: string;
   hideHeader?: boolean;
   borderless?: boolean;
@@ -34,11 +31,11 @@ export const Table = <T extends Record<string, unknown> | string[]>({
   interactive,
   tableMeta,
 }: TableProps<T>) => {
-  const table = useReactTable({
+  const table = useTable({
     data: data ?? [],
     columns,
     meta: tableMeta,
-    getCoreRowModel: getCoreRowModel(),
+    features: tableFeatures,
   });
 
   if (!data?.length) {

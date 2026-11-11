@@ -268,7 +268,7 @@ export default function DBTableChart({
         colorRules: groupByKeys.includes(key)
           ? undefined
           : rulesByColumn.get(key),
-        sortingFn: getClientSideSortingFn(data?.meta, key),
+        sortFn: getClientSideSortingFn(data?.meta, key),
         filterKey: filterKeyByColumn.get(key),
       }));
   }, [

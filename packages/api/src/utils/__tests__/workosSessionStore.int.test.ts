@@ -5,16 +5,15 @@ import request from 'supertest';
 
 import * as config from '@/config';
 import { authenticateWorkosSession } from '@/utils/workosSession';
-import { getWorkosSessionCollection } from '@/utils/workosSessionStore';
 import { replaceStoredWorkosSession } from '@/utils/workosSessionStore';
 
-const fixture = { refresh: jest.fn() };
-jest.mock('@/config', () => ({
-  ...jest.requireActual<typeof import('@/config')>('@/config'),
+const fixture = vi.hoisted(() => ({ refresh: vi.fn() }));
+vi.mock('@/config', async () => ({
+  ...(await vi.importActual<typeof import('@/config')>('@/config')),
   WORKOS: { clientId: 'client_app' },
   EXPRESS_SESSION_SECRET: 'fixture-shared-secret-at-least-32-characters',
 }));
-jest.mock('@/utils/workosClient', () => ({
+vi.mock('@/utils/workosClient', () => ({
   workos: {
     userManagement: {
       loadSealedSession: ({ sessionData }: { sessionData: string }) => {
@@ -121,7 +120,7 @@ describe('WorkOS refresh persistence across Mongo-backed replicas', () => {
   let cookie: string;
   let sid: string;
   const stored = async () =>
-    (await getWorkosSessionCollection(first.store)).findOne({ _id: sid });
+    (await first.store.collectionP).findOne({ _id: sid });
   beforeEach(async () => {
     fixture.refresh.mockReset().mockResolvedValue(fresh);
     first = replica();
@@ -131,8 +130,8 @@ describe('WorkOS refresh persistence across Mongo-backed replicas', () => {
     sid = seeded.body.id;
   });
   afterEach(async () => {
-    jest.restoreAllMocks();
-    await (await getWorkosSessionCollection(first.store)).deleteMany({});
+    vi.restoreAllMocks();
+    await (await first.store.collectionP).deleteMany({});
     await Promise.all(stores.splice(0).map(store => store.close()));
   });
 
@@ -220,20 +219,20 @@ describe('WorkOS refresh persistence across Mongo-backed replicas', () => {
   });
 
   it('retries payload conflicts while preserving unrelated fields and expiry', async () => {
-    const collection = await getWorkosSessionCollection(first.store);
+    const collection = await first.store.collectionP;
     const before = await stored();
     const update = collection.updateOne.bind(collection);
     const concurrent = JSON.parse(String(before?.session));
     concurrent.workosLogin.state = 'concurrently-updated-state';
-    jest
-      .spyOn(collection, 'updateOne')
-      .mockImplementationOnce(async (...args) => {
+    vi.spyOn(collection, 'updateOne').mockImplementationOnce(
+      async (...args) => {
         await update(
           { _id: sid },
           { $set: { session: JSON.stringify(concurrent) } },
         );
         return update(...args);
-      });
+      },
+    );
     await expect(
       replaceStoredWorkosSession(
         { sessionID: sid, sessionStore: first.store },
@@ -251,10 +250,10 @@ describe('WorkOS refresh persistence across Mongo-backed replicas', () => {
   });
 
   it('stops after three payload conflicts and preserves current credentials', async () => {
-    const collection = await getWorkosSessionCollection(first.store);
+    const collection = await first.store.collectionP;
     const update = collection.updateOne.bind(collection);
     let conflicts = 0;
-    jest.spyOn(collection, 'updateOne').mockImplementation(async (...args) => {
+    vi.spyOn(collection, 'updateOne').mockImplementation(async (...args) => {
       if ('session' in args[0]) {
         const concurrent = JSON.parse(String((await stored())?.session));
         concurrent.workosLogin.state = `concurrent-${++conflicts}`;
@@ -276,9 +275,9 @@ describe('WorkOS refresh persistence across Mongo-backed replicas', () => {
   });
 
   it('preserves credentials and returns 503 on a storage write failure', async () => {
-    jest
-      .spyOn(await getWorkosSessionCollection(first.store), 'updateOne')
-      .mockRejectedValueOnce(new Error('Synthetic storage outage'));
+    vi.spyOn(await first.store.collectionP, 'updateOne').mockRejectedValueOnce(
+      new Error('Synthetic storage outage'),
+    );
     await request(first.app)
       .get('/protected')
       .set('Cookie', cookie)

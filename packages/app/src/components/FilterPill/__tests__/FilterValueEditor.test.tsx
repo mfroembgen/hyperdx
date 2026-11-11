@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -8,13 +9,13 @@ import {
 
 // Mantine's Combobox calls scrollIntoView when its dropdown opens; jsdom lacks
 // it. jsdom also has no layout, so options must be queried with { hidden: true }.
-window.HTMLElement.prototype.scrollIntoView = jest.fn();
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 const renderEditor = (props: Partial<FilterValueEditorProps> = {}) => {
   const handlers = {
-    onReplaceValue: jest.fn(),
-    onTogglePolarity: jest.fn(),
-    onDone: jest.fn(),
+    onReplaceValue: vi.fn(),
+    onTogglePolarity: vi.fn(),
+    onDone: vi.fn(),
   };
   renderWithMantine(
     <FilterValueEditor

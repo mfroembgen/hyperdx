@@ -81,7 +81,7 @@ function useRemoveFavorite() {
   return useMutation({
     // shared key with useRemoveFavorite to coordinate refetching and optimistic updates
     mutationKey: ['favorites'],
-    mutationFn: (data: {
+    mutationFn: async (data: {
       resourceType: Favorite['resourceType'];
       resourceId: string;
     }) => {
@@ -95,11 +95,11 @@ function useRemoveFavorite() {
         if (match) {
           localFavorites.delete(match.id);
         }
-        return Promise.resolve();
+        return;
       }
-      return hdxServer(`favorites/${data.resourceType}/${data.resourceId}`, {
+      await hdxServer(`favorites/${data.resourceType}/${data.resourceId}`, {
         method: 'DELETE',
-      }).json<void>();
+      });
     },
     onMutate: async data => {
       // Cancel any outgoing favorites refetches (so they don't overwrite our optimistic update)

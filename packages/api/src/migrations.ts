@@ -36,7 +36,20 @@ export async function backfillAlertDisplayFields() {
         tileId: 1,
         'chartConfig.name': 1,
       },
-    ).lean();
+    ).lean<
+      (Pick<
+        IAlert,
+        | 'displayName'
+        | 'tags'
+        | 'source'
+        | 'savedSearch'
+        | 'dashboard'
+        | 'tileId'
+      > & {
+        _id: mongoose.Types.ObjectId;
+        chartConfig?: { name?: string | null } | null;
+      })[]
+    >();
 
     const savedSearchIds = batch
       .map(a => a.savedSearch)
@@ -64,7 +77,7 @@ export async function backfillAlertDisplayFields() {
     );
 
     const ops: {
-      filter: mongoose.FilterQuery<IAlert>;
+      filter: mongoose.QueryFilter<IAlert>;
       update: { $set: { displayName: string } | { tags: string[] } };
     }[] = [];
     for (const alert of batch) {
@@ -115,7 +128,7 @@ export async function backfillAlertDisplayFields() {
     if (ops.length > 0) {
       // Per-op timestamps because the bulkWrite-level option only covers
       // inserts; without it the backfill bumps the user-visible updatedAt.
-      const result = await Alert.bulkWrite(
+      const result = await Alert.bulkWrite<IAlert>(
         ops.map(op => ({ updateOne: { ...op, timestamps: false } })),
         { ordered: false },
       );

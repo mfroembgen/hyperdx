@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 /**
  * Unit tests for theme utilities
  *
@@ -8,7 +10,6 @@
  * - Safe localStorage helpers
  * - THEME_STORAGE_KEY constant
  */
-
 import {
   DEFAULT_THEME,
   getDevThemeName,
@@ -27,7 +28,7 @@ describe('theme/index', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     window.localStorage.clear();
   });
 

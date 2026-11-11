@@ -28,7 +28,7 @@ compare any two (or more) MCP servers side by side.
 
 | Requirement | Notes |
 |---|---|
-| `yarn dev` running | Each worktree needs `yarn dev` running with a fixed slot. This handles `yarn install`, `yarn build:common-utils`, Docker containers (ClickHouse, MongoDB), and the API server. See [Development Setup](development.md). |
+| `bun run dev` running | Each worktree needs `bun run dev` running with a fixed slot. This handles `bun install`, `bun run build:common-utils`, Docker containers (ClickHouse, MongoDB), and the API server. See [Development Setup](development.md). |
 | `ANTHROPIC_API_KEY` or `AI_API_KEY` | Auto-loaded from `.env.local` at the monorepo root. Check `.env.local` in other worktrees for existing keys if missing. |
 | `claude` CLI | Installed globally (`which claude`). The harness spawns it in streaming JSON mode. |
 | `uv` | Only needed for `stdio`-type MCPs (e.g. raw ClickHouse MCP). Install via `curl -LsSf https://astral.sh/uv/install.sh \| sh`. |
@@ -75,16 +75,16 @@ dual-slot comparisons you must seed each instance explicitly (step 4b).
 
 ### 1. Start both dev stacks
 
-`yarn dev` starts Docker infra (ClickHouse, MongoDB, OTel Collector) **and**
+`bun run dev` starts Docker infra (ClickHouse, MongoDB, OTel Collector) **and**
 the API + App servers in one command. Run it from each worktree with a fixed
 slot:
 
 ```bash
 # From the main worktree (slot 98)
-HDX_DEV_SLOT=98 yarn dev
+HDX_DEV_SLOT=98 bun run dev
 
 # From the branch worktree (slot 99)
-HDX_DEV_SLOT=99 yarn dev
+HDX_DEV_SLOT=99 bun run dev
 ```
 
 Each command prints a banner with its port assignments. Wait for both to
@@ -118,11 +118,11 @@ already exist and pass the check:
 # single-instance config. If you already have a combined two-MCP config,
 # you must re-run step 3 (jq merge) afterward.
 cp packages/hdx-eval/eval.config.branch.json packages/hdx-eval/eval.config.json 2>/dev/null && \
-  yarn workspace @hyperdx/hdx-eval dev setup-hyperdx --check && \
+  bun --bun run --filter @hyperdx/hdx-eval dev setup-hyperdx --check && \
   echo "Branch config OK" || echo "Branch config needs setup"
 
 cp packages/hdx-eval/eval.config.main.json packages/hdx-eval/eval.config.json 2>/dev/null && \
-  yarn workspace @hyperdx/hdx-eval dev setup-hyperdx --check && \
+  bun --bun run --filter @hyperdx/hdx-eval dev setup-hyperdx --check && \
   echo "Main config OK" || echo "Main config needs setup"
 ```
 
@@ -130,11 +130,11 @@ If either needs setup (or this is the first time):
 
 ```bash
 # Setup main instance (slot 98)
-yarn workspace @hyperdx/hdx-eval dev setup-hyperdx --api-url http://localhost:30198
+bun --bun run --filter @hyperdx/hdx-eval dev setup-hyperdx --api-url http://localhost:30198
 cp packages/hdx-eval/eval.config.json packages/hdx-eval/eval.config.main.json
 
 # Setup branch instance (slot 99)
-yarn workspace @hyperdx/hdx-eval dev setup-hyperdx --api-url http://localhost:30199
+bun --bun run --filter @hyperdx/hdx-eval dev setup-hyperdx --api-url http://localhost:30199
 cp packages/hdx-eval/eval.config.json packages/hdx-eval/eval.config.branch.json
 ```
 
@@ -196,10 +196,10 @@ instance explicitly:
 
 ```bash
 # Seed the main instance (slot 98, CH on port 30598)
-HDX_DEV_SLOT=98 yarn workspace @hyperdx/hdx-eval dev seed <scenario>
+HDX_DEV_SLOT=98 bun --bun run --filter @hyperdx/hdx-eval dev seed <scenario>
 
 # Seed the branch instance (slot 99, CH on port 30599)
-HDX_DEV_SLOT=99 yarn workspace @hyperdx/hdx-eval dev seed <scenario>
+HDX_DEV_SLOT=99 bun --bun run --filter @hyperdx/hdx-eval dev seed <scenario>
 ```
 
 The seed command is idempotent — it skips if data already exists. Replace
@@ -209,7 +209,7 @@ multiple scenarios by running the command once per scenario.
 ### 6. Run the comparison
 
 ```bash
-yarn workspace @hyperdx/hdx-eval dev run <scenario> \
+bun --bun run --filter @hyperdx/hdx-eval dev run <scenario> \
   --mcp hyperdx-branch,hyperdx-main \
   --baseline hyperdx-main \
   --runs 3 \
@@ -249,10 +249,10 @@ Run one MCP against a scenario to get a baseline score without comparison.
 Useful for validating that a scenario works or checking score after a change.
 
 ```bash
-# Single slot — just one `yarn dev` needed
+# Single slot — just one `bun run dev` needed
 export HDX_DEV_SLOT=98
-yarn workspace @hyperdx/hdx-eval dev setup-hyperdx
-yarn workspace @hyperdx/hdx-eval dev run error-root-cause --mcp hyperdx --runs 1 --no-judge
+bun --bun run --filter @hyperdx/hdx-eval dev setup-hyperdx
+bun --bun run --filter @hyperdx/hdx-eval dev run error-root-cause --mcp hyperdx --runs 1 --no-judge
 ```
 
 ### Model comparison (same MCP, different models)
@@ -261,9 +261,9 @@ Compare how different models perform on the same MCP and data. Useful for
 evaluating model upgrades or cost/quality tradeoffs.
 
 ```bash
-yarn workspace @hyperdx/hdx-eval dev run error-root-cause \
+bun --bun run --filter @hyperdx/hdx-eval dev run error-root-cause \
   --mcp hyperdx --model claude-sonnet-4-20250514 --runs 3
-yarn workspace @hyperdx/hdx-eval dev run error-root-cause \
+bun --bun run --filter @hyperdx/hdx-eval dev run error-root-cause \
   --mcp hyperdx --model claude-opus-4-6 --runs 3
 ```
 
@@ -274,7 +274,7 @@ default in `eval.config.json` after setup. Use it to compare HyperDX's MCP
 against querying ClickHouse directly.
 
 ```bash
-yarn workspace @hyperdx/hdx-eval dev run error-root-cause \
+bun --bun run --filter @hyperdx/hdx-eval dev run error-root-cause \
   --mcp hyperdx,clickhouse --baseline clickhouse --runs 3
 ```
 
@@ -297,22 +297,22 @@ Useful inspection commands:
 
 ```bash
 # List all batches
-yarn workspace @hyperdx/hdx-eval dev runs-list
+bun --bun run --filter @hyperdx/hdx-eval dev runs-list
 
 # Show a specific run's tool calls and queries
-yarn workspace @hyperdx/hdx-eval dev runs-show <path> --queries
+bun --bun run --filter @hyperdx/hdx-eval dev runs-show <path> --queries
 
 # Show the agent's final answer
-yarn workspace @hyperdx/hdx-eval dev runs-show <path> --final-answer
+bun --bun run --filter @hyperdx/hdx-eval dev runs-show <path> --final-answer
 
 # Re-grade with only programmatic checks (fast, no API key needed)
-yarn workspace @hyperdx/hdx-eval dev grade <batch> --no-judge
+bun --bun run --filter @hyperdx/hdx-eval dev grade <batch> --no-judge
 
 # Re-generate the comparison report with a different baseline
-yarn workspace @hyperdx/hdx-eval dev report <batch> --baseline hyperdx-main
+bun --bun run --filter @hyperdx/hdx-eval dev report <batch> --baseline hyperdx-main
 
 # Browse results in the web viewer
-yarn workspace @hyperdx/hdx-eval viewer
+bun --bun run --filter @hyperdx/hdx-eval viewer
 ```
 
 ## Common Pitfalls
@@ -351,16 +351,16 @@ but this adds time. Use `--reseed` explicitly to force a fresh seed.
 
 ### Dev stack not starting
 
-If `yarn dev` fails:
+If `bun run dev` fails:
 - Port already in use — another stack on the same slot is running. Check with
   `lsof -i :301XX` and kill stale processes.
 - Docker not running — start Docker Desktop or OrbStack first.
-- Missing dependencies — run `yarn setup` from the repo root.
+- Missing dependencies — run `bun run setup` from the repo root.
 
 ## Cleanup
 
 ```bash
-# If you started with `yarn dev`, Ctrl-C in each terminal stops everything.
+# If you started with `bun run dev`, Ctrl-C in each terminal stops everything.
 # If you started Docker separately:
 bash -c 'export HDX_DEV_SLOT=98 && source scripts/dev-env.sh 2>/dev/null && \
   docker compose -p hdx-dev-98 -f docker-compose.dev.yml down'
@@ -368,5 +368,5 @@ bash -c 'export HDX_DEV_SLOT=99 && source scripts/dev-env.sh 2>/dev/null && \
   docker compose -p hdx-dev-99 -f docker-compose.dev.yml down'
 
 # Drop eval data from ClickHouse (optional)
-yarn workspace @hyperdx/hdx-eval dev drop <scenario>
+bun --bun run --filter @hyperdx/hdx-eval dev drop <scenario>
 ```

@@ -440,7 +440,7 @@ describe('getHighlightedAttributesFromData', () => {
     ]);
 
     // Mock console.error to suppress error output during test
-    const consoleErrorSpy = jest
+    const consoleErrorSpy = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
 

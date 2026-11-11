@@ -157,7 +157,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   // State to store our value
   // Pass initial state function to useState so logic is only executed once
   const [storedValue, setStoredValue] = useState<T>(
-    getLocalStorageValue<T>(key) ?? initialValue,
+    () => getLocalStorageValue<T>(key) ?? initialValue,
   );
 
   // Create a unique ID for this hook instance
@@ -614,9 +614,7 @@ function semanticTokenFallback(
     case 'chart-error': {
       const theme = detectActiveTheme();
       const key = token.slice('chart-'.length) as
-        | 'success'
-        | 'warning'
-        | 'error';
+        'success' | 'warning' | 'error';
       return SEMANTIC_CHART_PALETTE[theme][key];
     }
     default: {

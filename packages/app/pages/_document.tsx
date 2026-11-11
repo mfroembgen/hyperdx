@@ -1,6 +1,6 @@
 import { Head, Html, Main, NextScript } from 'next/document';
 
-import { IS_CLICKHOUSE_BUILD, IS_NOINDEX } from '@/config';
+import { BASE_PATH, IS_CLICKHOUSE_BUILD, IS_NOINDEX } from '@/config';
 import { ibmPlexMono, inter, roboto, robotoMono } from '@/fonts';
 import { themes } from '@/theme';
 
@@ -34,13 +34,11 @@ export default function Document() {
     <Html lang="en" className={`${fontClasses} theme-hyperdx`}>
       <Head>
         {IS_NOINDEX && <meta name="robots" content="noindex, nofollow" />}
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script src="/__ENV.js" />
+        <script src={`${BASE_PATH}/__ENV.js`} />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {!IS_CLICKHOUSE_BUILD && (
           <>
-            {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-            <script src="/pyodide/pyodide.js"></script>
+            <script src={`${BASE_PATH}/pyodide/pyodide.js`}></script>
           </>
         )}
       </Head>

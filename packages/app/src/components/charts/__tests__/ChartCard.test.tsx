@@ -87,7 +87,7 @@ describe('ChartCard', () => {
     // normal-flow list (e.g. "Top 20 Most Time Consuming Queries").
     expect(scrollRegion.style.overflow).toBe('auto');
     expect(scrollRegion.style.flexGrow).toBe('1');
-    expect(scrollRegion.style.minHeight).toBe('0');
+    expect(scrollRegion.style.minHeight).toBe('0px');
   });
 
   it('does not wrap standalone (non-card) disableReactiveContainer content in a scroll region', () => {

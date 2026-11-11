@@ -17,8 +17,7 @@ import {
 } from './linkTemplate';
 
 export type LinkBuildResult =
-  | { ok: true; url: string }
-  | { ok: false; error: string };
+  { ok: true; url: string } | { ok: false; error: string };
 
 function renderOrError(
   template: string,

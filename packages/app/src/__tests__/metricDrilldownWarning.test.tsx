@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   BuilderChartConfigWithDateRange,
   DisplayType,
@@ -67,7 +68,7 @@ describe('metric drill-down warning without a correlated log source', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('warns and returns null', async () => {
@@ -90,14 +91,14 @@ describe('metric drill-down warning without a correlated log source', () => {
     await user.click(within(toast).getByRole('button'));
 
     expect(localStorage.getItem(DISMISSED_KEY)).toBe('true');
-    const show = jest.spyOn(notifications, 'show');
+    const show = vi.spyOn(notifications, 'show');
     expect(await drillDown()).toBeNull();
     expect(show).not.toHaveBeenCalled();
   });
 
   it('warns instead of throwing when localStorage is unavailable', async () => {
     renderWithMantine(<div />);
-    jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new DOMException('Access denied', 'SecurityError');
     });
 
@@ -119,7 +120,7 @@ describe('metric drill-down warning without a correlated log source', () => {
     });
 
     expect(localStorage.getItem(DISMISSED_KEY)).toBeNull();
-    const show = jest.spyOn(notifications, 'show');
+    const show = vi.spyOn(notifications, 'show');
     await drillDown();
     expect(show).toHaveBeenCalledTimes(1);
   });

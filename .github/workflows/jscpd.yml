@@ -7,6 +7,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   jscpd:
+    if: github.repository == 'hyperdxio/hyperdx'
     timeout-minutes: 10
     runs-on: ubuntu-24.04
     permissions:
@@ -14,7 +15,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout PR branch
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # --baseline-from-ref scans the base branch's tree, so the whole
           # history has to be present. Blobless, not treeless: jscpd needs the
@@ -22,15 +23,10 @@ jobs:
           fetch-depth: 0
           filter: blob:none
 
-      - name: Setup node
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        with:
-          node-version-file: '.nvmrc'
-          cache-dependency-path: 'yarn.lock'
-          cache: 'yarn'
-
+      - name: Setup Bun
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
       - name: Install dependencies
-        run: yarn install --immutable
+        run: bun ci
 
       # Advisory check. dupes.mjs always exits 0; continue-on-error covers the
       # case where it cannot run at all, so a tool failure can never block a PR.
@@ -39,7 +35,7 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run:
-          node scripts/ci/dupes.mjs --base "origin/$BASE_REF" --markdown >
+          bun scripts/ci/dupes.mjs --base "origin/$BASE_REF" --markdown >
           /tmp/jscpd-comment.md
 
       - name: Read report

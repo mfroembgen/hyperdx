@@ -3,11 +3,11 @@ import express, { RequestHandler, Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { performance } from 'perf_hooks';
 import { z } from 'zod';
-import { validateRequest } from 'zod-express-middleware';
 
 import { CODE_VERSION } from '@/config';
 import { getConnectionById } from '@/controllers/connection';
 import { getNonNullUserWithTeam } from '@/middleware/auth';
+import { validateRequest } from '@/middleware/validation';
 import { validateRequestHeaders } from '@/middleware/validation';
 import { recordOperationOutcome } from '@/utils/instrumentation';
 import logger from '@/utils/logger';
@@ -341,14 +341,14 @@ const markProxyStart: RequestHandler = (_req, res, next) => {
 };
 
 router.get(
-  '/*',
+  '/{*path}',
   hasConnectionId,
   getConnection,
   markProxyStart,
   proxyMiddleware,
 );
 router.post(
-  '/*',
+  '/{*path}',
   hasConnectionId,
   getConnection,
   markProxyStart,

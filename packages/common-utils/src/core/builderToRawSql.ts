@@ -65,8 +65,7 @@ function tryFormatSqlTemplate(sql: string): string {
  * template, or a user-facing reason the config can't be converted.
  */
 export type RenderedSqlTemplate =
-  | { isError: false; sql: string }
-  | { isError: true; error: string };
+  { isError: false; sql: string } | { isError: true; error: string };
 
 /**
  * Renders a builder chart config as a raw-SQL template string using the

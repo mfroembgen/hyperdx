@@ -3,8 +3,7 @@ import Connection, { IConnection } from '@/models/connection';
 import { objectIdSchema } from '@/utils/zod';
 
 export type ConnectionValidation =
-  | { ok: true }
-  | { ok: false; status: 400 | 403; message: string };
+  { ok: true } | { ok: false; status: 400 | 403; message: string };
 
 export async function validateConnectionId(
   connection: unknown,

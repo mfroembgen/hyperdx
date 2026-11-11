@@ -1,3 +1,4 @@
+import { type Mock, vi } from 'vitest';
 import { FilterSelection } from '@hyperdx/common-utils/dist/dashboardFilterValues';
 import {
   ConditionFilter,
@@ -12,20 +13,20 @@ import useDashboardFilters from '@/hooks/useDashboardFilters';
 import usePresetDashboardFilters from '@/hooks/usePresetDashboardFilters';
 
 // Mock the api module
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
-    usePresetDashboardFilters: jest.fn(),
-    useCreatePresetDashboardFilter: jest.fn(),
-    useUpdatePresetDashboardFilter: jest.fn(),
-    useDeletePresetDashboardFilter: jest.fn(),
+    usePresetDashboardFilters: vi.fn(),
+    useCreatePresetDashboardFilter: vi.fn(),
+    useUpdatePresetDashboardFilter: vi.fn(),
+    useDeletePresetDashboardFilter: vi.fn(),
   },
 }));
 
 // Mock the useDashboardFilters hook
-jest.mock('../useDashboardFilters', () => ({
+vi.mock('../useDashboardFilters', () => ({
   __esModule: true,
-  default: jest.fn(),
+  default: vi.fn(),
 }));
 
 describe('usePresetDashboardFilters', () => {
@@ -70,56 +71,56 @@ describe('usePresetDashboardFilters', () => {
     },
   ];
 
-  let mockRefetch: jest.Mock;
-  let mockCreateMutate: jest.Mock;
-  let mockUpdateMutate: jest.Mock;
-  let mockDeleteMutate: jest.Mock;
-  let mockSetFilterValue: jest.Mock;
+  let mockRefetch: Mock;
+  let mockCreateMutate: Mock;
+  let mockUpdateMutate: Mock;
+  let mockDeleteMutate: Mock;
+  let mockSetFilterValue: Mock;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Setup mocks
-    mockRefetch = jest.fn();
-    mockCreateMutate = jest.fn();
-    mockUpdateMutate = jest.fn();
-    mockDeleteMutate = jest.fn();
-    mockSetFilterValue = jest.fn();
+    mockRefetch = vi.fn();
+    mockCreateMutate = vi.fn();
+    mockUpdateMutate = vi.fn();
+    mockDeleteMutate = vi.fn();
+    mockSetFilterValue = vi.fn();
 
     // Mock usePresetDashboardFilters query
-    jest.mocked(api.usePresetDashboardFilters).mockReturnValue({
+    vi.mocked(api.usePresetDashboardFilters).mockReturnValue({
       data: mockFilters,
       refetch: mockRefetch,
     } as any);
 
     // Mock create mutation
-    jest.mocked(api.useCreatePresetDashboardFilter).mockReturnValue({
+    vi.mocked(api.useCreatePresetDashboardFilter).mockReturnValue({
       mutate: mockCreateMutate,
     } as any);
 
     // Mock update mutation
-    jest.mocked(api.useUpdatePresetDashboardFilter).mockReturnValue({
+    vi.mocked(api.useUpdatePresetDashboardFilter).mockReturnValue({
       mutate: mockUpdateMutate,
     } as any);
 
     // Mock delete mutation
-    jest.mocked(api.useDeletePresetDashboardFilter).mockReturnValue({
+    vi.mocked(api.useDeletePresetDashboardFilter).mockReturnValue({
       mutate: mockDeleteMutate,
     } as any);
 
     // Mock useDashboardFilters
-    jest.mocked(useDashboardFilters).mockReturnValue({
+    vi.mocked(useDashboardFilters).mockReturnValue({
       selectionByFilterId: mockSelectionByFilterId,
       setFilterValue: mockSetFilterValue,
       adhocConditionsByFilterId: new Map(),
-      setAdhocConditions: jest.fn(),
-      applyAdhocAction: jest.fn(),
+      setAdhocConditions: vi.fn(),
+      applyAdhocAction: vi.fn(),
       broadcastedFilters: mockFilterQueries,
-      setFilterValueEntries: jest.fn(),
+      setFilterValueEntries: vi.fn(),
       filterValueEntries: null,
       ignoredFilterExpressions: [],
       ignoredVariableNames: [],
-      getFilterQueriesForSource: jest.fn().mockReturnValue(mockFilterQueries),
+      getFilterQueriesForSource: vi.fn().mockReturnValue(mockFilterQueries),
       variables: [],
       unsatisfiedRequiredFilters: [],
     });
@@ -142,7 +143,7 @@ describe('usePresetDashboardFilters', () => {
   });
 
   it('should return empty array when no data is available', () => {
-    jest.mocked(api.usePresetDashboardFilters).mockReturnValue({
+    vi.mocked(api.usePresetDashboardFilters).mockReturnValue({
       data: undefined,
       refetch: mockRefetch,
     } as any);
@@ -216,7 +217,7 @@ describe('usePresetDashboardFilters', () => {
   });
 
   it('should pass empty array to useDashboardFilters when no data', () => {
-    jest.mocked(api.usePresetDashboardFilters).mockReturnValue({
+    vi.mocked(api.usePresetDashboardFilters).mockReturnValue({
       data: undefined,
       refetch: mockRefetch,
     } as any);

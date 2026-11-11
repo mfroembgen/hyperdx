@@ -1,8 +1,9 @@
+import { vi } from 'vitest';
 // --- mocks (hoisted; names must be prefixed with `mock`) ---
-const mockSpanAttrs: Record<string, unknown> = {};
-const mockCounterAdds: Record<string, unknown[][]> = {};
+const mockSpanAttrs: Record<string, unknown> = vi.hoisted(() => ({}));
+const mockCounterAdds: Record<string, unknown[][]> = vi.hoisted(() => ({}));
 
-jest.mock('@opentelemetry/api', () => ({
+vi.mock('@opentelemetry/api', () => ({
   trace: {
     getActiveSpan: () => ({
       setAttribute: (key: string, value: unknown) => {
@@ -11,16 +12,16 @@ jest.mock('@opentelemetry/api', () => ({
     }),
   },
 }));
-jest.mock('@/utils/instrumentation', () => ({
+vi.mock('@/utils/instrumentation', () => ({
   getCounter: (name: string) => ({
     add: (...args: unknown[]) => {
       (mockCounterAdds[name] ??= []).push(args);
     },
   }),
 }));
-jest.mock('@/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   __esModule: true,
-  default: { error: jest.fn() },
+  default: { error: vi.fn() },
 }));
 
 import { agentService } from '@/opamp/services/agentService';

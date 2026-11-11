@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import type {
   OnClickDashboard,
   OnClickExternal,
@@ -10,16 +11,16 @@ import { useDashboards } from '@/dashboard';
 import { useOnClickLinkBuilder } from '@/hooks/useOnClickLinkBuilder';
 import { useSources } from '@/source';
 
-jest.mock('@/source', () => ({
-  useSources: jest.fn(),
+vi.mock('@/source', () => ({
+  useSources: vi.fn(),
 }));
 
-jest.mock('@/dashboard', () => ({
-  useDashboards: jest.fn(),
+vi.mock('@/dashboard', () => ({
+  useDashboards: vi.fn(),
 }));
 
-jest.mock('@mantine/notifications', () => ({
-  notifications: { show: jest.fn() },
+vi.mock('@mantine/notifications', () => ({
+  notifications: { show: vi.fn() },
 }));
 
 const dateRange: [Date, Date] = [
@@ -29,8 +30,8 @@ const dateRange: [Date, Date] = [
 
 describe('useOnClickLinkBuilder', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.mocked(useSources).mockReturnValue({
+    vi.clearAllMocks();
+    vi.mocked(useSources).mockReturnValue({
       data: [
         {
           id: 'src_1',
@@ -42,7 +43,7 @@ describe('useOnClickLinkBuilder', () => {
         },
       ],
     } as any);
-    jest.mocked(useDashboards).mockReturnValue({
+    vi.mocked(useDashboards).mockReturnValue({
       data: [{ id: 'dash_1', name: 'API Latency Drilldown', tiles: [] }],
     } as any);
   });
@@ -152,13 +153,13 @@ describe('useOnClickLinkBuilder', () => {
     expect(action.onClickError).toBeInstanceOf(Function);
 
     // Render time is silent: no toast fires while computing the URL.
-    expect(jest.mocked(notifications.show)).not.toHaveBeenCalled();
+    expect(vi.mocked(notifications.show)).not.toHaveBeenCalled();
 
     // Clicking the failing row fires the toast.
-    const preventDefault = jest.fn();
+    const preventDefault = vi.fn();
     action.onClickError!({ preventDefault } as any);
     expect(preventDefault).toHaveBeenCalledTimes(1);
-    expect(jest.mocked(notifications.show)).toHaveBeenCalledWith(
+    expect(vi.mocked(notifications.show)).toHaveBeenCalledWith(
       expect.objectContaining({
         color: 'red',
         title: 'Link error',

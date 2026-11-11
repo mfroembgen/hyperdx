@@ -1,8 +1,9 @@
+import { vi } from 'vitest';
 // Mock heavy dependencies that break in unit-test context (no ClickHouse/Mongo)
-jest.mock('@/models/source', () => ({}));
-jest.mock('@/controllers/sources', () => ({}));
-jest.mock('@/controllers/connection', () => ({}));
-jest.mock('@/utils/trimToolResponse', () => ({
+vi.mock('@/models/source', () => ({}));
+vi.mock('@/controllers/sources', () => ({}));
+vi.mock('@/controllers/connection', () => ({}));
+vi.mock('@/utils/trimToolResponse', () => ({
   trimToolResponse: (data: unknown) => ({ data, isTrimmed: false }),
 }));
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 
 import DateRangeIndicator from '@/components/charts/DateRangeIndicator';
 import DBTableChart from '@/components/DBTableChart';
@@ -11,58 +12,66 @@ import { useOnClickLinkBuilder } from '@/hooks/useOnClickLinkBuilder';
 import { useSource } from '@/source';
 
 // Mock dependencies
-jest.mock('@/hooks/useOffsetPaginatedQuery', () => ({
+vi.mock('@/hooks/useOffsetPaginatedQuery', () => ({
   __esModule: true,
-  default: jest.fn(),
+  default: vi.fn(),
 }));
 
-jest.mock('next/router', () => ({
-  useRouter: jest.fn(),
+vi.mock('next/router', () => ({
+  useRouter: vi.fn(),
 }));
 
-jest.mock('@/hooks/useChartConfig', () => ({
-  ...jest.requireActual('@/hooks/useChartConfig'),
-  getMinGranularitySeconds: jest.fn().mockReturnValue(undefined),
-}));
+vi.mock('@/hooks/useChartConfig', async () => {
+  const actualModule0 = await vi.importActual<
+    typeof import('@/hooks/useChartConfig')
+  >('@/hooks/useChartConfig');
+  return {
+    ...actualModule0,
+    getMinGranularitySeconds: vi.fn().mockReturnValue(undefined),
+  };
+});
 
-jest.mock('@/hooks/useMVOptimizationExplanation', () => ({
-  useMVOptimizationExplanation: jest.fn().mockReturnValue({
+vi.mock('@/hooks/useMVOptimizationExplanation', () => ({
+  useMVOptimizationExplanation: vi.fn().mockReturnValue({
     data: undefined,
     isLoading: false,
     isPlaceholderData: false,
   }),
 }));
 
-jest.mock('@/source', () => ({
-  useSource: jest.fn().mockReturnValue({ data: null }),
-  useSources: jest.fn().mockReturnValue({ data: [] }),
-  useChartNumberFormats: jest
-    .fn()
-    .mockReturnValue({ formatByColumn: new Map(), chartFormat: undefined }),
-  // Pure helper (no hooks/network) — use the real implementation so the
-  // group-by column inference under test matches production behavior.
-  getBuilderValueColumnCount:
-    jest.requireActual('@/source').getBuilderValueColumnCount,
-}));
+vi.mock('@/source', async () => {
+  const actualModule1 =
+    await vi.importActual<typeof import('@/source')>('@/source');
+  return {
+    useSource: vi.fn().mockReturnValue({ data: null }),
+    useSources: vi.fn().mockReturnValue({ data: [] }),
+    useChartNumberFormats: vi
+      .fn()
+      .mockReturnValue({ formatByColumn: new Map(), chartFormat: undefined }),
+    // Pure helper (no hooks/network) — use the real implementation so the
+    // group-by column inference under test matches production behavior.
+    getBuilderValueColumnCount: actualModule1.getBuilderValueColumnCount,
+  };
+});
 
-jest.mock('@/HDXMultiSeriesTableChart', () => ({
+vi.mock('@/HDXMultiSeriesTableChart', () => ({
   __esModule: true,
-  Table: jest.fn(() => null),
+  Table: vi.fn(() => null),
 }));
 
-jest.mock('@/hooks/useOnClickLinkBuilder', () => ({
-  useOnClickLinkBuilder: jest.fn().mockReturnValue(null),
+vi.mock('@/hooks/useOnClickLinkBuilder', () => ({
+  useOnClickLinkBuilder: vi.fn().mockReturnValue(null),
 }));
 
-jest.mock('@/hooks/useResultColumnFilterKeys', () => ({
-  useResultColumnFilterKeys: jest.fn(() => new Map()),
+vi.mock('@/hooks/useResultColumnFilterKeys', () => ({
+  useResultColumnFilterKeys: vi.fn(() => new Map()),
 }));
 
-jest.mock('../MaterializedViews/MVOptimizationIndicator', () =>
-  jest.fn(() => null),
-);
+vi.mock('../MaterializedViews/MVOptimizationIndicator', () => ({
+  default: vi.fn(() => null),
+}));
 
-jest.mock('../charts/DateRangeIndicator', () => jest.fn(() => null));
+vi.mock('../charts/DateRangeIndicator', () => ({ default: vi.fn(() => null) }));
 
 describe('DBTableChart', () => {
   const baseTestConfig = {
@@ -75,9 +84,9 @@ describe('DBTableChart', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
-    jest.mocked(useOffsetPaginatedQuery).mockReturnValue({
+    vi.mocked(useOffsetPaginatedQuery).mockReturnValue({
       data: {
         data: [{ column1: 'value1', column2: 'value2' }],
         meta: [
@@ -92,7 +101,7 @@ describe('DBTableChart', () => {
           direction: 'DESC' as const,
         },
       },
-      fetchNextPage: jest.fn(),
+      fetchNextPage: vi.fn(),
       hasNextPage: false,
       isLoading: false,
       isFetching: false,
@@ -103,26 +112,26 @@ describe('DBTableChart', () => {
 
   it('passes the same config to useMVOptimizationExplanation, useOffsetPaginatedQuery, and MVOptimizationIndicator', () => {
     // Mock useSource to return a source so MVOptimizationIndicator is rendered
-    jest.mocked(useSource).mockReturnValue({
+    vi.mocked(useSource).mockReturnValue({
       data: { id: 'test-source', name: 'Test Source' },
     } as any);
 
     renderWithMantine(<DBTableChart config={baseTestConfig} />);
 
     // Get the config that was passed to useMVOptimizationExplanation
-    expect(jest.mocked(useMVOptimizationExplanation)).toHaveBeenCalled();
-    const mvOptExplanationConfig = jest.mocked(useMVOptimizationExplanation)
-      .mock.calls[0][0];
+    expect(vi.mocked(useMVOptimizationExplanation)).toHaveBeenCalled();
+    const mvOptExplanationConfig = vi.mocked(useMVOptimizationExplanation).mock
+      .calls[0][0];
 
     // Get the config that was passed to useOffsetPaginatedQuery
-    expect(jest.mocked(useOffsetPaginatedQuery)).toHaveBeenCalled();
-    const paginatedQueryConfig = jest.mocked(useOffsetPaginatedQuery).mock
+    expect(vi.mocked(useOffsetPaginatedQuery)).toHaveBeenCalled();
+    const paginatedQueryConfig = vi.mocked(useOffsetPaginatedQuery).mock
       .calls[0][0];
 
     // Get the config that was passed to MVOptimizationIndicator
-    expect(jest.mocked(MVOptimizationIndicator)).toHaveBeenCalled();
-    const indicatorConfig = jest.mocked(MVOptimizationIndicator).mock
-      .calls[0][0].config;
+    expect(vi.mocked(MVOptimizationIndicator)).toHaveBeenCalled();
+    const indicatorConfig = vi.mocked(MVOptimizationIndicator).mock.calls[0][0]
+      .config;
 
     // All three should receive the same config object reference
     expect(mvOptExplanationConfig).toBe(paginatedQueryConfig);
@@ -142,7 +151,7 @@ describe('DBTableChart', () => {
     };
 
     // Mock useMVOptimizationExplanation to return an optimized config with aligned date range
-    jest.mocked(useMVOptimizationExplanation).mockReturnValue({
+    vi.mocked(useMVOptimizationExplanation).mockReturnValue({
       data: {
         optimizedConfig: {
           ...config,
@@ -165,11 +174,11 @@ describe('DBTableChart', () => {
     renderWithMantine(<DBTableChart config={config} />);
 
     // Verify DateRangeIndicator was called
-    expect(jest.mocked(DateRangeIndicator)).toHaveBeenCalled();
+    expect(vi.mocked(DateRangeIndicator)).toHaveBeenCalled();
 
     // Verify it was called with the correct props
     const dateRangeIndicatorCall =
-      jest.mocked(DateRangeIndicator).mock.calls[0][0];
+      vi.mocked(DateRangeIndicator).mock.calls[0][0];
     expect(dateRangeIndicatorCall.originalDateRange).toEqual([
       originalStartDate,
       originalEndDate,
@@ -185,32 +194,30 @@ describe('DBTableChart', () => {
     it('asks the query to keep the previous rows during a refetch', () => {
       renderWithMantine(<DBTableChart config={baseTestConfig} />);
 
-      const options = jest.mocked(useOffsetPaginatedQuery).mock.calls[0][1];
+      const options = vi.mocked(useOffsetPaginatedQuery).mock.calls[0][1];
       expect(options?.keepPreviousData).toBe(true);
     });
 
     it('pulses while a refetch is showing the previous rows', () => {
-      jest.mocked(useOffsetPaginatedQuery).mockReturnValue({
-        ...jest.mocked(useOffsetPaginatedQuery)(baseTestConfig),
+      vi.mocked(useOffsetPaginatedQuery).mockReturnValue({
+        ...vi.mocked(useOffsetPaginatedQuery)(baseTestConfig),
         isPlaceholderData: true,
       });
 
       renderWithMantine(<DBTableChart config={baseTestConfig} />);
-      expect(jest.mocked(Table).mock.calls.at(-1)![0].className).toBe(
+      expect(vi.mocked(Table).mock.calls.at(-1)![0].className).toBe(
         'effect-pulse',
       );
     });
 
     it('does not pulse once fresh rows have loaded', () => {
       renderWithMantine(<DBTableChart config={baseTestConfig} />);
-      expect(
-        jest.mocked(Table).mock.calls.at(-1)![0].className,
-      ).toBeUndefined();
+      expect(vi.mocked(Table).mock.calls.at(-1)![0].className).toBeUndefined();
     });
 
     it('pulses the empty state while a refetch is running', () => {
-      const current = jest.mocked(useOffsetPaginatedQuery)(baseTestConfig);
-      jest.mocked(useOffsetPaginatedQuery).mockReturnValue({
+      const current = vi.mocked(useOffsetPaginatedQuery)(baseTestConfig);
+      vi.mocked(useOffsetPaginatedQuery).mockReturnValue({
         ...current,
         data: { ...current.data!, data: [] },
         isPlaceholderData: true,
@@ -225,16 +232,16 @@ describe('DBTableChart', () => {
     });
 
     describe('row links', () => {
-      const getRowSearchLink = jest.fn(() => '/search');
-      const rowAction = jest.fn();
+      const getRowSearchLink = vi.fn(() => '/search');
+      const rowAction = vi.fn();
 
       afterEach(() => {
-        jest.mocked(useOnClickLinkBuilder).mockReturnValue(null);
+        vi.mocked(useOnClickLinkBuilder).mockReturnValue(null);
       });
 
       const renderTable = (isPlaceholderData: boolean) => {
-        jest.mocked(useOffsetPaginatedQuery).mockReturnValue({
-          ...jest.mocked(useOffsetPaginatedQuery)(baseTestConfig),
+        vi.mocked(useOffsetPaginatedQuery).mockReturnValue({
+          ...vi.mocked(useOffsetPaginatedQuery)(baseTestConfig),
           isPlaceholderData,
         });
         renderWithMantine(
@@ -243,7 +250,7 @@ describe('DBTableChart', () => {
             getRowSearchLink={getRowSearchLink}
           />,
         );
-        return jest.mocked(Table).mock.calls.at(-1)![0];
+        return vi.mocked(Table).mock.calls.at(-1)![0];
       };
 
       it('disables search links on rows kept from the previous query', () => {
@@ -255,7 +262,7 @@ describe('DBTableChart', () => {
       });
 
       it('disables the configured row action on rows kept from the previous query', () => {
-        jest.mocked(useOnClickLinkBuilder).mockReturnValue(rowAction);
+        vi.mocked(useOnClickLinkBuilder).mockReturnValue(rowAction);
 
         expect(renderTable(true).getRowAction).toBeUndefined();
         expect(renderTable(false).getRowAction).toBe(rowAction);
@@ -267,7 +274,7 @@ describe('DBTableChart', () => {
     // Emulates how the ClickHouse query returns rows for a builder table chart:
     // series columns are produced before groupBy columns.
     beforeEach(() => {
-      jest.mocked(useOffsetPaginatedQuery).mockReturnValue({
+      vi.mocked(useOffsetPaginatedQuery).mockReturnValue({
         data: {
           data: [
             {
@@ -286,7 +293,7 @@ describe('DBTableChart', () => {
             direction: 'DESC' as const,
           },
         },
-        fetchNextPage: jest.fn(),
+        fetchNextPage: vi.fn(),
         hasNextPage: false,
         isLoading: false,
         isFetching: false,
@@ -311,7 +318,7 @@ describe('DBTableChart', () => {
     it('preserves the row key order (series, then groupBy) by default', () => {
       renderWithMantine(<DBTableChart config={configWithGroupBy} />);
 
-      const columns = jest.mocked(Table).mock.calls.at(-1)![0].columns;
+      const columns = vi.mocked(Table).mock.calls.at(-1)![0].columns;
       expect(columns.map(c => c.dataKey)).toEqual([
         'Count',
         'AvgDuration',
@@ -327,7 +334,7 @@ describe('DBTableChart', () => {
         />,
       );
 
-      const columns = jest.mocked(Table).mock.calls.at(-1)![0].columns;
+      const columns = vi.mocked(Table).mock.calls.at(-1)![0].columns;
       expect(columns.map(c => c.dataKey)).toEqual([
         'ServiceName',
         'SpanName',
@@ -341,7 +348,7 @@ describe('DBTableChart', () => {
       // single computed column for the ratio — not one column per select. The
       // row shape reflects this: 1 series column followed by the groupBy
       // columns.
-      jest.mocked(useOffsetPaginatedQuery).mockReturnValue({
+      vi.mocked(useOffsetPaginatedQuery).mockReturnValue({
         data: {
           data: [
             {
@@ -359,7 +366,7 @@ describe('DBTableChart', () => {
             direction: 'DESC' as const,
           },
         },
-        fetchNextPage: jest.fn(),
+        fetchNextPage: vi.fn(),
         hasNextPage: false,
         isLoading: false,
         isFetching: false,
@@ -384,7 +391,7 @@ describe('DBTableChart', () => {
 
       renderWithMantine(<DBTableChart config={ratioConfig} />);
 
-      const columns = jest.mocked(Table).mock.calls.at(-1)![0].columns;
+      const columns = vi.mocked(Table).mock.calls.at(-1)![0].columns;
       expect(columns.map(c => c.dataKey)).toEqual([
         'ServiceName',
         'SpanName',
@@ -401,7 +408,7 @@ describe('DBTableChart', () => {
         groupByColumnsOnLeft: true,
       };
 
-      jest.mocked(useOffsetPaginatedQuery).mockReturnValue({
+      vi.mocked(useOffsetPaginatedQuery).mockReturnValue({
         data: {
           data: [
             {
@@ -420,7 +427,7 @@ describe('DBTableChart', () => {
             direction: 'DESC' as const,
           },
         },
-        fetchNextPage: jest.fn(),
+        fetchNextPage: vi.fn(),
         hasNextPage: false,
         isLoading: false,
         isFetching: false,
@@ -430,7 +437,7 @@ describe('DBTableChart', () => {
 
       renderWithMantine(<DBTableChart config={rawSqlConfig} />);
 
-      const columns = jest.mocked(Table).mock.calls.at(-1)![0].columns;
+      const columns = vi.mocked(Table).mock.calls.at(-1)![0].columns;
       expect(columns.map(c => c.dataKey)).toEqual([
         'Count',
         'AvgDuration',
@@ -456,7 +463,7 @@ describe('DBTableChart', () => {
       );
 
       expect(
-        jest.mocked(Table).mock.calls.at(-1)![0].alternateRowBackground,
+        vi.mocked(Table).mock.calls.at(-1)![0].alternateRowBackground,
       ).toBe(true);
     });
 
@@ -464,7 +471,7 @@ describe('DBTableChart', () => {
       renderWithMantine(<DBTableChart config={builderConfig} />);
 
       expect(
-        jest.mocked(Table).mock.calls.at(-1)![0].alternateRowBackground,
+        vi.mocked(Table).mock.calls.at(-1)![0].alternateRowBackground,
       ).toBe(false);
     });
 
@@ -480,7 +487,7 @@ describe('DBTableChart', () => {
       renderWithMantine(<DBTableChart config={rawSqlConfig} />);
 
       expect(
-        jest.mocked(Table).mock.calls.at(-1)![0].alternateRowBackground,
+        vi.mocked(Table).mock.calls.at(-1)![0].alternateRowBackground,
       ).toBe(true);
     });
 
@@ -495,7 +502,7 @@ describe('DBTableChart', () => {
       renderWithMantine(<DBTableChart config={rawSqlConfig} />);
 
       expect(
-        jest.mocked(Table).mock.calls.at(-1)![0].alternateRowBackground,
+        vi.mocked(Table).mock.calls.at(-1)![0].alternateRowBackground,
       ).toBe(false);
     });
   });
@@ -526,7 +533,7 @@ describe('DBTableChart', () => {
           direction: 'DESC' as const,
         },
       },
-      fetchNextPage: jest.fn(),
+      fetchNextPage: vi.fn(),
       hasNextPage: false,
       isLoading: false,
       isFetching: false,
@@ -536,9 +543,9 @@ describe('DBTableChart', () => {
     });
 
     beforeEach(() => {
-      jest
-        .mocked(useOffsetPaginatedQuery)
-        .mockReturnValue(queryResult('Float64'));
+      vi.mocked(useOffsetPaginatedQuery).mockReturnValue(
+        queryResult('Float64'),
+      );
     });
 
     it('queries a range aligned to a resolved granularity', () => {
@@ -554,9 +561,7 @@ describe('DBTableChart', () => {
         />,
       );
 
-      const queried = jest
-        .mocked(useOffsetPaginatedQuery)
-        .mock.calls.at(-1)![0];
+      const queried = vi.mocked(useOffsetPaginatedQuery).mock.calls.at(-1)![0];
       expect(queried.dateRange).toEqual([
         new Date('2025-11-26T00:00:00Z'),
         new Date('2025-11-26T01:01:00Z'),
@@ -565,7 +570,7 @@ describe('DBTableChart', () => {
     });
 
     it("floors an auto granularity at the source's minimum", () => {
-      jest.mocked(getMinGranularitySeconds).mockReturnValueOnce(300);
+      vi.mocked(getMinGranularitySeconds).mockReturnValueOnce(300);
 
       renderWithMantine(
         <DBTableChart
@@ -579,9 +584,7 @@ describe('DBTableChart', () => {
         />,
       );
 
-      const queried = jest
-        .mocked(useOffsetPaginatedQuery)
-        .mock.calls.at(-1)![0];
+      const queried = vi.mocked(useOffsetPaginatedQuery).mock.calls.at(-1)![0];
       expect(queried.granularity).toBe('5 minute');
     });
 
@@ -589,14 +592,14 @@ describe('DBTableChart', () => {
       renderWithMantine(<DBTableChart config={promqlConfig} />);
 
       expect(
-        jest.mocked(Table).mock.calls.at(-1)![0].enableClientSideSorting,
+        vi.mocked(Table).mock.calls.at(-1)![0].enableClientSideSorting,
       ).toBe(true);
     });
 
     it('formats only the value column, leaving the label columns alone', () => {
       renderWithMantine(<DBTableChart config={promqlConfig} />);
 
-      const columns = jest.mocked(Table).mock.calls.at(-1)![0].columns;
+      const columns = vi.mocked(Table).mock.calls.at(-1)![0].columns;
       expect(columns.map(c => [c.dataKey, c.numberFormat?.output])).toEqual([
         ['Time', undefined],
         ['service', undefined],
@@ -605,13 +608,13 @@ describe('DBTableChart', () => {
     });
 
     it('formats a value column of any numeric type', () => {
-      jest
-        .mocked(useOffsetPaginatedQuery)
-        .mockReturnValue(queryResult('Nullable(Float64)'));
+      vi.mocked(useOffsetPaginatedQuery).mockReturnValue(
+        queryResult('Nullable(Float64)'),
+      );
 
       renderWithMantine(<DBTableChart config={promqlConfig} />);
 
-      const columns = jest.mocked(Table).mock.calls.at(-1)![0].columns;
+      const columns = vi.mocked(Table).mock.calls.at(-1)![0].columns;
       expect(columns.find(c => c.dataKey === 'Value')?.numberFormat).toEqual({
         output: 'number',
       });
@@ -620,7 +623,7 @@ describe('DBTableChart', () => {
 
   it('does not render DateRangeIndicator when MV optimization has no optimized date range', () => {
     // Mock useMVOptimizationExplanation to return data without an optimized config
-    jest.mocked(useMVOptimizationExplanation).mockReturnValue({
+    vi.mocked(useMVOptimizationExplanation).mockReturnValue({
       data: {
         optimizedConfig: undefined,
         explanations: [],
@@ -632,6 +635,6 @@ describe('DBTableChart', () => {
     renderWithMantine(<DBTableChart config={baseTestConfig} />);
 
     // Verify DateRangeIndicator was not called
-    expect(jest.mocked(DateRangeIndicator)).not.toHaveBeenCalled();
+    expect(vi.mocked(DateRangeIndicator)).not.toHaveBeenCalled();
   });
 });

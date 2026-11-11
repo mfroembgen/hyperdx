@@ -1,4 +1,5 @@
 import React from 'react';
+import { type Mock, vi } from 'vitest';
 import {
   BuilderChartConfigWithDateRange,
   SourceKind,
@@ -21,11 +22,14 @@ const mockRowTableProps: { current: RowTableProps } = { current: {} };
 const mockRowTableContext: { current: Record<string, unknown> } = {
   current: {},
 };
-jest.mock('../DBRowTable', () => {
-  const react = jest.requireActual<typeof React>('react');
-  const panel = jest.requireMock<{
+vi.mock('../DBRowTable', async () => {
+  const actualModule0 = await vi.importActual<typeof React>('react');
+  const actualModule1 = await vi.importMock<{
     RowSidePanelContext: React.Context<Record<string, unknown>>;
   }>('../DBRowSidePanel');
+
+  const react = actualModule0;
+  const panel = actualModule1;
   return {
     __esModule: true,
     DBSqlRowTable: (props: RowTableProps) => {
@@ -36,14 +40,16 @@ jest.mock('../DBRowTable', () => {
   };
 });
 
-jest.mock('../DBRowSidePanel', () => {
-  const react = jest.requireActual<typeof React>('react');
+vi.mock('../DBRowSidePanel', async () => {
+  const actualModule2 = await vi.importActual<typeof React>('react');
+
+  const react = actualModule2;
   return {
     __esModule: true,
     RowSidePanelContext: react.createContext({
       displayedColumns: ['Timestamp', 'Body'],
-      toggleColumn: jest.fn(),
-      onPropertyAddClick: jest.fn(),
+      toggleColumn: vi.fn(),
+      onPropertyAddClick: vi.fn(),
       generateSearchUrl: ({
         where,
         whereLanguage,
@@ -60,13 +66,13 @@ jest.mock('../DBRowSidePanel', () => {
 });
 
 let mockBasePath = '';
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   __esModule: true,
   useRouter: () => ({ basePath: mockBasePath }),
 }));
 
-const mockUseSource = jest.fn();
-jest.mock('@/source', () => ({
+const mockUseSource = vi.fn();
+vi.mock('@/source', () => ({
   __esModule: true,
   useSource: (args: unknown) => mockUseSource(args),
   getEventBody: (source: { bodyExpression?: string }) => source.bodyExpression,
@@ -96,12 +102,12 @@ const LOG_SOURCE: TLogSource = {
 
 function renderPanel({
   source = LOG_SOURCE,
-  onNavigateToLog = jest.fn(),
+  onNavigateToLog = vi.fn(),
   traceId = TRACE_ID,
 }: {
   /** Null for a source that no longer resolves. */
   source?: TLogSource | null;
-  onNavigateToLog?: jest.Mock;
+  onNavigateToLog?: Mock;
   traceId?: string;
 } = {}) {
   mockUseSource.mockReturnValue({

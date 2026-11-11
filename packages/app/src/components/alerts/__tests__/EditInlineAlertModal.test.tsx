@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   AlertSource,
   AlertThresholdType,
@@ -14,10 +15,10 @@ import {
 } from '@/components/alerts/EditInlineAlertModal';
 import type { AlertsPageItem } from '@/types';
 
-const updateAlertMutateAsync = jest.fn().mockResolvedValue({ data: {} });
-const useAlert = jest.fn();
+const updateAlertMutateAsync = vi.fn().mockResolvedValue({ data: {} });
+const useAlert = vi.fn();
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useUpdateAlert: () => ({
@@ -30,15 +31,15 @@ jest.mock('@/api', () => ({
   },
 }));
 
-jest.mock('@/useConfirm', () => ({ useConfirm: () => jest.fn() }));
-jest.mock('@/theme/ThemeProvider', () => ({
+vi.mock('@/useConfirm', () => ({ useConfirm: () => vi.fn() }));
+vi.mock('@/theme/ThemeProvider', () => ({
   __esModule: true,
   useBrandDisplayName: () => 'HyperDX',
 }));
 
 // The chart editor has its own suite; here it is stubbed to a "save what I was
 // seeded with" button, so these tests cover the modal's seeding and its PUT.
-jest.mock('@/components/DBEditTimeChartForm', () => ({
+vi.mock('@/components/DBEditTimeChartForm', () => ({
   __esModule: true,
   default: ({
     chartConfig,
@@ -121,7 +122,7 @@ const renderModal = (alert: AlertsPageItem) => {
       <EditInlineAlertModal
         alert={alert}
         opened
-        onClose={jest.fn()}
+        onClose={vi.fn()}
         dateRange={dateRange}
       />
     </QueryClientProvider>,

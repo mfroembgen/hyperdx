@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
+import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { NextSeo } from 'next-seo';
 import { HTTPError } from 'ky';
 import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import {
@@ -133,7 +133,9 @@ export default function PasswordAuthPage({
 
   return (
     <div className="AuthPage">
-      <NextSeo title={title} />
+      <Head>
+        <title>{title}</title>
+      </Head>
       <LandingHeader activeKey={`/${action}`} fixed />
       <div className="d-flex justify-content-center align-items-center vh-100">
         <div style={{ width: '26rem' }}>

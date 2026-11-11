@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { copyTextToClipboard } from '@/utils/clipboard';
 
 describe('copyTextToClipboard', () => {
@@ -11,11 +13,11 @@ describe('copyTextToClipboard', () => {
     });
     document.execCommand = originalExecCommand;
     document.body.innerHTML = '';
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('uses the Clipboard API when it is available', async () => {
-    const writeText = jest.fn().mockResolvedValue(undefined);
+    const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: { writeText },
@@ -31,7 +33,7 @@ describe('copyTextToClipboard', () => {
       configurable: true,
       value: undefined,
     });
-    document.execCommand = jest.fn().mockReturnValue(true);
+    document.execCommand = vi.fn().mockReturnValue(true);
     const initialChildCount = document.body.childElementCount;
 
     await expect(copyTextToClipboard('fallback text')).resolves.toBe(true);
@@ -41,12 +43,12 @@ describe('copyTextToClipboard', () => {
   });
 
   it('falls back to a textarea copy when the Clipboard API rejects', async () => {
-    const writeText = jest.fn().mockRejectedValue(new Error('denied'));
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: { writeText },
     });
-    document.execCommand = jest.fn().mockReturnValue(true);
+    document.execCommand = vi.fn().mockReturnValue(true);
 
     await expect(copyTextToClipboard('blocked')).resolves.toBe(true);
 
@@ -59,7 +61,7 @@ describe('copyTextToClipboard', () => {
       configurable: true,
       value: undefined,
     });
-    document.execCommand = jest.fn(() => {
+    document.execCommand = vi.fn(() => {
       throw new Error('copy failed');
     });
     const initialChildCount = document.body.childElementCount;
@@ -74,7 +76,7 @@ describe('copyTextToClipboard', () => {
       configurable: true,
       value: undefined,
     });
-    document.execCommand = jest.fn().mockReturnValue(true);
+    document.execCommand = vi.fn().mockReturnValue(true);
     const selectedText = document.createTextNode('selected text');
     const container = document.createElement('div');
     container.appendChild(selectedText);
@@ -96,7 +98,7 @@ describe('copyTextToClipboard', () => {
       configurable: true,
       value: undefined,
     });
-    document.execCommand = jest.fn().mockReturnValue(true);
+    document.execCommand = vi.fn().mockReturnValue(true);
     const selectedText = document.createTextNode('selected text');
     const container = document.createElement('div');
     container.appendChild(selectedText);
@@ -106,11 +108,9 @@ describe('copyTextToClipboard', () => {
     const selection = document.getSelection();
     selection?.removeAllRanges();
     selection?.addRange(range);
-    const addRange = jest
-      .spyOn(selection!, 'addRange')
-      .mockImplementation(() => {
-        throw new Error('range detached');
-      });
+    const addRange = vi.spyOn(selection!, 'addRange').mockImplementation(() => {
+      throw new Error('range detached');
+    });
 
     await expect(copyTextToClipboard('copy text')).resolves.toBe(true);
 
@@ -122,7 +122,7 @@ describe('copyTextToClipboard', () => {
       configurable: true,
       value: undefined,
     });
-    document.execCommand = jest.fn().mockReturnValue(false);
+    document.execCommand = vi.fn().mockReturnValue(false);
 
     await expect(copyTextToClipboard('nope')).resolves.toBe(false);
 

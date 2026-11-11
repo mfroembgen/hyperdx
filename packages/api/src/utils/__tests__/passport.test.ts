@@ -1,8 +1,10 @@
+import { vi } from 'vitest';
+
 import passport from '@/utils/passport';
 
-const mockFindUserById = jest.fn();
+const mockFindUserById = vi.hoisted(() => vi.fn());
 
-jest.mock('@/controllers/user', () => ({
+vi.mock('@/controllers/user', () => ({
   findUserById: (id: string) => mockFindUserById(id),
 }));
 

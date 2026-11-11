@@ -1,5 +1,6 @@
+import { vi } from 'vitest';
 import { UseQueryResult } from '@tanstack/react-query';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {
@@ -51,7 +52,7 @@ describe('cleanClickHouseExpression', () => {
 
 // jsdom has no layout, so the real virtualizer in NestedFilterGroup renders no
 // rows. Render every row as if visible.
-jest.mock('@tanstack/react-virtual', () => ({
+vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: ({ count }: { count: number }) => ({
     getVirtualItems: () =>
       Array.from({ length: count }, (_, index) => ({
@@ -64,8 +65,8 @@ jest.mock('@tanstack/react-virtual', () => ({
   }),
 }));
 
-jest.mock('@/hooks/useMetadata', () => ({
-  useGetValuesDistribution: jest
+vi.mock('@/hooks/useMetadata', () => ({
+  useGetValuesDistribution: vi
     .fn()
     .mockReturnValue({ data: undefined, isFetching: false, error: undefined }),
 }));
@@ -74,7 +75,7 @@ const mockDistribution = (
   data: Map<string, number> | undefined,
   error: Error | null = null,
 ) =>
-  jest.mocked(useGetValuesDistribution).mockReturnValue({
+  vi.mocked(useGetValuesDistribution).mockReturnValue({
     data,
     isFetching: false,
     error,
@@ -409,15 +410,15 @@ describe('FilterGroup', () => {
       { value: 'banana', label: 'banana' },
     ],
     selectedValues: { included: new Set(), excluded: new Set() },
-    onChange: jest.fn(),
-    onClearClick: jest.fn(),
-    onOnlyClick: jest.fn(),
-    onExcludeClick: jest.fn(),
+    onChange: vi.fn(),
+    onClearClick: vi.fn(),
+    onOnlyClick: vi.fn(),
+    onExcludeClick: vi.fn(),
     valuePins: {
-      onPinClick: jest.fn(),
-      isPinned: jest.fn().mockReturnValue(false),
+      onPinClick: vi.fn(),
+      isPinned: vi.fn().mockReturnValue(false),
     },
-    onLoadMore: jest.fn(),
+    onLoadMore: vi.fn(),
     loadMoreLoading: false,
     hasLoadedMore: false,
     isDefaultExpanded: true,
@@ -605,7 +606,7 @@ describe('FilterGroup', () => {
       screen.getByTestId('toggle-distribution-button-Test Filter'),
     );
 
-    expect(jest.mocked(useGetValuesDistribution)).toHaveBeenLastCalledWith(
+    expect(vi.mocked(useGetValuesDistribution)).toHaveBeenLastCalledWith(
       expect.objectContaining({
         chartConfig: expect.objectContaining({ filters }),
       }),
@@ -752,7 +753,7 @@ describe('FilterGroup', () => {
   });
 
   it('should clear excluded values when clicking Only', async () => {
-    const onOnlyClick = jest.fn();
+    const onOnlyClick = vi.fn();
     renderWithMantine(
       <FilterGroup
         {...defaultProps}
@@ -862,13 +863,13 @@ describe('NestedFilterGroup', () => {
       { key: 'attr1', value: ['val1', 'val2'], propertyPath: 'service.name' },
       { key: 'attr2', value: ['val3'], propertyPath: 'host.name' },
     ],
-    onChange: jest.fn(),
-    onClearClick: jest.fn(),
-    onOnlyClick: jest.fn(),
-    onExcludeClick: jest.fn(),
-    onPinClick: jest.fn(),
-    isPinned: jest.fn().mockReturnValue(false),
-    onLoadMore: jest.fn(),
+    onChange: vi.fn(),
+    onClearClick: vi.fn(),
+    onOnlyClick: vi.fn(),
+    onExcludeClick: vi.fn(),
+    onPinClick: vi.fn(),
+    isPinned: vi.fn().mockReturnValue(false),
+    onLoadMore: vi.fn(),
     loadMoreLoading: {} as Record<string, boolean>,
     hasLoadedMore: {} as Record<string, boolean>,
     chartConfig: {
@@ -1056,9 +1057,11 @@ describe('NestedFilterGroup', () => {
 
     await userEvent.click(screen.getByTestId(toggleTestId));
 
-    expect(screen.getByTestId(toggleTestId)).toHaveAttribute(
-      'aria-checked',
-      'false',
+    await waitFor(() =>
+      expect(screen.getByTestId(toggleTestId)).toHaveAttribute(
+        'aria-checked',
+        'false',
+      ),
     );
     expect(
       await screen.findAllByText('Error loading filter distribution'),

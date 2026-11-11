@@ -7,29 +7,23 @@ import Team from '@/models/team';
 import User from '@/models/user';
 import { resolveWorkosUser } from '@/utils/workosIdentity';
 
-const fixture = {
-  getUser: jest.fn(),
+const fixture = vi.hoisted(() => ({
+  getUser: vi.fn(),
   enabled: true,
   settings: {
     issuer: 'https://identity.example.com',
     teamId: '507f1f77bcf86cd799439011',
     autoJoinDomain: undefined as string | undefined,
   },
-};
-jest.mock('@/config', () => ({
-  ...jest.requireActual<typeof import('@/config')>('@/config'),
+}));
+vi.mock('@/config', async () => ({
+  ...(await vi.importActual<typeof import('@/config')>('@/config')),
   get WORKOS() {
     return fixture.enabled ? fixture.settings : undefined;
   },
 }));
-jest.mock('@/utils/workosClient', () => ({
-  workos: {
-    userManagement: {
-      get getUser() {
-        return fixture.getUser;
-      },
-    },
-  },
+vi.mock('@/utils/workosClient', () => ({
+  workos: { userManagement: { getUser: fixture.getUser } },
 }));
 
 describe('WorkOS existing Mongo member binding', () => {

@@ -62,8 +62,7 @@ export function extractQuickFilters(
       : undefined;
 
   const resourceAttrs = rowData[ROW_DATA_ALIASES.RESOURCE_ATTRIBUTES] as
-    | Record<string, unknown>
-    | undefined;
+    Record<string, unknown> | undefined;
 
   const serviceNameValue = rowData[ROW_DATA_ALIASES.SERVICE_NAME];
   if (serviceNameExpr && typeof serviceNameValue === 'string') {

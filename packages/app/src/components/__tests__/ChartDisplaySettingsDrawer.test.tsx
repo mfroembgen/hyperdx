@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import {
   DisplayType,
   MAX_LEGEND_TEMPLATE_LENGTH,
@@ -13,8 +14,8 @@ import { MAX_RENDERED_TIME_CHART_SERIES } from '@/defaults';
 
 // FormatTime depends on useUserPreferences (jotai + localStorage); mock it
 // so the drawer renders in isolation.
-jest.mock('@/useFormatTime', () => ({
-  FormatTime: jest.fn(() => null),
+vi.mock('@/useFormatTime', () => ({
+  FormatTime: vi.fn(() => null),
 }));
 
 describe('ChartDisplaySettingsDrawer', () => {
@@ -22,12 +23,12 @@ describe('ChartDisplaySettingsDrawer', () => {
     opened: true,
     configType: 'sql' as const,
     settings: {} as ChartConfigDisplaySettings,
-    onChange: jest.fn(),
-    onClose: jest.fn(),
+    onChange: vi.fn(),
+    onClose: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('heatmap y axis scale', () => {
@@ -57,7 +58,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     });
 
     it('applies the chosen scale', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
       renderWithMantine(
         <ChartDisplaySettingsDrawer
@@ -80,7 +81,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     it.each(['linear', 'log'] as const)(
       'selects the %s default scale when the tile has none',
       async scale => {
-        const onChange = jest.fn();
+        const onChange = vi.fn();
         const user = userEvent.setup();
         renderWithMantine(
           <ChartDisplaySettingsDrawer
@@ -130,7 +131,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     });
 
     it('calls onChange with the selected color token when Apply is clicked', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -164,7 +165,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     });
 
     it('calls onChange with a semantic token when Apply is clicked', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -229,7 +230,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     });
 
     it('calls onChange with fitYAxisToData = true when enabled and applied', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -287,7 +288,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     );
 
     it('leaves lineInterpolation unset when untouched', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
       renderWithMantine(
         <ChartDisplaySettingsDrawer
@@ -303,7 +304,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     });
 
     it('applies the chosen interpolation', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
       renderWithMantine(
         <ChartDisplaySettingsDrawer
@@ -419,7 +420,7 @@ describe('ChartDisplaySettingsDrawer', () => {
       );
 
       it('calls onChange with the entered seriesLimit when applied', async () => {
-        const onChange = jest.fn();
+        const onChange = vi.fn();
         const user = userEvent.setup();
 
         renderWithMantine(
@@ -442,7 +443,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     });
 
     it('calls onChange with the entered seriesLimit when applied', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -467,7 +468,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     // round-tripping through the URL query state; undefined would be dropped,
     // letting RHF's `values` sync restore the stale value.
     it('clears seriesLimit to null (disabled) when emptied', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -537,7 +538,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     });
 
     it('calls onChange with the entered seriesLimit when applied', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -561,7 +562,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     // Emits null (not undefined) for the same URL round-tripping reason as
     // the time-chart series limit above.
     it('clears seriesLimit to null (disabled) when emptied', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -637,7 +638,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     });
 
     it('calls onChange with alternateRowBackground = true when enabled and applied', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -660,7 +661,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     });
 
     it('calls onChange with alternateRowBackground = true for raw SQL table charts', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -750,7 +751,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     };
 
     it('does not persist the auto-detected format when Apply is clicked without changing it', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -768,7 +769,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     });
 
     it('persists the format when the user changes the output format', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -792,7 +793,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     });
 
     it('preserves an existing explicit format when only another setting changes', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -870,8 +871,8 @@ describe('ChartDisplaySettingsDrawer', () => {
     );
 
     it('blocks Apply when the template exceeds the persisted length cap', async () => {
-      const onChange = jest.fn();
-      const onClose = jest.fn();
+      const onChange = vi.fn();
+      const onClose = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -897,7 +898,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     });
 
     it('accepts a template exactly at the cap', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -916,7 +917,7 @@ describe('ChartDisplaySettingsDrawer', () => {
     });
 
     it('measures the trimmed value, matching what gets persisted', async () => {
-      const onChange = jest.fn();
+      const onChange = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(

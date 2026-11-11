@@ -1,8 +1,9 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 
 import { HeatmapTooltip } from '@/components/DBHeatmapChart/HeatmapTooltip';
 
-jest.mock('@/useFormatTime', () => ({
+vi.mock('@/useFormatTime', () => ({
   FormatTime: ({ value }: { value: number }) => <span>time:{value}</span>,
 }));
 

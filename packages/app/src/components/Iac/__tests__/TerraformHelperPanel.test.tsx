@@ -34,11 +34,11 @@ describe('TerraformHelperPanel', () => {
     expect(screen.getByText('import { to = foo.bar }')).toBeInTheDocument();
   });
 
-  it('hides a collapsible snippet behind a toggle and reveals its hint', () => {
+  it('hides a collapsible snippet behind a toggle and reveals its hint', async () => {
     renderPanel();
 
     expect(
-      screen.getByText('terraform { required_providers {} }'),
+      await screen.findByText('terraform { required_providers {} }'),
     ).not.toBeVisible();
 
     fireEvent.click(screen.getByText(/Show provider setup/));

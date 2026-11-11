@@ -1,12 +1,13 @@
+import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 
 // Local (temporary URL-state) dashboards never hit the backend, so setDashboard
 // must record the 'dashboard' onboarding task itself once a tile exists. These
 // tests exercise that branch in isolation.
 
-const mutate = jest.fn();
+const mutate = vi.fn();
 let localDashboardValue: unknown = null;
-const setLocalDashboard = jest.fn((v: unknown) => {
+const setLocalDashboard = vi.fn((v: unknown) => {
   localDashboardValue = v;
 });
 let meData: {
@@ -17,25 +18,25 @@ let meData: {
 // A real 24-hex ObjectId: recording is gated on the user id being persistable.
 const REAL_USER_ID = 'a1b2c3d4e5f6a1b2c3d4e5f6';
 
-jest.mock('../config', () => ({ IS_LOCAL_MODE: false }));
-jest.mock('@mantine/notifications', () => ({
-  notifications: { show: jest.fn() },
+vi.mock('../config', () => ({ IS_LOCAL_MODE: false }));
+vi.mock('@mantine/notifications', () => ({
+  notifications: { show: vi.fn() },
 }));
-jest.mock('nuqs', () => ({
+vi.mock('nuqs', () => ({
   parseAsJson: () => ({}),
   useQueryState: () => [localDashboardValue, setLocalDashboard],
 }));
-jest.mock('@tanstack/react-query', () => ({
-  useMutation: () => ({ mutate: jest.fn() }),
+vi.mock('@tanstack/react-query', () => ({
+  useMutation: () => ({ mutate: vi.fn() }),
   useQuery: () => ({ data: undefined, isFetching: false }),
-  useQueryClient: () => ({ invalidateQueries: jest.fn() }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
-jest.mock('../api', () => ({
+vi.mock('../api', () => ({
   __esModule: true,
   default: { useMe: () => ({ data: meData }) },
-  hdxServer: jest.fn(),
-  useMarkOnboardingTaskComplete: () => jest.fn(),
-  useInvalidateTags: () => jest.fn(),
+  hdxServer: vi.fn(),
+  useMarkOnboardingTaskComplete: () => vi.fn(),
+  useInvalidateTags: () => vi.fn(),
   useCompleteOnboardingTask: () => ({ mutate }),
 }));
 
@@ -56,7 +57,7 @@ function makeDashboard(tiles: unknown[]) {
 
 describe('useDashboard local-dashboard onboarding', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     localDashboardValue = null;
     meData = {
       id: REAL_USER_ID,
