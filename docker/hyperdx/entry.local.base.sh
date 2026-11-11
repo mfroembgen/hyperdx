@@ -72,14 +72,13 @@ echo "ClickHouse is ready!"
 # Start Otel Collector with entrypoint script for template rendering and log rotation
 /otel-entrypoint.sh /usr/local/bin/opampsupervisor > /var/log/otel-collector.log 2>&1 &
 
-node /etc/local/refresh-env.js
 
 # Start HyperDX app
-./node_modules/.bin/concurrently \
+bun ./packages/api/node_modules/.bin/concurrently \
   "--kill-others-on-fail" \
   "--names=API,APP,ALERT-TASK" \
   "PORT=${HYPERDX_API_PORT:-8000} HYPERDX_APP_PORT=${HYPERDX_APP_PORT:-8080} ./packages/api/bin/hyperdx api" \
-  "cd ./packages/app/packages/app && HOSTNAME='${HYPERDX_APP_LISTEN_HOSTNAME:-0.0.0.0}' HYPERDX_API_PORT=${HYPERDX_API_PORT:-8000} PORT=${HYPERDX_APP_PORT:-8080} node server.js" \
+  "cd ./packages/app && HOST='${HYPERDX_APP_LISTEN_HOSTNAME:-0.0.0.0}' HYPERDX_API_PORT=${HYPERDX_API_PORT:-8000} PORT=${HYPERDX_APP_PORT:-8080} bun server.mjs" \
   "./packages/api/bin/hyperdx task check-alerts" \
   > /var/log/app.log 2>&1 &
 
