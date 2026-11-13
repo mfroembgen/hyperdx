@@ -4119,6 +4119,7 @@ __metadata:
     "@types/sqlstring": "npm:^2.3.0"
     "@types/supertest": "npm:^2.0.12"
     "@types/swagger-jsdoc": "npm:^6"
+    "@workos-inc/node": "npm:12.0.0"
     ai: "npm:^7.0.116"
     ajv: "npm:^8.20.0"
     aws4: "npm:^1.13.2"
@@ -4137,6 +4138,7 @@ __metadata:
     http-proxy-middleware: "npm:^4.0.0"
     ip-address: "npm:^10.7.4"
     jest: "npm:^30.2.0"
+    jose: "npm:6.2.14"
     lodash: "npm:^4.18.1"
     migrate-mongo: "npm:^11.0.0"
     minimist: "npm:^1.2.7"
@@ -12145,6 +12147,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@workos-inc/node@npm:12.0.0":
+  version: 12.0.0
+  resolution: "@workos-inc/node@npm:12.0.0"
+  checksum: 10c0/d1f42b379cb6ce40100fb4f2fabb37c545da4ce57decbb9e245cf93b8ead1fc7ffe00fae63e4518d384a30513e58c91fe5fa6592f2a09364c546ccd6b26bfaa8
+  languageName: node
+  linkType: hard
+
 "@xstate/fsm@npm:^1.4.0":
   version: 1.6.5
   resolution: "@xstate/fsm@npm:1.6.5"
@@ -20117,6 +20126,13 @@ __metadata:
   bin:
     jiti: lib/jiti-cli.mjs
   checksum: 10c0/1b1e2310a490dce1aeea3da5f5dfe18273516c20ce48be2e98eb8ea452d5f3dcc8fd0cfd6d28b4052a24c5dbab6e3089b2d7e79f0bce7915b10d750929563c42
+  languageName: node
+  linkType: hard
+
+"jose@npm:6.2.14":
+  version: 6.2.14
+  resolution: "jose@npm:6.2.14"
+  checksum: 10c0/3db121220793e391c24803edae1ede848e7a67e2c3d37f9864f3e3e245c4b2d318f176d17f0f8ab02be07e210a3db5453612c8d5716af2deeaaa4e5d50e70641
   languageName: node
   linkType: hard
 

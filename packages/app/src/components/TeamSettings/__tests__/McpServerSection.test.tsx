@@ -2,6 +2,7 @@ import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { fromPartial } from '@total-typescript/shoehorn';
 
 import api from '@/api';
 import McpServerSection from '@/components/TeamSettings/McpServerSection';
@@ -10,11 +11,13 @@ jest.mock('@/api', () => ({
   __esModule: true,
   default: {
     useMe: jest.fn(),
+    useInstallation: jest.fn(),
   },
   hdxServer: jest.fn(),
 }));
 
 const mockUseMe = jest.mocked(api.useMe);
+const mockUseInstallation = jest.mocked(api.useInstallation);
 
 function setMe(accessKey: string | null, isLoading = false) {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
@@ -50,6 +53,30 @@ describe('McpServerSection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setMe('k_test');
+    mockUseInstallation.mockReturnValue(
+      fromPartial({
+        data: { isTeamExisting: true, workosEnabled: false },
+        isLoading: false,
+      }),
+    );
+  });
+
+  it('connects OAuth clients without distributing the personal access key', () => {
+    mockUseInstallation.mockReturnValue(
+      fromPartial({
+        data: { isTeamExisting: true, workosEnabled: true },
+        isLoading: false,
+      }),
+    );
+
+    renderSection();
+
+    expect(screen.getByText(/codex mcp login clickstack/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/claude mcp add --transport http clickstack/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Authorization|bearer-token-env-var/)).toBeNull();
+    expect(screen.queryByText(/k_test/)).toBeNull();
   });
 
   it('renders the section header and the install panel', () => {

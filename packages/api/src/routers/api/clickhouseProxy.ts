@@ -202,6 +202,12 @@ const getConnection: RequestHandler =
         username: connection.username,
         hyperdxSettingPrefix: connection.hyperdxSettingPrefix,
       };
+      // Browser and HyperDX credentials must never reach the database host.
+      // Strip incoming headers before the proxy adds database credentials.
+      delete req.headers.authorization;
+      delete req.headers['proxy-authorization'];
+      delete req.headers.cookie;
+      delete req.headers['x-hyperdx-api-key'];
       next();
     } catch (e) {
       console.error('Error setting up proxy hdx connection', e);

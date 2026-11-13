@@ -23,6 +23,18 @@ describe('telemetry preload', () => {
     });
   };
 
+  const httpInstrumentation = {
+    '@opentelemetry/instrumentation-http': {
+      applyCustomAttributesOnSpan: expect.any(Function),
+      redactedQueryParams: expect.arrayContaining(['sig', 'code', 'state']),
+      redactedQueryParamsServer: expect.arrayContaining([
+        'sig',
+        'code',
+        'state',
+      ]),
+    },
+  };
+
   beforeEach(() => {
     mockInit.mockClear();
     mockIsMainThread = true;
@@ -30,6 +42,24 @@ describe('telemetry preload', () => {
 
   afterAll(() => {
     process.env = originalEnv;
+  });
+
+  it('scrubs setup tokens from the url.path of incoming HTTP spans', () => {
+    runPreload({ HYPERDX_API_KEY: 'ingest-key', NODE_ENV: 'production' });
+    const { applyCustomAttributesOnSpan } =
+      mockInit.mock.calls[0][0].instrumentations[
+        '@opentelemetry/instrumentation-http'
+      ];
+    const setAttribute = jest.fn();
+
+    applyCustomAttributesOnSpan(
+      { setAttribute },
+      { url: '/team/setup/secret-invite?code=secret-code&page=2' },
+    );
+
+    expect(Object.fromEntries(setAttribute.mock.calls)).toEqual({
+      'url.path': '/team/setup/[REDACTED]',
+    });
   });
 
   it('does not start the SDK without a key or OTLP headers', () => {
@@ -43,7 +73,7 @@ describe('telemetry preload', () => {
 
     expect(mockInit).toHaveBeenCalledWith({
       apiKey: 'ingest-key',
-      instrumentations: undefined,
+      instrumentations: httpInstrumentation,
     });
   });
 
@@ -67,6 +97,7 @@ describe('telemetry preload', () => {
     expect(mockInit).toHaveBeenCalledWith({
       apiKey: 'ingest-key',
       instrumentations: {
+        ...httpInstrumentation,
         '@opentelemetry/instrumentation-host-metrics': { enabled: true },
       },
     });

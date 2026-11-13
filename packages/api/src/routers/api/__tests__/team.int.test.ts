@@ -179,12 +179,12 @@ describe('team router', () => {
         },
         {
           "email": "user1@example.com",
-          "hasPasswordAuth": true,
+          "hasPasswordAuth": false,
           "isCurrentUser": false,
         },
         {
           "email": "user2@example.com",
-          "hasPasswordAuth": true,
+          "hasPasswordAuth": false,
           "isCurrentUser": false,
         },
       ]
