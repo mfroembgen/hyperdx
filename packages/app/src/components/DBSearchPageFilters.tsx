@@ -1374,9 +1374,6 @@ const DBSearchPageFiltersComponent = ({
     const _facets: FacetEntry[] = [];
     for (const _facet of facetsWithPinnedValues ?? []) {
       const facet = structuredClone(_facet);
-      if (jsonColumns?.some(col => facet.key.startsWith(col))) {
-        facet.key = `toString(${facet.key})`;
-      }
 
       // Skip fields already shown in the Shared Filters section
       if (sharedFilterKeys.has(facet.key)) {
@@ -1456,7 +1453,6 @@ const DBSearchPageFiltersComponent = ({
     tableMetadata,
     isFieldPinned,
     isSharedFieldPinned,
-    jsonColumns,
     sharedFilterKeys,
   ]);
 

@@ -31,6 +31,7 @@ import { useSource } from '@/source';
 import { mergePath } from '@/utils';
 
 import {
+  cleanClickHouseExpression,
   listRequestedFacets,
   sortLowCardinalityFirst,
   toQuotedClickHouseKeyExpression,
@@ -224,15 +225,17 @@ function useFacets({
   const loadMoreFacetsForKey = useCallback(
     async (key: string): Promise<Facet | undefined> => {
       try {
+        const cleanKey = cleanClickHouseExpression(key);
         const sqlKey = toQuotedClickHouseKeyExpression(
-          key,
+          cleanKey,
           knownColumns,
           jsonColumnSet,
         );
         if (mode === 'exact') {
           const strippedFilterState: FilterState = { ...filterState };
           delete strippedFilterState[key];
-          if (sqlKey !== key) delete strippedFilterState[sqlKey];
+          delete strippedFilterState[cleanKey];
+          delete strippedFilterState[sqlKey];
           const newKeyVals = await metadata.getKeyValuesWithMVs({
             chartConfig: {
               ...chartConfig,
@@ -273,7 +276,11 @@ function useFacets({
           metadataMVs: tableConnection.metadataMVs,
           // "Load more" wants every value in the time range, not a sample of parts.
           mapKeyIndexMaxParts: null,
-          keyExpressions: [sqlKey],
+          // getAllKeyValues reads JSON paths only in Map form, which it
+          // renders as JSON string subcolumns.
+          keyExpressions: [
+            toQuotedClickHouseKeyExpression(cleanKey, knownColumns, new Set()),
+          ],
           maxValuesPerKey: SINGLE_KEY_VALUES_LIMIT,
           dateRange,
           timestampValueExpression:

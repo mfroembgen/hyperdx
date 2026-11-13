@@ -64,14 +64,38 @@ export function listRequestedFacets({
   return { facets, pendingKeys };
 }
 
+// A key that begins with `identifier(` is a raw SQL function call (e.g.
+// `toString(...)`, `JSONExtractString(...)`), not a column name or a dot-form
+// Map sub-key, so it is already a valid ClickHouse expression.
+const isSqlFunctionCallExpression = (key: string): boolean =>
+  /^[A-Za-z_]\w*\(/.test(key);
+
 // Clean ClickHouse expressions to extract clean property paths
 export function cleanClickHouseExpression(key: string): string {
   // Remove toString() wrapper if present
   let cleanKey = key.replace(/^toString\((.+)\)$/, '$1');
+  // Quoting inside a SQL function belongs to the expression, not the field key.
+  if (isSqlFunctionCallExpression(cleanKey)) return key;
 
-  // Convert backtick dot notation to clean dot notation
-  // e.g., `host`.`arch` -> host.arch
-  cleanKey = cleanKey.replace(/`([^`]+)`/g, '$1');
+  // Map string keys are values, so identifier unquoting must leave them intact.
+  // Numeric subscripts (`events`[1]) are JSON array paths, not Map keys.
+  const bracketStart = cleanKey.search(/\[['"]/);
+  if (bracketStart !== -1) {
+    const column = cleanKey.slice(0, bracketStart);
+    return (
+      column.replace(/^`((?:``|[^`])*)`$/, (_, identifier: string) =>
+        identifier.replace(/``/g, '`'),
+      ) + cleanKey.slice(bracketStart)
+    );
+  }
+
+  // Only unquote complete path segments. Literal backticks inside a clean
+  // identifier must survive another pass through the normalizer.
+  cleanKey = cleanKey.replace(
+    /(^|\.)`((?:``|[^`])*)`(?=\.|\[|$)/g,
+    (_, separator: string, identifier: string) =>
+      separator + identifier.replace(/``/g, '`'),
+  );
 
   return cleanKey;
 }
@@ -233,12 +257,6 @@ export function getFilterStateEntry(
     filterState[`${parsed.baseName}['${parsed.propertyPath}']`]
   );
 }
-
-// A key that begins with `identifier(` is a raw SQL function call (e.g.
-// `toString(...)`, `JSONExtractString(...)`), not a column name or a dot-form
-// Map sub-key, so it is already a valid ClickHouse expression.
-const isSqlFunctionCallExpression = (key: string): boolean =>
-  /^[A-Za-z_]\w*\(/.test(key);
 
 // Coerce a filterState key into a ClickHouse expression suitable for raw SQL.
 // A dot-form Map sub-key like `LogAttributes.host.name` is rewritten to bracket

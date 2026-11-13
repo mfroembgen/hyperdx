@@ -189,6 +189,7 @@ export const useSearchPageFilterState = ({
       value: string | boolean,
       action?: 'only' | 'exclude' | 'include',
     ) => {
+      property = cleanClickHouseExpression(property);
       setFilters(prevFilters => {
         const newFilters = produce(prevFilters, draft => {
           if (!draft[property]) {
@@ -243,7 +244,7 @@ export const useSearchPageFilterState = ({
       setFilters(prevFilters => {
         const newFilters = produce(prevFilters, draft => {
           for (const { property, value } of entries) {
-            draft[property] = {
+            draft[cleanClickHouseExpression(property)] = {
               included: new Set([value]),
               excluded: new Set(),
             };
@@ -258,6 +259,7 @@ export const useSearchPageFilterState = ({
 
   const setFilterRange = useCallback(
     (property: string, range: { min: number; max: number }) => {
+      property = cleanClickHouseExpression(property);
       setFilters(prevFilters => {
         const newFilters = produce(prevFilters, draft => {
           if (!draft[property]) {
@@ -274,6 +276,7 @@ export const useSearchPageFilterState = ({
 
   const clearFilter = useCallback(
     (property: string) => {
+      property = cleanClickHouseExpression(property);
       setFilters(prevFilters => {
         const newFilters = produce(prevFilters, draft => {
           delete draft[property];
@@ -295,6 +298,7 @@ export const useSearchPageFilterState = ({
       newValue: string | boolean,
       action: 'include' | 'exclude',
     ) => {
+      property = cleanClickHouseExpression(property);
       setFilters(prevFilters => {
         const newFilters = produce(prevFilters, draft => {
           if (!draft[property]) {

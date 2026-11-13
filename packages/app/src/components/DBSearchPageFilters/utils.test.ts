@@ -21,6 +21,18 @@ describe('cleanClickHouseExpression', () => {
     ).toBe('ResourceAttributes.hdx.sdk');
   });
 
+  it('unescapes doubled backticks in quoted JSON path segments', () => {
+    expect(
+      cleanClickHouseExpression('toString(ResourceAttributes.`k8s`.`na``me`)'),
+    ).toBe('ResourceAttributes.k8s.na`me');
+  });
+
+  it('unquotes JSON path segments that carry array subscripts', () => {
+    expect(
+      cleanClickHouseExpression('toString(`message`.`events`[1].`value`)'),
+    ).toBe('message.events[1].value');
+  });
+
   it('leaves a plain identifier unchanged', () => {
     expect(cleanClickHouseExpression('ServiceName')).toBe('ServiceName');
   });

@@ -323,7 +323,7 @@ const renderJsonStringSubcolumn = (
     .map(quoteJsonPathSegment)
     .join('.');
 
-  return `${columnIdentifier}.${path}${JSON_STRING_TYPE_SUFFIX}`;
+  return `toString(${columnIdentifier}.${path})`;
 };
 
 export class MetadataCache {
