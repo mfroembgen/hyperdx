@@ -2,6 +2,7 @@ import { ClickhouseClient } from '@hyperdx/common-utils/dist/clickhouse/node';
 import { isRawSqlChartConfig } from '@hyperdx/common-utils/dist/guards';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { vi } from 'vitest';
 
 import * as config from '@/config';
 import {
@@ -183,7 +184,7 @@ describe('log body fallback for bare-text MCP filters', () => {
     });
     expect(saved.isError).toBeFalsy();
     const dashboard = JSON.parse(getFirstText(saved));
-    const query = jest.spyOn(ClickhouseClient.prototype, 'queryChartConfig');
+    const query = vi.spyOn(ClickhouseClient.prototype, 'queryChartConfig');
     try {
       const result = await callTool(client, 'clickstack_query_tile', {
         dashboardId: dashboard.id,

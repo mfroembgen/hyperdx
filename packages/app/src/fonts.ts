@@ -1,29 +1,12 @@
-import { IBM_Plex_Mono, Inter, Roboto, Roboto_Mono } from 'next/font/google';
+import '@styles/fonts.css';
 
-export const ibmPlexMono = IBM_Plex_Mono({
-  weight: ['300', '400', '500', '600', '700'],
-  subsets: ['latin'],
-  variable: '--font-ibm-plex-mono',
-  display: 'swap',
-});
-
-export const robotoMono = Roboto_Mono({
-  weight: ['100', '300', '400', '500', '700'],
-  subsets: ['latin'],
-  variable: '--font-roboto-mono',
-  display: 'swap',
-});
-
-export const inter = Inter({
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-});
-
-export const roboto = Roboto({
-  weight: ['100', '300', '400', '500', '700'],
-  subsets: ['latin'],
-  variable: '--font-roboto',
-  display: 'swap',
-});
+export const ibmPlexMono = {
+  variable: 'font-ibm-plex-mono',
+  className: 'face-ibm-plex-mono',
+};
+export const inter = { variable: 'font-inter', className: 'face-inter' };
+export const roboto = { variable: 'font-roboto', className: 'face-roboto' };
+export const robotoMono = {
+  variable: 'font-roboto-mono',
+  className: 'face-roboto-mono',
+};

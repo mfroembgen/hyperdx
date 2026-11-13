@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 
 import { Dashboard } from '@/dashboard';
@@ -5,7 +6,7 @@ import useTileSelection from '@/hooks/useTileSelection';
 
 function renderSelectionHook(dashboard: Dashboard) {
   let current = dashboard;
-  const setDashboard = jest.fn((d: Dashboard) => {
+  const setDashboard = vi.fn((d: Dashboard) => {
     current = d;
   });
   const hook = renderHook(() =>

@@ -1,29 +1,31 @@
-const mockShutdown = jest.fn<Promise<void>, []>();
-const mockCronStop = jest.fn();
-const mockCronFrom = jest.fn((_options: unknown) => ({ stop: mockCronStop }));
+import { type MockInstance, vi } from 'vitest';
+
+const mockShutdown = vi.fn<() => Promise<void>>();
+const mockCronStop = vi.fn();
+const mockCronFrom = vi.fn((_options: unknown) => ({ stop: mockCronStop }));
 const mockConfig = {
   CODE_VERSION: 'test',
   RUN_SCHEDULED_TASKS_EXTERNALLY: false,
 };
 
-jest.mock('@clickhouse/clickstack-node', () => ({
+vi.mock('@clickhouse/clickstack-node', () => ({
   shutdown: () => mockShutdown(),
 }));
-jest.mock('cron', () => ({
+vi.mock('cron', () => ({
   CronJob: { from: (options: unknown) => mockCronFrom(options) },
 }));
-jest.mock('@/config', () => mockConfig);
-jest.mock('@/utils/logger', () => ({
+vi.mock('@/config', () => mockConfig);
+vi.mock('@/utils/logger', () => ({
   __esModule: true,
-  default: { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
+  default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
-jest.mock('@/tasks/checkAlerts', () => ({
+vi.mock('@/tasks/checkAlerts', () => ({
   __esModule: true,
-  default: jest.fn(),
+  default: vi.fn(),
 }));
-jest.mock('@/tasks/provisionDashboards', () => ({
+vi.mock('@/tasks/provisionDashboards', () => ({
   __esModule: true,
-  default: jest.fn(),
+  default: vi.fn(),
 }));
 
 const flushPromises = () => new Promise(resolve => setImmediate(resolve));
@@ -32,15 +34,14 @@ describe('tasks entry point', () => {
   const originalArgv = process.argv;
   // Jest's process copy forwards exitCode to the real process.
   const originalExitCode = process.exitCode;
-  let processOn: jest.SpyInstance;
-  let processExit: jest.SpyInstance;
+  let processOn: MockInstance;
+  let processExit: MockInstance;
   let finishShutdown: () => void;
 
-  const loadTasks = () => {
+  const loadTasks = async () => {
     process.argv = ['node', 'tasks', 'ping-pong'];
-    jest.isolateModules(() => {
-      jest.requireActual('@/tasks/index');
-    });
+    vi.resetModules();
+    await import('@/tasks/index.js');
   };
 
   const handlerFor = (event: string) => {
@@ -52,26 +53,28 @@ describe('tasks entry point', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockShutdown.mockReturnValue(
       new Promise(resolve => {
         finishShutdown = resolve;
       }),
     );
-    processOn = jest.spyOn(process, 'on').mockReturnValue(process);
-    processExit = jest.spyOn(process, 'exit').mockImplementation();
-    jest.spyOn(console, 'log').mockImplementation();
+    processOn = vi.spyOn(process, 'on').mockReturnValue(process);
+    processExit = vi
+      .spyOn(process, 'exit')
+      .mockImplementation(() => undefined as never);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     process.argv = originalArgv;
     process.exitCode = originalExitCode;
   });
 
   it('stops the cron job and shuts down once, exiting with the first code', async () => {
     mockConfig.RUN_SCHEDULED_TASKS_EXTERNALLY = false;
-    loadTasks();
+    await loadTasks();
     expect(mockCronFrom).toHaveBeenCalledTimes(1);
 
     handlerFor('uncaughtException')(new Error('first'));
@@ -95,7 +98,7 @@ describe('tasks entry point', () => {
 
   it('keeps exit code 0 when a rejection arrives during the one-shot shutdown', async () => {
     mockConfig.RUN_SCHEDULED_TASKS_EXTERNALLY = true;
-    loadTasks();
+    await loadTasks();
     await flushPromises();
     expect(mockCronFrom).not.toHaveBeenCalled();
     expect(mockShutdown).toHaveBeenCalledTimes(1);

@@ -141,7 +141,7 @@ describe('tile description', () => {
                   aggFn: 'count',
                   where: '',
                   groupBy: [],
-                  displayType: 'line',
+                  displayType: DisplayType.Line,
                 },
               ],
             }
@@ -932,7 +932,7 @@ describe('PromQL tiles', () => {
       h: 4,
       config: {
         configType: 'promql',
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId: source,
         expressions: [
           { expression: 'up', queryType: 'instant', reducer: 'max' },
@@ -953,7 +953,7 @@ describe('PromQL tiles', () => {
       h: 4,
       config: {
         configType: 'promql',
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId: source,
         expressions: [{ expression: 'up' }],
         ...config,

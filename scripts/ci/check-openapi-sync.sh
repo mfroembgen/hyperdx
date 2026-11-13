@@ -11,7 +11,7 @@ SPEC=packages/api/openapi.json
 
 # `swaggerOptions.apis` is a cwd-relative glob; from the repo root it matches
 # nothing and emits an empty spec.
-yarn workspace @hyperdx/api docgen
+bun run --filter @hyperdx/api docgen
 
 # Against the index, not HEAD, so staging the regenerated spec counts as fixed.
 if git --no-pager diff --quiet -- "$SPEC"; then

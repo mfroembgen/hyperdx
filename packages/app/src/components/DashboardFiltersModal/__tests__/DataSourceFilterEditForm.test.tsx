@@ -1,4 +1,5 @@
 import { useForm } from 'react-hook-form';
+import { vi } from 'vitest';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -10,7 +11,7 @@ import {
   toSavedFilter,
 } from '@/components/DashboardFiltersModal/filterFormState';
 
-jest.mock('@/connection', () => ({
+vi.mock('@/connection', () => ({
   useConnections: () => ({ data: [{ id: 'conn-1', name: 'Primary' }] }),
 }));
 
@@ -60,7 +61,7 @@ describe('DataSourceFilterEditForm', () => {
   });
 
   it('saves no connection once the connection is cleared', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderWithMantine(
       <Harness
         allowedSourceKinds={[SourceKind.Log]}

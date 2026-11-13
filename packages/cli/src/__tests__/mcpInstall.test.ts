@@ -1,11 +1,4 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  jest,
-} from '@jest/globals';
+import { vi } from 'vitest';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -289,7 +282,7 @@ describe('listTeams', () => {
     globalThis.fetch = realFetch;
   });
   const respondText = (text: string, status = 200) => {
-    const fetchMock = jest.fn(async (_url: string, _init?: RequestInit) => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => {
       return new Response(text, { status });
     });
     globalThis.fetch = fetchMock as unknown as typeof fetch;
@@ -387,7 +380,7 @@ describe('verifyKey', () => {
   });
 
   const respond = (status: number, body: unknown = {}) => {
-    const fetchMock = jest.fn(async (_url: string, _init?: RequestInit) =>
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
       Response.json(body, { status }),
     );
     globalThis.fetch = fetchMock as unknown as typeof fetch;

@@ -46,9 +46,7 @@ import {
 } from '@/utils/clipboard';
 
 type JSONExtractFn =
-  | 'JSONExtractString'
-  | 'JSONExtractFloat'
-  | 'JSONExtractBool';
+  'JSONExtractString' | 'JSONExtractFloat' | 'JSONExtractBool';
 
 export function buildJSONExtractQuery(
   keyPath: string[],
@@ -516,7 +514,7 @@ export function DBRowJsonViewer({
           label: <IconFilter size={14} />,
           title: 'Add to Filters',
           onClick: () => {
-            let filterFieldPath = fieldPath;
+            let filterFieldPath: string;
 
             // Handle parsed JSON from string columns using JSONExtractString
             if (isInParsedJson && parsedJsonRootPath) {

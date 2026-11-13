@@ -1,4 +1,4 @@
-import { ClickHouseError } from '@clickhouse/client-common';
+import { ClickHouseError } from '@clickhouse/client';
 
 export const WEBHOOK_REDIRECT_ERROR_MESSAGE =
   'Webhook destination responded with a redirect. Redirects are not supported.';

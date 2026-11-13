@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { Menu } from '@mantine/core';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -53,7 +54,7 @@ describe('MoveToGroupSubmenu', () => {
     props: { containerId?: string; tabId?: string } = {},
     moveTargets: MoveTarget[] = buildMoveTargets(containers),
   ) {
-    const onMoveToGroup = jest.fn();
+    const onMoveToGroup = vi.fn();
     // jsdom has no layout, so Popover would hide the dropdown as detached
     const { unmount } = renderWithMantine(
       <Menu opened transitionProps={{ duration: 0 }} hideDetached={false}>

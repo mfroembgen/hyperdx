@@ -1,10 +1,13 @@
 import express from 'express';
-import rateLimit, { Options } from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator, Options } from 'express-rate-limit';
 
 import { getAccessKeyFromRequest } from '@/middleware/auth';
 
 export const rateLimiterKeyGenerator = (req: express.Request): string => {
-  return getAccessKeyFromRequest(req) || req.ip || 'unknown';
+  return (
+    getAccessKeyFromRequest(req) ||
+    (req.ip ? ipKeyGenerator(req.ip) : 'unknown')
+  );
 };
 
 export default (config?: Partial<Options>) => {

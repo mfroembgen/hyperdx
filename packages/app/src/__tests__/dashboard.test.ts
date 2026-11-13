@@ -1,24 +1,25 @@
-jest.mock('../api', () => ({
+import { vi } from 'vitest';
+vi.mock('../api', () => ({
   __esModule: true,
   default: { useMe: () => ({ data: null }) },
-  hdxServer: jest.fn(),
-  useMarkOnboardingTaskComplete: () => jest.fn(),
-  useCompleteOnboardingTask: () => ({ mutate: jest.fn() }),
+  hdxServer: vi.fn(),
+  useMarkOnboardingTaskComplete: () => vi.fn(),
+  useCompleteOnboardingTask: () => ({ mutate: vi.fn() }),
 }));
-jest.mock('../config', () => ({ IS_LOCAL_MODE: true }));
-jest.mock('@mantine/notifications', () => ({
-  notifications: { show: jest.fn() },
+vi.mock('../config', () => ({ IS_LOCAL_MODE: true }));
+vi.mock('@mantine/notifications', () => ({
+  notifications: { show: vi.fn() },
 }));
-jest.mock('nuqs', () => ({
-  parseAsJson: jest.fn(),
-  useQueryState: jest.fn(),
+vi.mock('nuqs', () => ({
+  parseAsJson: vi.fn(),
+  useQueryState: vi.fn(),
 }));
-jest.mock('@tanstack/react-query', () => ({
-  useQuery: jest.fn(),
-  useMutation: jest.fn(),
-  useQueryClient: jest.fn(),
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: vi.fn(),
+  useMutation: vi.fn(),
+  useQueryClient: vi.fn(),
 }));
-jest.mock('@/utils', () => ({ hashCode: jest.fn(() => 0) }));
+vi.mock('@/utils', () => ({ hashCode: vi.fn(() => 0) }));
 
 import { LEGACY_CHART_PALETTE_TOKEN_MAP } from '@hyperdx/common-utils/dist/types';
 

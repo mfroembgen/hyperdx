@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
 import {
@@ -32,7 +33,7 @@ const rows = [row('where-a', hintA), row('where-b', hintB)];
 function renderHint(
   overrides: Partial<Parameters<typeof useRowHighlightHint>[0]> = {},
 ) {
-  const onClick = jest.fn();
+  const onClick = vi.fn();
   const view = renderHook(
     (props: Parameters<typeof useRowHighlightHint>[0]) =>
       useRowHighlightHint(props),

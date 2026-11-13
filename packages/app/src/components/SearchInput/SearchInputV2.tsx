@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { FieldValues } from 'react-hook-form';
 import { useController, UseControllerProps } from 'react-hook-form';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
@@ -42,7 +43,7 @@ export class LuceneLanguageFormatter implements ILanguageFormatter {
 }
 
 const luceneLanguageFormatter = new LuceneLanguageFormatter();
-export default function SearchInputV2({
+export default function SearchInputV2<TFieldValues extends FieldValues>({
   tableConnection,
   tableConnections,
   placeholder = 'Search your events for anything...',
@@ -71,7 +72,7 @@ export default function SearchInputV2({
   sourceId?: string;
   enableVariables?: boolean;
   'data-testid'?: string;
-} & UseControllerProps<any> &
+} & UseControllerProps<TFieldValues> &
   TableConnectionChoice) {
   const {
     field: { onChange, value },
@@ -114,15 +115,19 @@ export default function SearchInputV2({
   );
 
   useEffect(() => {
+    let active = true;
     if (tableConnection) {
       genEnglishExplanation({
         query: expandVariablesForEnglish(value != null ? `${value}` : ''),
         tableConnection,
         metadata,
       }).then(q => {
-        setParsedEnglishQuery(q);
+        if (active) setParsedEnglishQuery(q);
       });
     }
+    return () => {
+      active = false;
+    };
   }, [value, expandVariablesForEnglish, tableConnection, metadata]);
 
   useHotkeys(

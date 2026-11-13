@@ -65,7 +65,8 @@ export const swaggerOptions = {
       },
     ],
   },
-  apis: ['./src/routers/external-api/**/*.ts'], // Path to the API routes files
+  // swagger-jsdoc preserves file traversal order when merging the spec.
+  apis: fs.globSync('./src/routers/external-api/**/*.ts').sort(),
 };
 
 export function setupSwagger(app: Application) {

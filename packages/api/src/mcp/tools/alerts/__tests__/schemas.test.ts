@@ -1,3 +1,6 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
+import { AlertThresholdType } from '@hyperdx/common-utils/dist/types';
+
 import {
   McpSaveAlertInput,
   mcpSaveAlertSchema,
@@ -17,7 +20,7 @@ const baseInput: Omit<McpSaveAlertInput, 'channel' | 'channels'> = {
   source: 'saved_search',
   savedSearchId: 'saved-search-1',
   threshold: 1,
-  thresholdType: 'above',
+  thresholdType: AlertThresholdType.ABOVE,
   interval: '5m',
 };
 
@@ -86,7 +89,7 @@ describe('validateSaveAlertInput channel comparison', () => {
 
 describe('validateSaveAlertInput inline alerts', () => {
   const chartConfig: NonNullable<McpSaveAlertInput['chartConfig']> = {
-    displayType: 'line',
+    displayType: DisplayType.Line,
     sourceId: 'source-1',
     select: [
       {
@@ -140,7 +143,7 @@ describe('mcpSaveAlertSchema isDelta dialect bridge', () => {
       savedSearchId: undefined,
       channel: wh('a'),
       chartConfig: {
-        displayType: 'line',
+        displayType: DisplayType.Line,
         sourceId: 'source-1',
         select: [selectItem],
       },

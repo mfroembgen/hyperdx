@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
 import { CsvColumn, useCsvExport } from '@/hooks/useCsvExport';
@@ -16,11 +17,11 @@ describe('useCsvExport', () => {
   ];
 
   beforeEach(() => {
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('basic functionality', () => {

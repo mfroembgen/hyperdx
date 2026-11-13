@@ -1,7 +1,6 @@
 import { ConnectionSchema } from '@hyperdx/common-utils/dist/types';
 import express from 'express';
-import z from 'zod';
-import { validateRequest } from 'zod-express-middleware';
+import { z } from 'zod';
 
 import {
   createConnection,
@@ -12,6 +11,7 @@ import {
 } from '@/controllers/connection';
 import { connectionServesPrometheusHttpApi } from '@/controllers/promql';
 import { getNonNullUserWithTeam } from '@/middleware/auth';
+import { validateRequest } from '@/middleware/validation';
 import { objectIdSchema } from '@/utils/zod';
 
 const router = express.Router();

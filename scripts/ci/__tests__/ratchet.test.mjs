@@ -50,8 +50,8 @@ test('`as any` is word-anchored, so prose does not inflate the count', () => {
     app: {
       'src/a.ts': [
         '// true if the user has any dashboards',
-        'const klass = node as anything;',
-        'const real = node as any;',
+        'const klass = bun as anything;',
+        'const real = bun as any;',
       ].join('\n'),
     },
   });

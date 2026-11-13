@@ -1,9 +1,12 @@
+import { type Mock, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 
-const mockSetKioskMode = jest.fn();
+const mockSetKioskMode = vi.fn();
 
-jest.mock('nuqs', () => {
-  const actual = jest.requireActual('nuqs');
+vi.mock('nuqs', async () => {
+  const actualModule0 = await vi.importActual<typeof import('nuqs')>('nuqs');
+
+  const actual = actualModule0;
   return {
     ...actual,
 
@@ -11,11 +14,14 @@ jest.mock('nuqs', () => {
   };
 });
 
-jest.mock('@mantine/hooks', () => {
-  const actual = jest.requireActual('@mantine/hooks');
+vi.mock('@mantine/hooks', async () => {
+  const actualModule1 =
+    await vi.importActual<typeof import('@mantine/hooks')>('@mantine/hooks');
+
+  const actual = actualModule1;
   return {
     ...actual,
-    useHotkeys: jest.fn(),
+    useHotkeys: vi.fn(),
   };
 });
 
@@ -23,13 +29,13 @@ import { useDashboardKioskMode } from '@/hooks/useDashboardKioskMode';
 
 describe('useDashboardKioskMode', () => {
   let fullscreenElement: Element | null;
-  let requestFullscreen: jest.Mock<Promise<void>, []>;
-  let exitFullscreen: jest.Mock<Promise<void>, []>;
+  let requestFullscreen: Mock<(...args: []) => Promise<void>>;
+  let exitFullscreen: Mock<(...args: []) => Promise<void>>;
 
   beforeEach(() => {
     fullscreenElement = null;
-    requestFullscreen = jest.fn().mockResolvedValue(undefined);
-    exitFullscreen = jest.fn().mockResolvedValue(undefined);
+    requestFullscreen = vi.fn().mockResolvedValue(undefined);
+    exitFullscreen = vi.fn().mockResolvedValue(undefined);
     mockSetKioskMode.mockReset();
 
     Object.defineProperty(document, 'fullscreenElement', {

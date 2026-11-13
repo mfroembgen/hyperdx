@@ -1,4 +1,5 @@
 import { RegisterOptions, useForm } from 'react-hook-form';
+import { vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -12,17 +13,17 @@ import { SqlQueryFilterEditForm } from '@/components/DashboardFiltersModal/SqlQu
 import { ReferenceVariablesProvider } from '@/components/sourceSelectUtils';
 import { SqlVariablesProvider } from '@/components/SQLEditor/variableCompletions';
 
-const mockUseSqlQueryFilterValues = jest.fn();
+const mockUseSqlQueryFilterValues = vi.fn();
 const mockCompletionLabels: string[] = [];
 
-jest.mock('@/hooks/useSqlQueryFilterValues', () => ({
+vi.mock('@/hooks/useSqlQueryFilterValues', () => ({
   SQL_QUERY_FILTER_VALUES_QUERY_KEY: 'sql-values',
   useSqlQueryFilterValues: (...args: unknown[]) =>
     mockUseSqlQueryFilterValues(...args),
 }));
 // The real selector fetches connections, and the real editor is CodeMirror;
 // plain inputs bound to the same fields are enough to drive the preview.
-jest.mock('@/components/ConnectionSelect', () => ({
+vi.mock('@/components/ConnectionSelect', () => ({
   ConnectionSelectControlled: ({
     control,
     name,
@@ -31,7 +32,7 @@ jest.mock('@/components/ConnectionSelect', () => ({
     name: 'connection';
   }) => <input data-testid="connection-input" {...control.register(name)} />,
 }));
-jest.mock('@/components/SQLEditor/SQLEditor', () => ({
+vi.mock('@/components/SQLEditor/SQLEditor', () => ({
   SQLEditorControlled: ({
     control,
     name,
@@ -205,7 +206,7 @@ describe('SqlQueryFilterEditForm', () => {
   });
 
   it('re-runs the same query when previewed again', async () => {
-    const invalidate = jest.spyOn(queryClient, 'invalidateQueries');
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
     const user = await renderForm();
 
     await user.click(screen.getByTestId('filter-sql-preview-button'));

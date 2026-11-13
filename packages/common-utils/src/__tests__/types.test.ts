@@ -596,7 +596,7 @@ describe('DashboardFilterSchema static-list variant', () => {
 
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]).toMatchObject({
-      code: 'invalid_union_discriminator',
+      code: 'invalid_union',
       path: ['type'],
     });
   });

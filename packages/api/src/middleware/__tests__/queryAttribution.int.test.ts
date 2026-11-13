@@ -1,6 +1,7 @@
 import { buildLogComment } from '@hyperdx/common-utils/dist/clickhouse';
 import { Metadata } from '@hyperdx/common-utils/dist/core/metadata';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
+import { type MockInstance, vi } from 'vitest';
 
 import * as config from '@/config';
 import {
@@ -15,7 +16,7 @@ import Connection from '@/models/connection';
 import { Source } from '@/models/source';
 
 declare global {
-  // Set by jest.setup.ts before it stubs `fetch`.
+  // Set by vi.setup.ts before it stubs `fetch`.
   var realFetch: typeof fetch;
 }
 
@@ -43,17 +44,17 @@ describe('request query attribution', () => {
     });
   });
 
-  // jest.setup.ts installs `fetch` as a plain jest.fn(), not a spy, so
+  // vi.setup.ts installs `fetch` as a plain vi.fn(), not a spy, so
   // restoreAllMocks can't put it back; and restoreAllMocks would also undo
   // the setup's console spies. Each mock is reset by hand instead.
-  const fetchStub = jest.mocked(global.fetch).getMockImplementation();
-  let serverVersionSpy: jest.SpiedFunction<
-    Metadata['getServerVersion']
-  > | null = null;
+  const fetchStub = vi.mocked(global.fetch).getMockImplementation();
+  let serverVersionSpy: MockInstance<Metadata['getServerVersion']> | null =
+    null;
 
   afterEach(async () => {
     await server.clearDBs();
-    jest.mocked(global.fetch).mockImplementation(fetchStub);
+    if (fetchStub) vi.mocked(global.fetch).mockImplementation(fetchStub);
+    else vi.mocked(global.fetch).mockReset();
     serverVersionSpy?.mockRestore();
     serverVersionSpy = null;
   });
@@ -121,7 +122,7 @@ describe('request query attribution', () => {
       password: config.CLICKHOUSE_PASSWORD,
     });
     const source = await Source.create({
-      kind: SourceKind.Promql,
+      kind: SourceKind.Promql as const,
       team: team._id,
       connection: conn._id,
       name: 'PromQL',
@@ -148,7 +149,7 @@ describe('request query attribution', () => {
   it('tags PromQL table-function queries with the attribution the browser sent', async () => {
     // Below 26.6 the router evaluates through prometheusQuery() rather than
     // proxying to ClickHouse's Prometheus HTTP API.
-    serverVersionSpy = jest
+    serverVersionSpy = vi
       .spyOn(Metadata.prototype, 'getServerVersion')
       .mockResolvedValue([26, 5, 0, 0]);
     const { agent, team } = await getLoggedInAgent(server);
@@ -160,7 +161,7 @@ describe('request query attribution', () => {
       password: config.CLICKHOUSE_PASSWORD,
     });
     const source = await Source.create({
-      kind: SourceKind.Promql,
+      kind: SourceKind.Promql as const,
       team: team._id,
       connection: conn._id,
       name: 'PromQL',
@@ -205,7 +206,7 @@ describe('request query attribution', () => {
   // The CI ClickHouse serves prometheus_api_v1, which evaluates the PromQL
   // itself: this pins that it honours the log_comment and query_id we send.
   it('tags PromQL proxied to the prometheus_api_v1 handler', async () => {
-    jest.mocked(global.fetch).mockImplementation(globalThis.realFetch);
+    vi.mocked(global.fetch).mockImplementation(globalThis.realFetch);
     const { agent, team } = await getLoggedInAgent(server);
     const conn = await Connection.create({
       team: team._id,
@@ -215,7 +216,7 @@ describe('request query attribution', () => {
       password: config.CLICKHOUSE_PASSWORD,
     });
     const source = await Source.create({
-      kind: SourceKind.Promql,
+      kind: SourceKind.Promql as const,
       team: team._id,
       connection: conn._id,
       name: 'PromQL',

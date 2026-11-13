@@ -1,0 +1,12 @@
+diff --git a/lib/common/index.js b/lib/common/index.js
+--- a/lib/common/index.js
++++ b/lib/common/index.js
+@@ -1115,6 +1115,8 @@
+   transformInstalled = true;
+   registerESMLoader();
+   installSourceMapSupport();
++  if ("Bun" in globalThis)
++    return;
+   if (loaderChannel) {
+     installCJSHooks();
+     return;

@@ -67,63 +67,16 @@ export class TimePickerComponent {
    * Clicking the input when the popover is already open would close it.
    */
   async open() {
-    await this.page.waitForLoadState('networkidle');
-
-    // The input toggles the popover, so this method must end in a *stably
-    // open* state. The tricky cases this loop handles:
-    //  - Already open and stable → nothing to do.
-    //  - Closed → one click opens it.
-    //  - Mid-close (still visible but about to detach, e.g. right after
-    //    selectTimeInterval()'s handleRelativeSearch → close()) → an early
-    //    return here would hand back a popover that then vanishes. We instead
-    //    wait for it to settle to a stable hidden state, then click to open.
-    //  - Click swallowed by a React re-render → retry.
-    for (let attempt = 0; attempt < 5; attempt++) {
-      if (await this.isPopoverStablyOpen()) return;
-
-      // Settle to a clean hidden baseline before toggling open. If it's
-      // genuinely open-and-stable the check above already returned; if it's
-      // closing, wait for hidden so our click reopens rather than re-closes.
-      await this.pickerPopover
-        .waitFor({ state: 'hidden', timeout: 2000 })
-        .catch(() => {
-          // Either already hidden or still finishing an open; the stability
-          // check at the top of the next iteration will sort it out.
-        });
-
-      // The popover is closed here, so it is safe to press Escape to dismiss
-      // any overlay that would intercept the toggle click — most importantly
-      // the search input's autocomplete dropdown ("Searching for:" portal),
-      // which renders on top of the time-picker input after typing a query
-      // (e.g. traces-workflow types "Order" then opens the picker). Escape is
-      // only pressed from this closed baseline, so it can't race a just-opened
-      // popover shut.
+    // A closing Mantine popover remains visible during its transition. The
+    // target's expanded state tells us whether clicking will open or close it.
+    if ((await this.pickerInput.getAttribute('aria-expanded')) !== 'true') {
       await this.page.keyboard.press('Escape');
-
       await this.pickerInput.click();
-      if (await this.isPopoverStablyOpen()) return;
     }
-    // Surface a clear failure if it still hasn't opened.
+    await expect(this.pickerInput).toHaveAttribute('aria-expanded', 'true', {
+      timeout: 5000,
+    });
     await this.pickerPopover.waitFor({ state: 'visible', timeout: 5000 });
-  }
-
-  /**
-   * True only if the popover is visible and *stays* visible briefly afterwards
-   * — i.e. it is not in the middle of a close transition. Used by open() to
-   * avoid returning a popover that is about to detach.
-   */
-  private async isPopoverStablyOpen(): Promise<boolean> {
-    if (!(await this.pickerPopover.isVisible())) return false;
-    // A just-opened popover can be closed again by the post-apply /
-    // post-select re-render cascade (URL update + results reload). Rather than
-    // blindly sleeping to outlast it, wait for that reload's network activity
-    // to go idle — the observable end of the cascade — then confirm the
-    // popover survived. Bounded + swallowed so a perpetually-busy page (e.g.
-    // live tail) can't hang here; on timeout we simply re-check visibility.
-    await this.page
-      .waitForLoadState('networkidle', { timeout: 2000 })
-      .catch(() => {});
-    return await this.pickerPopover.isVisible();
   }
 
   /**
@@ -172,6 +125,7 @@ export class TimePickerComponent {
    * test timeout.
    */
   async isRelativeTimeEnabled(): Promise<boolean> {
+    await this.open();
     await this.relativeTimeSwitch.waitFor({ state: 'attached', timeout: 5000 });
     return await this.relativeTimeSwitch.isChecked();
   }
@@ -274,9 +228,6 @@ export class TimePickerComponent {
       .catch(() => {
         // If it never reports hidden, open()'s own settling logic will cope.
       });
-    await this.page.waitForLoadState('networkidle').catch(() => {
-      // Network may stay busy (live tail); proceeding is safe.
-    });
   }
 
   /**

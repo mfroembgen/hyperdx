@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import type { FieldPath, FieldValues } from 'react-hook-form';
 import { useController, UseControllerProps } from 'react-hook-form';
 import { Select, SelectProps } from '@mantine/core';
 
@@ -7,8 +8,11 @@ enum SelectControlledSpecialValues {
   EditValue = '_edit_value',
 }
 
-export type SelectControlledProps = SelectProps &
-  UseControllerProps<any> & {
+export type SelectControlledProps<
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> = SelectProps &
+  UseControllerProps<TFieldValues, TName> & {
     onCreate?: () => void;
     onEdit?: () => void;
     allowDeselect?: boolean;
@@ -33,7 +37,10 @@ export function isValueInSelectData(
   );
 }
 
-export default function SelectControlled(props: SelectControlledProps) {
+export default function SelectControlled<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>(props: SelectControlledProps<TFieldValues, TName>) {
   const {
     field: {
       value: fieldValue,

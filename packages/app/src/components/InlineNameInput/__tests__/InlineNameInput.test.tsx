@@ -1,4 +1,5 @@
 import { useForm } from 'react-hook-form';
+import { vi } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -8,7 +9,7 @@ import {
 } from '@/components/InlineNameInput/InlineNameInput';
 
 function renderInput(value = 'My dashboard') {
-  const onCommit = jest.fn();
+  const onCommit = vi.fn();
   const utils = render(
     <InlineNameInput
       value={value}
@@ -35,7 +36,7 @@ describe('InlineNameInput', () => {
   it('keeps the typed name until the saved value arrives', async () => {
     const user = userEvent.setup();
     let resolveSave: () => void = () => {};
-    const onCommit = jest.fn(
+    const onCommit = vi.fn(
       () =>
         new Promise<void>(resolve => {
           resolveSave = resolve;
@@ -70,7 +71,7 @@ describe('InlineNameInput', () => {
 
   it('reverts to the saved name when the commit fails', async () => {
     const user = userEvent.setup();
-    const onCommit = jest.fn(() => Promise.reject(new Error('nope')));
+    const onCommit = vi.fn(() => Promise.reject(new Error('nope')));
     render(
       <InlineNameInput
         value="My dashboard"
@@ -87,7 +88,7 @@ describe('InlineNameInput', () => {
 
   it('shows a newer saved value that arrives while a rename is in flight', async () => {
     const user = userEvent.setup();
-    const onCommit = jest.fn(() => new Promise(() => {}));
+    const onCommit = vi.fn(() => new Promise(() => {}));
     const { rerender } = render(
       <InlineNameInput
         value="My dashboard"
@@ -149,7 +150,7 @@ describe('InlineNameInput', () => {
     rerender(
       <InlineNameInput
         value="Renamed elsewhere"
-        onCommit={jest.fn()}
+        onCommit={vi.fn()}
         aria-label="Dashboard name"
       />,
     );
@@ -161,7 +162,7 @@ describe('InlineNameInput', () => {
     render(
       <InlineNameInput
         value="My dashboard"
-        onCommit={jest.fn()}
+        onCommit={vi.fn()}
         aria-label="Dashboard name"
         headingLevel={3}
       />,
@@ -192,7 +193,7 @@ function ControlledHarness({ onSubmit }: { onSubmit: (v: unknown) => void }) {
 describe('InlineNameInputControlled', () => {
   it('stores the name in the form and saves it with the form', async () => {
     const user = userEvent.setup();
-    const onSubmit = jest.fn();
+    const onSubmit = vi.fn();
     render(<ControlledHarness onSubmit={onSubmit} />);
 
     const input = screen.getByLabelText('Tile name');

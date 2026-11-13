@@ -4,47 +4,59 @@
 
 ```bash
 # Install dependencies and setup hooks
-yarn setup
+bun run setup
 
 # Start full development stack (auto-assigns unique ports per worktree)
-yarn dev        # or equivalently: make dev
+bun run dev        # or equivalently: make dev
 ```
 
 ## Key Development Scripts
 
-- `yarn dev` / `make dev`: Start full dev stack with worktree-isolated ports. A
-  dev portal at http://localhost:9900 auto-starts showing all running stacks.
-- `yarn dev:down` / `make dev-down`: Stop the dev stack for the current worktree
-- `make dev-portal`: Start the dev portal manually (auto-started by `yarn dev`)
-- `yarn lint`: Run linting across all packages
-- `yarn dev:unit`: Run unit tests in watch mode (per package)
-- `yarn dev:mutation --mutate <file>`: Run mutation tests (common-utils only). A
-  surviving mutant means the tests execute that code but don't assert on it.
-  Always scope it with `--mutate`; a whole-package run takes tens of minutes.
-  See [CONTRIBUTING.md](../CONTRIBUTING.md#mutation-tests)
-- `yarn seed:alerts --count N` (in `packages/api`): Fill this worktree's
+- `bun run dev` / `make dev`: Start full dev stack with worktree-isolated ports.
+  A dev portal at http://localhost:9900 auto-starts showing all running stacks.
+- `bun run dev:down` / `make dev-down`: Stop the dev stack for the current
+  worktree
+- `make dev-portal`: Start the dev portal manually (auto-started by
+  `bun run dev`)
+- `bun run lint`: Run linting across all packages
+- `bun run dev:unit`: Run unit tests in watch mode (per package)
+- `bun run dev:mutation --mutate <file>`: Run mutation tests (common-utils
+  only). A surviving mutant means the tests execute that code but don't assert
+  on it. Always scope it with `--mutate`; a whole-package run takes tens of
+  minutes. See [CONTRIBUTING.md](../CONTRIBUTING.md#mutation-tests)
+- `bun run seed:alerts --count N` (in `packages/api`): Fill this worktree's
   dev-slot Mongo with N alerts for testing the alerts page at scale: half on
   saved searches, half on dashboard tiles. Seeded dashboards and saved searches
-  are tagged `seeded`; `yarn seed:alerts --purge` removes them.
+  are tagged `seeded`; `bun run seed:alerts --purge` removes them.
 
 ## Environment Configuration
 
 - `.env.development`: Development environment variables
-- Docker Compose manages ClickHouse, MongoDB, OTel Collector
+- Apple container on macOS and Docker Compose on Linux manage ClickHouse,
+  MongoDB, and the OTel Collector. The macOS helper uses a 4 CPU, 8 GB builder
+  for OCB and TypeScript declaration builds; changing its resources recreates
+  the build cache.
+- MongoDB development and test fixtures use MongoDB 9. Development uses
+  `.volumes/db_dev_mongo9_<slot>` and starts with fresh metadata, including
+  users, dashboards and saved searches. The old `.volumes/db_dev_<slot>`
+  directory is retained unchanged. To keep its metadata, follow
+  [MongoDB's supported sequential upgrades](https://www.mongodb.com/docs/manual/release-notes/9.0-upgrade-standalone/),
+  including each version's feature compatibility steps, before using it with
+  MongoDB 9. Never attach an older MongoDB data directory directly.
 - Hot reload enabled for all services in development
 
 ## Worktree Isolation (Multi-Agent / Multi-Developer)
 
 When multiple git worktrees need to run the dev stack simultaneously (e.g.
 multiple agents or developers working in parallel), use `make dev` instead of
-`yarn dev`. This automatically assigns unique ports per worktree.
+`bun run dev`. This automatically assigns unique ports per worktree.
 
 ### How It Works
 
 1. `scripts/slots.sh` computes a deterministic slot (0-99) from the worktree
    directory name (via `cksum`), or from its full path with `HDX_SLOT_FROM=path`
-   (see below). It is the only place slots and ports are computed: `yarn dev`,
-   `make dev-int`, `make dev-e2e`, and tools all use it.
+   (see below). It is the only place slots and ports are computed:
+   `bun run dev`, `make dev-int`, `make dev-e2e`, and tools all use it.
 2. Each service gets a unique port: `base + slot` (see table below)
 3. Docker Compose runs with a unique project name (`hdx-dev-<slot>`)
 4. Volume paths include the slot to prevent data corruption between worktrees
@@ -57,7 +69,7 @@ integration tests (14320-40098) and E2E tests (20320-21399).
 | Service           | Base Port | Range         | Env Variable                  |
 | ----------------- | --------- | ------------- | ----------------------------- |
 | API server        | 30100     | 30100 - 30199 | `HYPERDX_API_PORT`            |
-| App (Next.js)     | 30200     | 30200 - 30299 | `HYPERDX_APP_PORT`            |
+| App (Vinext)      | 30200     | 30200 - 30299 | `HYPERDX_APP_PORT`            |
 | OpAMP             | 30300     | 30300 - 30399 | `HYPERDX_OPAMP_PORT`          |
 | MongoDB           | 30400     | 30400 - 30499 | `HDX_DEV_MONGO_PORT`          |
 | ClickHouse HTTP   | 30500     | 30500 - 30599 | `HDX_DEV_CH_HTTP_PORT`        |
@@ -113,8 +125,8 @@ today's slots.
 
 Run them through `scripts/with-slots.sh`. It sets this worktree's dev ports
 (`HDX_DEV_CH_HTTP_PORT`, `HYPERDX_API_PORT`, ...) and nothing else. Don't source
-`scripts/dev-env.sh` for this: it also clears `packages/app/.next` and registers
-the stack with the dev portal, which disrupts a running `yarn dev`.
+`scripts/dev-env.sh` for this: it also clears stale frontend build output and
+registers the stack with the dev portal, which disrupts a running `bun run dev`.
 
 ```bash
 # From a package script, e.g. packages/api's "seed:alerts"
@@ -128,9 +140,9 @@ HDX_DEV_SLOT=5 scripts/with-slots.sh <command>
 
 ### Testing Tools
 
-- **Unit Tests**: Jest with TypeScript support
-- **Integration Tests**: Jest with database fixtures
-- **Frontend Testing**: React Testing Library + Jest
+- **Unit Tests**: Vitest with TypeScript support
+- **Integration Tests**: Vitest with database fixtures
+- **Frontend Testing**: React Testing Library + Vitest
 - **E2E Testing**: Playwright (frontend) and Custom smoke tests with BATS
   (ingestion)
 
@@ -269,12 +281,12 @@ If you need to manually lint:
 
 ```bash
 # Per-package linting with auto-fix
-cd packages/app && yarn run lint:fix
-cd packages/api && yarn run lint:fix
-cd packages/common-utils && yarn lint:fix
+cd packages/app && bun run lint:fix
+cd packages/api && bun run lint:fix
+cd packages/common-utils && bun run lint:fix
 
 # Check all packages
-yarn run lint
+bun run lint
 ```
 
 ## File Locations Quick Reference
@@ -293,11 +305,11 @@ yarn run lint
 
 ## Vercel Preview Deployments (Inline API)
 
-The `hyperdx-private` Vercel project deploys the `@hyperdx/app` Next.js app for
-preview environments. Normally `/api/*` requests proxy to a separately deployed
+The optional Vercel preview path builds the same Vinext application with its
+inline API handler. Normally `/api/*` requests proxy to a separately deployed
 API service (`SERVER_URL`). For PR previews we instead **inline the entire
-Express API** into the Next.js serverless function so a single Vercel deployment
-serves both the app and the API.
+Express API** into a serverless function so a single Vercel deployment serves
+both the app and the API.
 
 ### How it works
 
@@ -306,27 +318,35 @@ serves both the app and the API.
    MongoDB on the first invocation and caches the connection across warm
    invocations.
 2. `packages/app/pages/api/[...all].ts` branches on the `HDX_PREVIEW_INLINE_API`
-   env var. When `true`, it `require()`s the compiled serverless handler and
+   env var. When `true`, it imports the compiled serverless handler and
    dispatches directly. Otherwise it falls back to the existing
    http-proxy-middleware path used by Docker/standalone builds.
-3. `packages/app/next.config.mjs` adds a webpack `externals` rule that marks
-   `@hyperdx/api` as a CommonJS external **unless** `HDX_PREVIEW_INLINE_API` is
-   `true`. This keeps production app builds (Docker fullstack image, standalone
-   Next output) byte-for-byte equivalent to before — they never bundle
-   passport-saml, mongoose, AWS SDK, etc.
-4. `vercel.json` declares the repo-root build commands so Vercel builds
-   `common-utils` → `api` → `app` in order.
+3. `packages/app/vite.config.mts` keeps the API external for standalone builds;
+   the inline handler remains available when `HDX_PREVIEW_INLINE_API=true`.
+4. `bun run --filter @hyperdx/app build:vercel` conditionally adds the official
+   Nitro Vite adapter at exact `3.0.260903-beta` and selects Vercel's Bun 1.4
+   runtime. Nitro 3 has no stable release yet; this prerelease is confined to
+   the optional preview build. See
+   [Vinext deployment](https://github.com/cloudflare/vinext#other-platforms-via-nitro)
+   and [Nitro's Vercel adapter](https://nitro.build/deploy/providers/vercel).
+5. Preparation emits the Build Output API artifact at repo-root `.vercel/output`
+   and materializes each native dependency at its exact Bun-resolved version.
+   Workspace packages include compiled output, and preview dependency source
+   maps are omitted. The inline bridge preserves stream/header methods before
+   Express changes prototypes; session cookies and raw streaming bodies retain
+   their API behavior. Self-hosting continues to use `bun run build` and the
+   standalone artifact without Nitro.
 
 ### Required Vercel project env vars (Preview scope only)
 
-| Key                                          | Notes                                                             |
-| -------------------------------------------- | ----------------------------------------------------------------- |
-| `HDX_PREVIEW_INLINE_API`                     | `true` — turns on the inline path                                 |
-| `MONGO_URI`                                  | Preview MongoDB connection string                                 |
-| `EXPRESS_SESSION_SECRET`                     | Random 32+ char string shared by all instances; unset generates one per process, invalidating sessions on restart and between instances |
-| `DISABLED_AUTH_METHODS`                      | `google,saml` (avoids per-preview OAuth callback URL config)      |
-| `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL_NAME` | Optional, only if AI features should work                         |
-| `FRONTEND_URL`                               | Optional. Leave unset to use host-only cookies on the preview URL |
+| Key                                          | Notes                                                                                                       |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `HDX_PREVIEW_INLINE_API`                     | `true` — turns on the inline path                                                                           |
+| `MONGO_URI`                                  | Preview MongoDB connection string                                                                           |
+| `EXPRESS_SESSION_SECRET`                     | Required strong 32+ char string shared by all instances; production startup rejects missing or weak secrets |
+| `DISABLED_AUTH_METHODS`                      | `google,saml` (avoids per-preview OAuth callback URL config)                                                |
+| `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL_NAME` | Optional, only if AI features should work                                                                   |
+| `FRONTEND_URL`                               | Optional. Leave unset to use host-only cookies on the preview URL                                           |
 
 Production env vars on the same project must leave `HDX_PREVIEW_INLINE_API`
 unset (or `false`) so production deployments keep using the proxy path.
@@ -339,11 +359,14 @@ unset (or `false`) so production deployments keep using the proxy path.
 - **No OPAMP server.** The OPAMP control-plane server (`APP_TYPE=opamp`) is not
   started in preview. The serverless entrypoint asserts `APP_TYPE=api` and
   refuses to boot otherwise.
-- **Function size.** The bundled function should stay under Vercel's 50 MB
-  unzipped limit. If it grows, mark heavy deps (`@aws-sdk/*`,
-  `@node-saml/passport-saml`, AI SDKs) as `serverExternalPackages` in
-  `next.config.mjs`.
+- **Function size.** Keep the complete native function within Vercel's
+  [250 MB standard uncompressed limit](https://vercel.com/docs/functions/limitations#bundle-size-limits).
+  The preparation step excludes workspace test reports and preview source maps.
+  Check artifact size after dependency changes; external packages still count
+  when included in the function. No large-function beta or account setting is
+  enabled by this profile.
 - **Cold-start latency.** First request after idle pays ~500–1500 ms for the
-  initial Mongo connection.
+  initial Mongo connection. Actual latency depends on the deployment and
+  database.
 - **Shared preview MongoDB.** Unless you partition by database name, all preview
   deployments share the same Mongo state.

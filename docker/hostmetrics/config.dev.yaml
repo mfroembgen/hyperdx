@@ -17,12 +17,12 @@ receivers:
       filesystem:
       network:
 exporters:
-  logging:
-    loglevel: ${env:HYPERDX_LOG_LEVEL}
+  debug:
+    verbosity: normal
   otlphttp:
     endpoint: 'http://otel-collector:4318'
     headers:
-      authorization: ${HYPERDX_API_KEY}
+      authorization: ${env:HYPERDX_API_KEY}
     compression: gzip
 service:
   telemetry:
@@ -31,4 +31,4 @@ service:
   pipelines:
     metrics:
       receivers: [mongodb, hostmetrics]
-      exporters: [otlphttp, logging]
+      exporters: [otlphttp, debug]

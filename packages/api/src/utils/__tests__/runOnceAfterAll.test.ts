@@ -1,10 +1,12 @@
+import { vi } from 'vitest';
+
 import { runOnceAfterAll } from '@/utils/runOnceAfterAll';
 
 const flushPromises = () => new Promise(resolve => setImmediate(resolve));
 
 describe('runOnceAfterAll', () => {
   it('runs once, after the last caller arrives', async () => {
-    const fn = jest.fn(async () => {});
+    const fn = vi.fn(async () => {});
     const arrive = runOnceAfterAll(2, fn);
 
     let firstSettled = false;

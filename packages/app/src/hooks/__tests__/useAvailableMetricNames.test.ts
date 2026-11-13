@@ -1,3 +1,4 @@
+import { type MockedFunction, vi } from 'vitest';
 import {
   MetricsDataType,
   TMetricSource,
@@ -7,9 +8,9 @@ import { renderHook } from '@testing-library/react';
 import { useAvailableMetricNames } from '@/hooks/useAvailableMetricNames';
 import { useGetKeyValues } from '@/hooks/useMetadata';
 
-jest.mock('@/hooks/useMetadata');
+vi.mock('@/hooks/useMetadata');
 
-const mockUseGetKeyValues = useGetKeyValues as jest.MockedFunction<
+const mockUseGetKeyValues = useGetKeyValues as MockedFunction<
   typeof useGetKeyValues
 >;
 
@@ -52,7 +53,9 @@ function render() {
 }
 
 describe('useAvailableMetricNames', () => {
-  afterEach(() => jest.resetAllMocks());
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
 
   it('reports the metric names the query returned', () => {
     mockQuery({ data: [{ key: 'MetricName', value: METRIC_NAMES }] });

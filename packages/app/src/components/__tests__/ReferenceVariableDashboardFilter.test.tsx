@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   DataSourceDashboardFilter as DataSourceFilter,
   SourceKind,
@@ -10,10 +11,10 @@ import {
   DataSourceDashboardFilter,
 } from '@/components/ReferenceVariableDashboardFilter';
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   useSources: () => ({ data: mockSources }),
 }));
-jest.mock('@/connection', () => ({
+vi.mock('@/connection', () => ({
   useConnections: () => ({
     data: [
       { id: 'conn-b', name: 'Secondary' },
@@ -23,7 +24,7 @@ jest.mock('@/connection', () => ({
 }));
 
 // Mantine's Combobox calls scrollIntoView when its dropdown opens; jsdom lacks it.
-window.HTMLElement.prototype.scrollIntoView = jest.fn();
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 const makeSource = (
   id: string,
@@ -53,7 +54,7 @@ const filter: DataSourceFilter = {
 
 const renderFilter = (
   value: string | undefined,
-  onChange = jest.fn(),
+  onChange = vi.fn(),
   overrides: Partial<DataSourceFilter> = {},
   pendingVariables?: string[],
 ) =>
@@ -72,7 +73,7 @@ const select = () => screen.getByTestId('dashboard-filter-select-Logs source');
 
 describe('DataSourceDashboardFilter', () => {
   it('offers only sources of the allowed kinds and reports the picked one', async () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     renderFilter(undefined, onChange);
 
     await userEvent.click(select());
@@ -102,7 +103,7 @@ describe('DataSourceDashboardFilter', () => {
   });
 
   it('offers only the sources on its connection', async () => {
-    renderFilter(undefined, jest.fn(), { connection: 'conn-b' });
+    renderFilter(undefined, vi.fn(), { connection: 'conn-b' });
 
     await userEvent.click(select());
     expect(await screen.findByText('Logs C')).toBeInTheDocument();
@@ -110,7 +111,7 @@ describe('DataSourceDashboardFilter', () => {
   });
 
   it('flags a connection variable it is waiting on', () => {
-    renderFilter(undefined, jest.fn(), { connection: '$conn' }, ['conn']);
+    renderFilter(undefined, vi.fn(), { connection: '$conn' }, ['conn']);
 
     expect(
       screen.getByTestId('dashboard-filter-pending-variable-Logs source'),
@@ -120,7 +121,7 @@ describe('DataSourceDashboardFilter', () => {
 
 describe('ConnectionDashboardFilter', () => {
   it('offers the connections and reports the picked one', async () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     renderWithMantine(
       <ConnectionDashboardFilter
         filter={{

@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { ClickHouseQueryError } from '@hyperdx/common-utils/dist/clickhouse';
 import {
   ChartVariable,
@@ -12,9 +13,9 @@ import {
   useSqlQueryFilterValues,
 } from '@/hooks/useSqlQueryFilterValues';
 
-const mockQuery = jest.fn();
+const mockQuery = vi.fn();
 
-jest.mock('@/clickhouse', () => ({
+vi.mock('@/clickhouse', () => ({
   getClickhouseClient: () => ({ query: mockQuery }),
 }));
 

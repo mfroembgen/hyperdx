@@ -148,4 +148,4 @@ Search is the first page on this pattern. Other side-panel pages should adopt it
 
 ## Knip
 
-`packages/app` Knip entry roots are `pages/`, `scripts/`, and e2e tests. After you add or move a `PageLayout` import, run `yarn knip` from the repo root (or `yarn knip` in `packages/app` if configured) so new consumers stay wired.
+`packages/app` Knip entry roots are `pages/`, `scripts/`, and e2e tests. After you add or move a `PageLayout` import, run `bun run knip` from the repo root (or `bun run knip` in `packages/app` if configured) so new consumers stay wired.

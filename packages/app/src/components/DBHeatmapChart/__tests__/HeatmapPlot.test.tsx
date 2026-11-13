@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { act, fireEvent, screen } from '@testing-library/react';
 
 import {
@@ -16,8 +17,8 @@ type PlotOptions = {
   scales?: { y?: { range?: unknown } };
 };
 
-const mockPlot = jest.fn();
-jest.mock('uplot-react', () => ({
+const mockPlot = vi.fn();
+vi.mock('uplot-react', () => ({
   __esModule: true,
   default: ({
     data,
@@ -32,7 +33,7 @@ jest.mock('uplot-react', () => ({
 }));
 
 let onPointHighlight: (point: HighlightedPoint | undefined) => void;
-jest.mock('@/components/DBHeatmapChart/highlightDataPlugin', () => ({
+vi.mock('@/components/DBHeatmapChart/highlightDataPlugin', () => ({
   highlightDataPlugin: (opts: {
     onPointHighlight: typeof onPointHighlight;
   }) => {
@@ -62,7 +63,7 @@ describe('HeatmapPlot', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('plots the grid as uPlot mode-2 data with cell extents', () => {
@@ -76,7 +77,7 @@ describe('HeatmapPlot', () => {
     expect(lastOptions().cursor?.drag).toMatchObject({ x: false, y: false });
     unmount();
 
-    renderPlot({ onFilter: jest.fn() });
+    renderPlot({ onFilter: vi.fn() });
     expect(lastOptions().cursor?.drag).toMatchObject({ x: true, y: true });
   });
 
@@ -113,15 +114,15 @@ describe('HeatmapPlot', () => {
 
   it('clears the selection on click only when the caller can filter', () => {
     // Clicks within 300ms of the last drag are ignored
-    jest.spyOn(performance, 'now').mockReturnValue(10_000);
-    const onClearFilter = jest.fn();
+    vi.spyOn(performance, 'now').mockReturnValue(10_000);
+    const onClearFilter = vi.fn();
 
     const { unmount } = renderPlot({ onClearFilter });
     fireEvent.click(screen.getByTestId('heatmap-plot'));
     expect(onClearFilter).not.toHaveBeenCalled();
     unmount();
 
-    renderPlot({ onFilter: jest.fn(), onClearFilter });
+    renderPlot({ onFilter: vi.fn(), onClearFilter });
     fireEvent.click(screen.getByTestId('heatmap-plot'));
     expect(onClearFilter).toHaveBeenCalledTimes(1);
   });

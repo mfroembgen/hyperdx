@@ -40,14 +40,17 @@ describe('log body fallback in alert queries', () => {
       username: config.CLICKHOUSE_USER,
       password: config.CLICKHOUSE_PASSWORD,
     });
-    source = await LogSource.create({
-      team: team._id,
-      connection: connection._id,
-      name: 'Logs',
-      from: { databaseName: 'default', tableName: 'otel_logs' },
-      timestampValueExpression: 'Timestamp',
-      bodyExpression: 'Body',
-    });
+    // Alert providers hand the task plain source objects, not documents.
+    source = (
+      await LogSource.create({
+        team: team._id,
+        connection: connection._id,
+        name: 'Logs',
+        from: { databaseName: 'default', tableName: 'otel_logs' },
+        timestampValueExpression: 'Timestamp',
+        bodyExpression: 'Body',
+      })
+    ).toJSON({ virtuals: true });
     clickhouseClient = new ClickhouseClient({
       host: connection.host,
       username: connection.username,
@@ -116,7 +119,7 @@ describe('log body fallback in alert queries', () => {
     const sample = await fetchSampleLines({
       clickhouseClient,
       metadata,
-      source: updated!,
+      source: updated!.toJSON({ virtuals: true }),
       savedSearch,
       startTime,
       endTime,

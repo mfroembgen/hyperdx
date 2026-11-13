@@ -1,11 +1,12 @@
+import { vi } from 'vitest';
 import { SourceKind, TSource } from '@hyperdx/common-utils/dist/types';
 import { fireEvent, screen } from '@testing-library/react';
 
 import { SearchGroupBySelect } from '@/components/SearchGroupBy/SearchGroupBySelect';
 import { useAllFields } from '@/hooks/useMetadata';
 
-jest.mock('@/hooks/useMetadata', () => ({
-  useAllFields: jest.fn(() => ({
+vi.mock('@/hooks/useMetadata', () => ({
+  useAllFields: vi.fn(() => ({
     data: [
       { path: ['ServiceName'], type: 'String', jsType: 'string' },
       {
@@ -24,7 +25,7 @@ jest.mock('@/hooks/useMetadata', () => ({
 
 // jsdom has no layout, so the real virtualizer renders no rows. Render every
 // row as if visible.
-jest.mock('@tanstack/react-virtual', () => ({
+vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: ({ count }: { count: number }) => ({
     getVirtualItems: () =>
       Array.from({ length: count }, (_, index) => ({
@@ -38,7 +39,7 @@ jest.mock('@tanstack/react-virtual', () => ({
 }));
 
 // CodeMirror doesn't run in jsdom.
-jest.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
+vi.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
   __esModule: true,
   default: ({
     value,
@@ -71,7 +72,7 @@ const source = {
 
 const dateRange: [Date, Date] = [new Date(0), new Date(1000)];
 
-async function renderSelect(value: string | null, onApply = jest.fn()) {
+async function renderSelect(value: string | null, onApply = vi.fn()) {
   renderWithMantine(
     <SearchGroupBySelect
       source={source}
@@ -132,7 +133,7 @@ describe('SearchGroupBySelect', () => {
   });
 
   it('keeps the key list from the range it opened with while the range moves', async () => {
-    const props = { source, value: null, onApply: jest.fn() };
+    const props = { source, value: null, onApply: vi.fn() };
     const { rerender } = renderWithMantine(
       <SearchGroupBySelect {...props} dateRange={dateRange} />,
     );
@@ -145,7 +146,7 @@ describe('SearchGroupBySelect', () => {
         <SearchGroupBySelect {...props} dateRange={laterRange} />
       </TestProviders>,
     );
-    expect(jest.mocked(useAllFields)).toHaveBeenLastCalledWith(
+    expect(vi.mocked(useAllFields)).toHaveBeenLastCalledWith(
       expect.anything(),
       expect.objectContaining({ enabled: true, dateRange }),
     );
@@ -153,7 +154,7 @@ describe('SearchGroupBySelect', () => {
 
     fireEvent.click(screen.getByTestId('search-group-by-button'));
     fireEvent.click(screen.getByTestId('search-group-by-button'));
-    expect(jest.mocked(useAllFields)).toHaveBeenLastCalledWith(
+    expect(vi.mocked(useAllFields)).toHaveBeenLastCalledWith(
       expect.anything(),
       expect.objectContaining({ enabled: true, dateRange: laterRange }),
     );

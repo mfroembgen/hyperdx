@@ -1,5 +1,6 @@
 import { AlertErrorType, DisplayType } from '@hyperdx/common-utils/dist/types';
 import { Types } from 'mongoose';
+import { vi } from 'vitest';
 
 import { AlertState, IAlertError } from '@/models/alert';
 import AlertHistory from '@/models/alertHistory';
@@ -48,12 +49,12 @@ const makeFiredHistory = (): any => ({
 });
 
 const makeProvider = (): any => ({
-  updateAlertState: jest.fn().mockResolvedValue(undefined),
-  recordAlertErrors: jest.fn().mockResolvedValue(undefined),
+  updateAlertState: vi.fn().mockResolvedValue(undefined),
+  recordAlertErrors: vi.fn().mockResolvedValue(undefined),
 });
 
 const makeClient = (): any => ({
-  queryChartConfig: jest.fn().mockRejectedValue(new Error('not expected')),
+  queryChartConfig: vi.fn().mockRejectedValue(new Error('not expected')),
   requestTimeoutMs: 1000,
 });
 
@@ -96,7 +97,7 @@ describe('alert evaluators', () => {
     const custom: AlertEvaluator = {
       name: 'custom',
       appliesTo: alert => alert.threshold === 42,
-      evaluate: jest.fn(),
+      evaluate: vi.fn(),
     };
     registerAlertEvaluator(custom);
 
@@ -108,7 +109,7 @@ describe('alert evaluators', () => {
     const evaluator: AlertEvaluator = {
       name: 'custom',
       appliesTo: () => true,
-      evaluate: jest.fn(),
+      evaluate: vi.fn(),
     };
     registerAlertEvaluator(evaluator);
     expect(() => registerAlertEvaluator(evaluator)).toThrow(
@@ -189,7 +190,7 @@ describe('alert evaluators', () => {
     registerAlertEvaluator({
       name: 'other',
       appliesTo: () => false,
-      evaluate: jest.fn(),
+      evaluate: vi.fn(),
     });
 
     const { client } = await run(makeAlert(), new Date('2025-01-01T00:07:00Z'));
@@ -282,7 +283,7 @@ describe('alert evaluators', () => {
       name: 'delayed',
       appliesTo: () => true,
       evaluationNow: (_alert, now) => new Date(now.getTime() - 2 * 60_000),
-      evaluate: jest.fn(),
+      evaluate: vi.fn(),
     });
 
     expect(
@@ -295,7 +296,7 @@ describe('alert evaluators', () => {
       name: 'ahead',
       appliesTo: () => true,
       evaluationNow: (_alert, now) => new Date(now.getTime() + 10 * 60_000),
-      evaluate: jest.fn(),
+      evaluate: vi.fn(),
     });
 
     expect(
@@ -312,11 +313,11 @@ describe('alert evaluators', () => {
         }
         return false;
       },
-      evaluate: jest.fn(),
+      evaluate: vi.fn(),
     });
     const healthy = makeAlert({ numConsecutiveWindows: 2 });
     const broken = makeAlert({ numConsecutiveWindows: 2, threshold: 42 });
-    const aggregate = jest
+    const aggregate = vi
       .spyOn(AlertHistory, 'aggregate')
       .mockResolvedValue([
         { createdAt: new Date(), state: AlertState.ALERT, group: '' },
@@ -361,7 +362,7 @@ describe('alert evaluators', () => {
       appliesTo: () => {
         throw new Error('lookup failed');
       },
-      evaluate: jest.fn(),
+      evaluate: vi.fn(),
     });
 
     const { provider } = await run(
@@ -376,15 +377,16 @@ describe('alert evaluators', () => {
 });
 
 describe('extension registration', () => {
-  it('rolls back and retries a failed registration', () => {
-    jest.isolateModules(() => {
-      const registerExtensions = jest
+  it('rolls back and retries a failed registration', async () => {
+    {
+      vi.resetModules();
+      const registerExtensions = vi
         .fn()
         .mockImplementationOnce(() => {
           evaluatorsModule.registerAlertEvaluator({
             name: 'partial',
             appliesTo: () => true,
-            evaluate: jest.fn(),
+            evaluate: vi.fn(),
           });
           throw new Error('registration failed');
         })
@@ -392,12 +394,12 @@ describe('extension registration', () => {
           evaluatorsModule.registerAlertEvaluator({
             name: 'partial',
             appliesTo: () => true,
-            evaluate: jest.fn(),
+            evaluate: vi.fn(),
           });
         });
-      jest.doMock('@/extensions', () => ({ registerExtensions }));
-      // eslint-disable-next-line @typescript-eslint/no-require-imports, n/no-missing-require
-      const evaluatorsModule = require('@/tasks/checkAlerts/evaluators');
+      vi.doMock('@/extensions', () => ({ registerExtensions }));
+      const evaluatorsModule =
+        await import('@/tasks/checkAlerts/evaluators.js');
 
       expect(() => evaluatorsModule.findAlertEvaluator(makeAlert())).toThrow(
         'registration failed',
@@ -408,6 +410,7 @@ describe('extension registration', () => {
         'partial',
       );
       expect(registerExtensions).toHaveBeenCalledTimes(2);
-    });
+      vi.doUnmock('@/extensions');
+    }
   });
 });

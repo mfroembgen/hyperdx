@@ -15,6 +15,7 @@ services:
   #   depends_on:
   #     - app
   db:
+    # Preserve existing data directories; see DEPLOY.md before upgrading MongoDB.
     image: mongo:5.0.32-focal
     volumes:
       - .volumes/db:/data/db

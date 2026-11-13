@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import Link from 'next/link';
 import cx from 'classnames';
-import sub from 'date-fns/sub';
+import { sub } from 'date-fns/sub';
 import { useQueryState } from 'nuqs';
 import { useForm, useWatch } from 'react-hook-form';
 import { Badge } from '@clickhouse/click-ui';
@@ -114,11 +114,7 @@ const Th = React.memo<{
 const TABLE_FETCH_LIMIT = 10000;
 
 type InfraPodsStatusTableColumn =
-  | 'restarts'
-  | 'uptime'
-  | 'cpuLimit'
-  | 'memLimit'
-  | 'phase';
+  'restarts' | 'uptime' | 'cpuLimit' | 'memLimit' | 'phase';
 
 const TableLoading = () => {
   return (
@@ -1222,8 +1218,6 @@ function KubernetesDashboardPage() {
   });
 
   const whereClause = searchQuery;
-
-  const [_searchQuery, _setSearchQuery] = React.useState<string | null>(null);
 
   const { data: logSourceJsonColumns, isLoading: isLoadingJsonColumns } =
     useJsonColumns(

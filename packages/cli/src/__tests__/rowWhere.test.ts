@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it } from 'vitest';
 
 import type { ColumnMetaType } from '@hyperdx/common-utils/dist/clickhouse';
 

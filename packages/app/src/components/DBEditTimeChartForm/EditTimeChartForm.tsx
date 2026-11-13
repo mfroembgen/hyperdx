@@ -9,7 +9,6 @@ import {
   type UseFormSetValue,
   useWatch,
 } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { getHeatmapMode } from '@hyperdx/common-utils/dist/core/heatmap';
 import { tcFromSource } from '@hyperdx/common-utils/dist/core/metadata';
 import { isReducibleRangeQuery } from '@hyperdx/common-utils/dist/core/promql';
@@ -112,6 +111,7 @@ import {
   useSources,
 } from '@/source';
 import { normalizeNoOpAlertScheduleFields } from '@/utils/alerts';
+import { passthroughFormResolver } from '@/utils/formResolver';
 
 import { AlertPanelPrimaryAction } from './AlertPanelPrimaryAction';
 import { ChartActionBar, DashboardFiltersToggleProps } from './ChartActionBar';
@@ -177,7 +177,8 @@ type EditTimeChartFormProps = {
   showSaveToDashboard?: boolean;
 };
 
-const zodChartFormResolver = zodResolver(zSavedChartConfig);
+const zodChartFormResolver =
+  passthroughFormResolver<ChartEditorFormState>(zSavedChartConfig);
 
 // A tile on a variable can't keep an alert. The form holds on to it, so that
 // switching back to a fixed source restores it, but validates and submits

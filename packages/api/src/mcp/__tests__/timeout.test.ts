@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import {
   DeadlineExceededError,
   runWithTimeout,
@@ -7,8 +9,8 @@ import {
 const never = () => new Promise<never>(() => {});
 
 describe('runWithTimeout', () => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
 
   it('returns the value when work finishes in time and aborts the signal on exit', async () => {
     let captured: AbortSignal | undefined;
@@ -21,7 +23,7 @@ describe('runWithTimeout', () => {
     );
     expect(outcome).toEqual({ timedOut: false, value: 'done' });
     expect(captured?.aborted).toBe(true);
-    expect(jest.getTimerCount()).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it('times out and aborts the signal at the deadline', async () => {
@@ -33,9 +35,9 @@ describe('runWithTimeout', () => {
       },
       { timeoutMs: 1000 },
     );
-    await jest.advanceTimersByTimeAsync(999);
+    await vi.advanceTimersByTimeAsync(999);
     expect(captured?.aborted).toBe(false);
-    await jest.advanceTimersByTimeAsync(1);
+    await vi.advanceTimersByTimeAsync(1);
     await expect(pending).resolves.toEqual({ timedOut: true });
     expect(captured?.aborted).toBe(true);
   });
@@ -48,7 +50,7 @@ describe('runWithTimeout', () => {
         ),
       { timeoutMs: 1000 },
     );
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     await expect(pending).resolves.toEqual({ timedOut: true });
   });
 
@@ -60,9 +62,9 @@ describe('runWithTimeout', () => {
         ),
       { timeoutMs: 1000 },
     );
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     await expect(pending).resolves.toEqual({ timedOut: true });
-    expect(jest.getTimerCount()).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it('keeps a result returned inside the grace window after the abort', async () => {
@@ -73,7 +75,7 @@ describe('runWithTimeout', () => {
         ),
       { timeoutMs: 1000, graceMs: 500 },
     );
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     await expect(pending).resolves.toEqual({
       timedOut: false,
       value: 'partial',
@@ -88,9 +90,9 @@ describe('runWithTimeout', () => {
     }).finally(() => {
       settled = true;
     });
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     expect(settled).toBe(false);
-    await jest.advanceTimersByTimeAsync(500);
+    await vi.advanceTimersByTimeAsync(500);
     await expect(pending).resolves.toEqual({ timedOut: true });
   });
 
@@ -102,7 +104,7 @@ describe('runWithTimeout', () => {
         ),
       { timeoutMs: 1000, graceMs: 500 },
     );
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     await expect(pending).resolves.toEqual({ timedOut: true });
   });
 
@@ -118,7 +120,7 @@ describe('runWithTimeout', () => {
       ),
     ).rejects.toThrow('boom');
     expect(captured?.aborted).toBe(true);
-    expect(jest.getTimerCount()).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });
 
@@ -141,7 +143,7 @@ describe('withDeadline', () => {
     // Work scheduled after the batch budget is spent must fail fast WITHOUT
     // invoking the thunk — this is what keeps the post-deadline drain from
     // issuing any (un-cancellable) ClickHouse queries.
-    const start = jest.fn(() => Promise.resolve('too late'));
+    const start = vi.fn(() => Promise.resolve('too late'));
     await expect(withDeadline(start, Date.now() - 1)).rejects.toBeInstanceOf(
       DeadlineExceededError,
     );

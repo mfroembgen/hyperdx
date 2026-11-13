@@ -1,4 +1,5 @@
 import { useForm } from 'react-hook-form';
+import { vi } from 'vitest';
 import {
   AdhocDashboardFilter,
   DashboardFilter,
@@ -12,14 +13,14 @@ import {
   toFormValues,
 } from '@/components/DashboardFiltersModal/filterFormState';
 
-jest.mock('@/source', () => ({ useSources: () => ({ data: [] }) }));
+vi.mock('@/source', () => ({ useSources: () => ({ data: [] }) }));
 // The real inputs pull CodeMirror and source metadata into jsdom.
-jest.mock('@/components/SearchInput/SearchWhereInput', () => ({
+vi.mock('@/components/SearchInput/SearchWhereInput', () => ({
   __esModule: true,
   default: () => null,
   getStoredLanguage: () => undefined,
 }));
-jest.mock('@/components/SourceMultiSelect', () => ({
+vi.mock('@/components/SourceMultiSelect', () => ({
   SourceMultiSelectControlled: ({ name }: { name: string }) => (
     <div data-testid={`multi-select-${name}`} />
   ),

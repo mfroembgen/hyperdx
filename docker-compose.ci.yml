@@ -35,7 +35,7 @@ services:
     networks:
       - internal
   db:
-    image: mongo:5.0.32-focal
+    image: mongo:9.0.4
     command: --port 29999
     ports:
       - '${HDX_CI_MONGO_PORT:-39999}:29999'

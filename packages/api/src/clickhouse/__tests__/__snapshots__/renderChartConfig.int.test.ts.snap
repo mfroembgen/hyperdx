@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`renderChartConfig K8s Semantic Convention Migrations with metricNameSql should handle gauge metric with metricNameSql and groupBy 1`] = `
+exports[`renderChartConfig > K8s Semantic Convention Migrations with metricNameSql > should handle gauge metric with metricNameSql and groupBy 1`] = `
 [
   {
     "__hdx_time_bucket": "2022-01-05T00:00:00Z",
@@ -35,7 +35,7 @@ exports[`renderChartConfig K8s Semantic Convention Migrations with metricNameSql
 ]
 `;
 
-exports[`renderChartConfig K8s Semantic Convention Migrations with metricNameSql should handle metrics without metricNameSql (backward compatibility) 1`] = `
+exports[`renderChartConfig > K8s Semantic Convention Migrations with metricNameSql > should handle metrics without metricNameSql (backward compatibility) 1`] = `
 [
   {
     "__hdx_time_bucket": "2022-01-05T00:00:00Z",
@@ -52,7 +52,7 @@ exports[`renderChartConfig K8s Semantic Convention Migrations with metricNameSql
 ]
 `;
 
-exports[`renderChartConfig K8s Semantic Convention Migrations with metricNameSql should query k8s.pod.cpu.utilization gauge metric using metricNameSql to handle both old and new conventions 1`] = `
+exports[`renderChartConfig > K8s Semantic Convention Migrations with metricNameSql > should query k8s.pod.cpu.utilization gauge metric using metricNameSql to handle both old and new conventions 1`] = `
 [
   {
     "__hdx_time_bucket": "2022-01-05T00:00:00Z",
@@ -81,7 +81,7 @@ exports[`renderChartConfig K8s Semantic Convention Migrations with metricNameSql
 ]
 `;
 
-exports[`renderChartConfig Query Events - Logs simple select + group by query logs 1`] = `
+exports[`renderChartConfig > Query Events - Logs > simple select + group by query logs 1`] = `
 [
   {
     "ServiceName": "app",
@@ -94,7 +94,7 @@ exports[`renderChartConfig Query Events - Logs simple select + group by query lo
 ]
 `;
 
-exports[`renderChartConfig Query Events - Logs simple select + where query logs 1`] = `
+exports[`renderChartConfig > Query Events - Logs > simple select + where query logs 1`] = `
 [
   {
     "Body": "Oh no! Something went wrong!",
@@ -102,7 +102,7 @@ exports[`renderChartConfig Query Events - Logs simple select + where query logs 
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Gauge single avg gauge with group-by 1`] = `
+exports[`renderChartConfig > Query Metrics - Gauge > single avg gauge with group-by 1`] = `
 [
   {
     "__hdx_time_bucket": "2022-01-05T00:00:00Z",
@@ -127,7 +127,7 @@ exports[`renderChartConfig Query Metrics - Gauge single avg gauge with group-by 
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Gauge single avg gauge with where 1`] = `
+exports[`renderChartConfig > Query Metrics - Gauge > single avg gauge with where 1`] = `
 [
   {
     "__hdx_time_bucket": "2022-01-05T00:00:00Z",
@@ -140,7 +140,7 @@ exports[`renderChartConfig Query Metrics - Gauge single avg gauge with where 1`]
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Gauge single max gauge with delta 1`] = `
+exports[`renderChartConfig > Query Metrics - Gauge > single max gauge with delta 1`] = `
 [
   {
     "__hdx_time_bucket": "2022-01-05T00:00:00Z",
@@ -153,7 +153,7 @@ exports[`renderChartConfig Query Metrics - Gauge single max gauge with delta 1`]
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Gauge single max gauge with delta and group by 1`] = `
+exports[`renderChartConfig > Query Metrics - Gauge > single max gauge with delta and group by 1`] = `
 [
   {
     "__hdx_time_bucket": "2022-01-05T00:00:00Z",
@@ -178,7 +178,7 @@ exports[`renderChartConfig Query Metrics - Gauge single max gauge with delta and
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Gauge single max/avg/sum gauge 1`] = `
+exports[`renderChartConfig > Query Metrics - Gauge > single max/avg/sum gauge 1`] = `
 [
   {
     "__hdx_time_bucket": "2022-01-05T00:00:00Z",
@@ -191,7 +191,7 @@ exports[`renderChartConfig Query Metrics - Gauge single max/avg/sum gauge 1`] = 
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Gauge single max/avg/sum gauge 2`] = `
+exports[`renderChartConfig > Query Metrics - Gauge > single max/avg/sum gauge 2`] = `
 [
   {
     "__hdx_time_bucket": "2022-01-05T00:00:00Z",
@@ -204,7 +204,7 @@ exports[`renderChartConfig Query Metrics - Gauge single max/avg/sum gauge 2`] = 
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Gauge single max/avg/sum gauge 3`] = `
+exports[`renderChartConfig > Query Metrics - Gauge > single max/avg/sum gauge 3`] = `
 [
   {
     "__hdx_time_bucket": "2022-01-05T00:00:00Z",
@@ -217,7 +217,7 @@ exports[`renderChartConfig Query Metrics - Gauge single max/avg/sum gauge 3`] = 
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Histogram should bucket correctly when grouping by a single attribute 1`] = `
+exports[`renderChartConfig > Query Metrics - Histogram > should bucket correctly when grouping by a single attribute 1`] = `
 [
   {
     "Value": 3.5714285714285716,
@@ -250,7 +250,7 @@ exports[`renderChartConfig Query Metrics - Histogram should bucket correctly whe
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Histogram should bucket correctly when grouping by multiple attributes 1`] = `
+exports[`renderChartConfig > Query Metrics - Histogram > should bucket correctly when grouping by multiple attributes 1`] = `
 [
   {
     "Value": 2.916666666666667,
@@ -351,7 +351,7 @@ exports[`renderChartConfig Query Metrics - Histogram should bucket correctly whe
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Histogram should bucket correctly when no grouping is defined 1`] = `
+exports[`renderChartConfig > Query Metrics - Histogram > should bucket correctly when no grouping is defined 1`] = `
 [
   {
     "Value": 5.241935483870968,
@@ -364,7 +364,7 @@ exports[`renderChartConfig Query Metrics - Histogram should bucket correctly whe
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Histogram two_timestamps_bounded histogram (p25) 1`] = `
+exports[`renderChartConfig > Query Metrics - Histogram > two_timestamps_bounded histogram (p25) 1`] = `
 [
   {
     "Value": 7.5,
@@ -373,7 +373,7 @@ exports[`renderChartConfig Query Metrics - Histogram two_timestamps_bounded hist
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Histogram two_timestamps_bounded histogram (p50) 1`] = `
+exports[`renderChartConfig > Query Metrics - Histogram > two_timestamps_bounded histogram (p50) 1`] = `
 [
   {
     "Value": 20,
@@ -382,7 +382,7 @@ exports[`renderChartConfig Query Metrics - Histogram two_timestamps_bounded hist
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Histogram two_timestamps_bounded histogram (p90) 1`] = `
+exports[`renderChartConfig > Query Metrics - Histogram > two_timestamps_bounded histogram (p90) 1`] = `
 [
   {
     "Value": 30,
@@ -391,7 +391,7 @@ exports[`renderChartConfig Query Metrics - Histogram two_timestamps_bounded hist
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Histogram two_timestamps_lower_bound_inf histogram (p50) 1`] = `
+exports[`renderChartConfig > Query Metrics - Histogram > two_timestamps_lower_bound_inf histogram (p50) 1`] = `
 [
   {
     "Value": 0.5,
@@ -400,7 +400,7 @@ exports[`renderChartConfig Query Metrics - Histogram two_timestamps_lower_bound_
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Sum calculates min_rate/max_rate correctly for sum metrics: maxSum 1`] = `
+exports[`renderChartConfig > Query Metrics - Sum > calculates min_rate/max_rate correctly for sum metrics > maxSum 1`] = `
 [
   {
     "Value": 24,
@@ -413,7 +413,7 @@ exports[`renderChartConfig Query Metrics - Sum calculates min_rate/max_rate corr
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Sum calculates min_rate/max_rate correctly for sum metrics: minSum 1`] = `
+exports[`renderChartConfig > Query Metrics - Sum > calculates min_rate/max_rate correctly for sum metrics > minSum 1`] = `
 [
   {
     "Value": 15,
@@ -426,7 +426,7 @@ exports[`renderChartConfig Query Metrics - Sum calculates min_rate/max_rate corr
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Sum cross-scope same-key attributes split into two series under variadic AttributesHash (HDX-4466) 1`] = `
+exports[`renderChartConfig > Query Metrics - Sum > cross-scope same-key attributes split into two series under variadic AttributesHash (HDX-4466) 1`] = `
 [
   {
     "Value": 0,
@@ -435,7 +435,7 @@ exports[`renderChartConfig Query Metrics - Sum cross-scope same-key attributes s
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Sum handles counter resets correctly for sum metrics 1`] = `
+exports[`renderChartConfig > Query Metrics - Sum > handles counter resets correctly for sum metrics 1`] = `
 [
   {
     "Value": 15,
@@ -448,7 +448,7 @@ exports[`renderChartConfig Query Metrics - Sum handles counter resets correctly 
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Sum single sum rate 1`] = `
+exports[`renderChartConfig > Query Metrics - Sum > single sum rate 1`] = `
 [
   {
     "Value": 19,
@@ -469,7 +469,7 @@ exports[`renderChartConfig Query Metrics - Sum single sum rate 1`] = `
 ]
 `;
 
-exports[`renderChartConfig Query Metrics - Sum sum values as without rate computation 1`] = `
+exports[`renderChartConfig > Query Metrics - Sum > sum values as without rate computation 1`] = `
 [
   {
     "Value": 950400,
@@ -482,7 +482,7 @@ exports[`renderChartConfig Query Metrics - Sum sum values as without rate comput
 ]
 `;
 
-exports[`renderChartConfig Query settings handles the the query settings 1`] = `
+exports[`renderChartConfig > Query settings > handles the the query settings 1`] = `
 [
   {
     "Body": "Oh no! Something went wrong!",
@@ -493,7 +493,7 @@ exports[`renderChartConfig Query settings handles the the query settings 1`] = `
 ]
 `;
 
-exports[`renderChartConfig aggFn numeric agg functions should handle numeric values as strings 1`] = `
+exports[`renderChartConfig > aggFn > numeric agg functions should handle numeric values as strings 1`] = `
 [
   {
     "AVG(toFloat64OrDefault(toString(strVal)))": 0.5,
@@ -505,7 +505,7 @@ exports[`renderChartConfig aggFn numeric agg functions should handle numeric val
 ]
 `;
 
-exports[`renderChartConfig aggFn numeric agg functions should use default values for other types 1`] = `
+exports[`renderChartConfig > aggFn > numeric agg functions should use default values for other types 1`] = `
 [
   {
     "AVG(toFloat64OrDefault(toString(strVal)))": 0,

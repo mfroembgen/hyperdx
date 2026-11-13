@@ -1,4 +1,4 @@
-import type { Logger, WarnLogParams } from '@clickhouse/client-common';
+import type { Logger, WarnLogParams } from '@clickhouse/client';
 import type {
   BaseResultSet,
   ClickHouseClient as WebClickHouseClient,

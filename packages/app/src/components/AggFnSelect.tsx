@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import type { FieldPath, FieldValues } from 'react-hook-form';
 import { useController, UseControllerProps } from 'react-hook-form';
 import { getPercentileAggFnLevel } from '@hyperdx/common-utils/dist/core/utils';
 import { MetricsDataType } from '@hyperdx/common-utils/dist/types';
@@ -48,8 +49,7 @@ const HISTOGRAM_SUPPORTED_AGG_FNS_DISPLAY: AggFnValues[] = [
 ];
 
 type OnChangeValue =
-  | { aggFn?: AggFnValues }
-  | { aggFn: 'quantile'; level: number };
+  { aggFn?: AggFnValues } | { aggFn: 'quantile'; level: number };
 function AggFnSelect({
   value,
   defaultValue,
@@ -109,7 +109,7 @@ function AggFnSelect({
   );
 }
 
-export function AggFnSelectControlled({
+export function AggFnSelectControlled<TFieldValues extends FieldValues>({
   aggFnName,
   quantileLevelName,
   defaultValue,
@@ -118,11 +118,11 @@ export function AggFnSelectControlled({
   ...props
 }: {
   defaultValue: string;
-  aggFnName: string;
-  quantileLevelName: string;
+  aggFnName: FieldPath<TFieldValues>;
+  quantileLevelName: FieldPath<TFieldValues>;
   hideCustom?: boolean;
   metricType?: MetricsDataType;
-} & Omit<UseControllerProps<any>, 'name'>) {
+} & Omit<UseControllerProps<TFieldValues>, 'name'>) {
   const {
     field: { onChange: onAggFnChange, value: aggFnValue },
   } = useController({

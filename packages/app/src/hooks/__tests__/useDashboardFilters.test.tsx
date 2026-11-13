@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   ADHOC_FILTER_MAX_CONDITIONS,
   AdhocDashboardFilter,
@@ -14,7 +15,7 @@ import useDashboardFilters from '@/hooks/useDashboardFilters';
 
 // Mock nuqs useQueryState with a simple useState-like implementation
 let mockState: DashboardFilterValue[] | null = null;
-const mockSetState = jest.fn(
+const mockSetState = vi.fn(
   (
     updater:
       | DashboardFilterValue[]
@@ -31,7 +32,7 @@ const mockSetState = jest.fn(
   },
 );
 
-jest.mock('nuqs', () => ({
+vi.mock('nuqs', () => ({
   useQueryState: () => [mockState, mockSetState],
   createParser: (opts: { parse: Function; serialize: Function }) => opts,
 }));

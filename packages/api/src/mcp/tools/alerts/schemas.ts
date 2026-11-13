@@ -68,7 +68,7 @@ const mcpAlertChartLevelWhereLanguageSchema =
 
 const rejectedRawSqlAlertWhereField = z
   .never({
-    invalid_type_error:
+    error:
       'Raw SQL alert configs have no chart-level where; filter inside the sqlTemplate instead',
   })
   .optional()

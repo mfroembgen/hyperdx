@@ -1701,7 +1701,7 @@ describe('dashboard router', () => {
   describe('promql-label filters', () => {
     const createPromqlSource = () =>
       Source.create({
-        kind: SourceKind.Promql,
+        kind: SourceKind.Promql as const,
         name: 'Test PromQL Source',
         team: team._id,
         connection: new Types.ObjectId().toString(),
@@ -1828,7 +1828,7 @@ describe('dashboard router', () => {
 
       it('rejects a filter naming a source of the wrong kind', async () => {
         const logSource = await Source.create({
-          kind: SourceKind.Log,
+          kind: SourceKind.Log as const,
           name: 'Test Log Source',
           team: team._id,
           connection: new Types.ObjectId().toString(),
@@ -1852,7 +1852,7 @@ describe('dashboard router', () => {
       // as absent.
       it("rejects another team's PromQL source", async () => {
         const otherTeamSource = await Source.create({
-          kind: SourceKind.Promql,
+          kind: SourceKind.Promql as const,
           name: 'Other Team PromQL Source',
           team: new Types.ObjectId(),
           connection: new Types.ObjectId().toString(),
@@ -1965,7 +1965,7 @@ describe('dashboard router', () => {
           .expect(200);
 
         const logSource = await Source.create({
-          kind: SourceKind.Log,
+          kind: SourceKind.Log as const,
           name: 'Converted Log Source',
           team: team._id,
           connection: new Types.ObjectId().toString(),
@@ -2185,7 +2185,7 @@ describe('dashboard router', () => {
 
   describe('ad hoc filters', () => {
     const createSource = (kind: SourceKind, teamId = team._id) =>
-      Source.create({
+      new Source({
         kind,
         name: `Test ${kind} source`,
         team: teamId,
@@ -2197,7 +2197,7 @@ describe('dashboard router', () => {
           metricTables: { gauge: 'otel_metrics_gauge' },
           resourceAttributesExpression: 'ResourceAttributes',
         }),
-      });
+      }).save();
 
     let logSourceId: string;
     let traceSourceId: string;
@@ -2486,8 +2486,11 @@ describe('dashboard router', () => {
   });
 
   describe('preset dashboards', () => {
-    const MOCK_SOURCE: Omit<Extract<TSource, { kind: 'log' }>, 'id'> = {
-      kind: SourceKind.Log,
+    const MOCK_SOURCE: Omit<
+      Extract<TSource, { kind: SourceKind.Log }>,
+      'id'
+    > = {
+      kind: SourceKind.Log as const,
       name: 'Test Source',
       connection: new Types.ObjectId().toString(),
       from: {
@@ -2500,7 +2503,7 @@ describe('dashboard router', () => {
 
     const MOCK_PRESET_DASHBOARD_FILTER = {
       name: 'Test Filter',
-      type: 'QUERY_EXPRESSION',
+      type: 'QUERY_EXPRESSION' as const,
       expression: 'service.name:test-service',
       presetDashboard: PresetDashboard.Services,
     };

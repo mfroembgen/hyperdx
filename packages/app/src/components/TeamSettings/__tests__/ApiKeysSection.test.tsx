@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { type Mock, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -7,33 +8,33 @@ import { defaultRedact } from '@/components/RevealSnippet/RevealSnippet';
 import ApiKeysSection from '@/components/TeamSettings/ApiKeysSection';
 import { useConfirm } from '@/useConfirm';
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
-    useMe: jest.fn(),
-    useTeam: jest.fn(),
-    useRotateTeamApiKey: jest.fn(),
-    useRotatePersonalAccessKey: jest.fn(),
+    useMe: vi.fn(),
+    useTeam: vi.fn(),
+    useRotateTeamApiKey: vi.fn(),
+    useRotatePersonalAccessKey: vi.fn(),
   },
-  hdxServer: jest.fn(),
+  hdxServer: vi.fn(),
 }));
 
 // The real ConfirmProvider lives in pages/_app.tsx and pulls in next/router,
 // so the shared dialog is mocked here and exercised in the E2E specs instead.
-jest.mock('@/useConfirm', () => ({ useConfirm: jest.fn() }));
+vi.mock('@/useConfirm', () => ({ useConfirm: vi.fn() }));
 
-// Annotated as the loose `jest.Mock` rather than `jest.mocked(...)`'s exact
+// Annotated as the loose `Mock` rather than `vi.mocked(...)`'s exact
 // MockedFunction: these hooks return TanStack `UseQueryResult` /
 // `UseMutationResult` objects with ~25 members, and the tests only need the
 // few the component reads. The loose type keeps `mockReturnValue` at `any`
 // so the partial fixtures below need no type assertions.
-const mockUseMe: jest.Mock = jest.mocked(api.useMe);
-const mockUseTeam: jest.Mock = jest.mocked(api.useTeam);
-const mockUseRotateTeamApiKey: jest.Mock = jest.mocked(api.useRotateTeamApiKey);
-const mockUseRotatePersonalAccessKey: jest.Mock = jest.mocked(
+const mockUseMe: Mock = vi.mocked(api.useMe);
+const mockUseTeam: Mock = vi.mocked(api.useTeam);
+const mockUseRotateTeamApiKey: Mock = vi.mocked(api.useRotateTeamApiKey);
+const mockUseRotatePersonalAccessKey: Mock = vi.mocked(
   api.useRotatePersonalAccessKey,
 );
-const mockUseConfirm: jest.Mock = jest.mocked(useConfirm);
+const mockUseConfirm: Mock = vi.mocked(useConfirm);
 
 /** Options object the component hands to `mutate`, captured so the tests can
  *  drive `onSuccess` / `onError` without a real mutation. */
@@ -43,17 +44,17 @@ type MutateOptions = {
 };
 
 let capturedPersonalOptions: MutateOptions | undefined;
-const rotatePersonalMutate = jest.fn(
+const rotatePersonalMutate = vi.fn(
   (_vars: undefined, options?: MutateOptions) => {
     capturedPersonalOptions = options;
   },
 );
-const rotateTeamMutate = jest.fn();
+const rotateTeamMutate = vi.fn();
 
 /** Resolution of the next `confirm(...)` call, i.e. did the user accept. */
 let confirmAccepts = true;
 // Params are declared so `mock.calls[n][i]` stays typed; the body ignores them.
-const confirmSpy = jest.fn(
+const confirmSpy = vi.fn(
   (
     _message: ReactNode,
     _confirmLabel?: string,
@@ -85,7 +86,7 @@ function renderConfirmMessage(callIndex = 0) {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   capturedPersonalOptions = undefined;
   confirmAccepts = true;
 
@@ -93,7 +94,7 @@ beforeEach(() => {
   mockUseConfirm.mockReturnValue(confirmSpy);
   mockUseTeam.mockReturnValue({
     data: { apiKey: 'ingestion_key_xyz' },
-    refetch: jest.fn(),
+    refetch: vi.fn(),
   });
   mockUseRotateTeamApiKey.mockReturnValue({ mutate: rotateTeamMutate });
   mockUseRotatePersonalAccessKey.mockReturnValue({

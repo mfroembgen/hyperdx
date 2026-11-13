@@ -10,6 +10,9 @@ import {
 import { mcpSaveSavedSearchSchema } from '@/mcp/tools/savedSearches/schemas';
 import { mcpUnion } from '@/mcp/utils/errors';
 
+// Zod 4's message for a required string field that is missing.
+const MISSING_STRING = 'Invalid input: expected string, received undefined';
+
 // The text an agent sees: the MCP SDK's rendering of the tool-args parse error.
 const agentMessage = (schema: z.ZodTypeAny, input: unknown) => {
   const result = schema.safeParse(input);
@@ -39,7 +42,7 @@ describe('mcpUnion', () => {
     expect(
       agentMessage(args, { tiles: [{ displayType: 'line', aggFn: 'bogus' }] }),
     ).toBe(
-      "sourceId: Required; aggFn: Invalid enum value. Expected 'count' | 'sum', received 'bogus' at tiles[0]",
+      `sourceId: ${MISSING_STRING}; aggFn: Invalid option: expected one of "count"|"sum" at tiles[0]`,
     );
   });
 
@@ -50,7 +53,9 @@ describe('mcpUnion', () => {
           { configType: 'sql', displayType: 'line', whereLanguage: 'sql' },
         ],
       }),
-    ).toBe('connectionId: Required; sqlTemplate: Required at tiles[0]');
+    ).toBe(
+      `connectionId: ${MISSING_STRING}; sqlTemplate: ${MISSING_STRING} at tiles[0]`,
+    );
   });
 
   it("lists only the matched branch's values, and keeps its other issues", () => {
@@ -59,7 +64,7 @@ describe('mcpUnion', () => {
         tiles: [{ configType: 'sql', displayType: 'markdown' }],
       }),
     ).toBe(
-      'displayType: expected one of "line", "table"; connectionId: Required; sqlTemplate: Required at tiles[0]',
+      `displayType: expected one of "line", "table"; connectionId: ${MISSING_STRING}; sqlTemplate: ${MISSING_STRING} at tiles[0]`,
     );
   });
 
@@ -118,7 +123,8 @@ describe('MCP tool unions keep their specific messages', () => {
         ],
       }),
     ).toBe(
-      'config.sourceId: Required; config.granularity: Invalid at tiles[0]',
+      `config.sourceId: ${MISSING_STRING}; ` +
+        'config.granularity: Invalid string: must match pattern /^\\d+ (second|minute|hour|day)$/ at tiles[0]',
     );
   });
 
@@ -139,9 +145,9 @@ describe('MCP tool unions keep their specific messages', () => {
         ],
       }),
     ).toBe(
-      `${whereMessage}; config.sourceId: Required; ` +
-        'config.select: Expected array, received string; ' +
-        'config.groupBy: Expected string, received number at tiles[0]',
+      `${whereMessage}; config.sourceId: ${MISSING_STRING}; ` +
+        'config.select: Invalid input: expected array, received string; ' +
+        'config.groupBy: Invalid input: expected string, received number at tiles[0]',
     );
   });
 
@@ -175,7 +181,8 @@ describe('MCP tool unions keep their specific messages', () => {
         filters: [{ type: 'sql_ast', operator: '~' }],
       }),
     ).toBe(
-      "operator: Invalid enum value. Expected '=' | '<' | '>' | '!=' | '<=' | '>=', received '~'; left: Required; right: Required at filters[0]",
+      'operator: Invalid option: expected one of "="|"<"|">"|"!="|"<="|">="; ' +
+        `left: ${MISSING_STRING}; right: ${MISSING_STRING} at filters[0]`,
     );
   });
 });

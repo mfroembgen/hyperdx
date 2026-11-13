@@ -1,4 +1,6 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
+import { vi } from 'vitest';
 
 import { getServer, randomMongoId } from '@/fixtures';
 import { AlertSource } from '@/models/alert';
@@ -28,7 +30,7 @@ describe('unaddressableTileAlertIds', () => {
     y: 0,
     w: 4,
     h: 2,
-    config: { name, displayType: 'line' },
+    config: { name, displayType: DisplayType.Line },
   });
 
   // Shaped like the lean rows the manifest router passes in.
@@ -54,7 +56,7 @@ describe('unaddressableTileAlertIds', () => {
     // The failure this guards is MaxTimeMSExpired on a read sequenced last on
     // a shared budget. Reproducing that needs a slow collection, so the read
     // itself is made to reject instead.
-    const find = jest.spyOn(Dashboard, 'find').mockReturnValue({
+    const find = vi.spyOn(Dashboard, 'find').mockReturnValue({
       maxTimeMS: () => ({
         lean: () => Promise.reject(new Error('MaxTimeMSExpired')),
       }),
@@ -86,7 +88,7 @@ describe('unaddressableTileAlertIds', () => {
       tiles: [tile('tile-1', 'Errors')],
     });
     const alerts = [alert(dashboard._id, 'tile-1')];
-    const find = jest.spyOn(Dashboard, 'find');
+    const find = vi.spyOn(Dashboard, 'find');
 
     try {
       const withheld = await unaddressableTileAlertIds({
@@ -115,7 +117,7 @@ describe('unaddressableTileAlertIds', () => {
     const alerts = [alert(dashboard._id, 'tile-1')];
 
     // Never settles, which is the shape of a wait maxTimeMS cannot see.
-    const find = jest.spyOn(Dashboard, 'find').mockReturnValue({
+    const find = vi.spyOn(Dashboard, 'find').mockReturnValue({
       maxTimeMS: () => ({ lean: () => new Promise(() => {}) }),
     } as never);
 
@@ -144,7 +146,7 @@ describe('unaddressableTileAlertIds', () => {
     });
     const alerts = [alert(dashboard._id, 'tile-1')];
 
-    const find = jest.spyOn(Dashboard, 'find').mockReturnValue({
+    const find = vi.spyOn(Dashboard, 'find').mockReturnValue({
       maxTimeMS: () => ({
         lean: () =>
           new Promise((_, reject) =>
@@ -154,11 +156,11 @@ describe('unaddressableTileAlertIds', () => {
     } as never);
     // getCounter memoizes by name, so this is the instrument the module under
     // test captured at import — no options, or it would warn about a mismatch.
-    const add = jest.spyOn(
+    const add = vi.spyOn(
       getCounter('hyperdx.iac.tile_alert_lookup_failed'),
       'add',
     );
-    const warn = jest.spyOn(logger, 'warn');
+    const warn = vi.spyOn(logger, 'warn');
 
     try {
       const withheld = await unaddressableTileAlertIds({

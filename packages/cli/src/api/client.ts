@@ -37,7 +37,7 @@ import type {
 
 /**
  * Extract a readable detail string from an error response body.
- * Handles both plain-text errors and zod-express-middleware's JSON
+ * Handles both plain-text errors and request validation's JSON
  * validation issue arrays.
  */
 async function formatErrorBody(res: Response): Promise<string> {

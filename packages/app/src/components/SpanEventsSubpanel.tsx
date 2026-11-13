@@ -4,6 +4,7 @@ import { Box, Button } from '@mantine/core';
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { ColumnDef } from '@tanstack/react-table';
 
+import type { AppTableFeatures } from '@/tableFeatures';
 import { FormatTime } from '@/useFormatTime';
 
 import { DBRowJsonViewer } from './DBRowJsonViewer';
@@ -17,7 +18,7 @@ interface SpanEventData extends Record<string, unknown> {
   Attributes: Record<string, string>;
 }
 
-const spanEventColumns: ColumnDef<SpanEventData>[] = [
+const spanEventColumns: ColumnDef<AppTableFeatures, SpanEventData>[] = [
   {
     accessorKey: 'Timestamp',
     header: 'Timestamp',

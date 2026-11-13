@@ -1,11 +1,13 @@
+import { vi } from 'vitest';
+
 import { downloadTextFile } from '@/utils/downloadFile';
 
 describe('downloadTextFile', () => {
   it('creates an object URL, clicks a download anchor, and revokes the URL', () => {
-    const createObjectURL = jest.fn((_blob: Blob) => 'blob:fake');
-    const revokeObjectURL = jest.fn();
+    const createObjectURL = vi.fn((_blob: Blob) => 'blob:fake');
+    const revokeObjectURL = vi.fn();
     Object.assign(URL, { createObjectURL, revokeObjectURL });
-    const click = jest
+    const click = vi
       .spyOn(HTMLAnchorElement.prototype, 'click')
       .mockImplementation(() => undefined);
 
@@ -21,12 +23,12 @@ describe('downloadTextFile', () => {
 
   it('removes the anchor from the document after clicking', () => {
     Object.assign(URL, {
-      createObjectURL: jest.fn(() => 'blob:fake'),
-      revokeObjectURL: jest.fn(),
+      createObjectURL: vi.fn(() => 'blob:fake'),
+      revokeObjectURL: vi.fn(),
     });
-    jest
-      .spyOn(HTMLAnchorElement.prototype, 'click')
-      .mockImplementation(() => undefined);
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(
+      () => undefined,
+    );
 
     downloadTextFile('import {}', 'hyperdx-import.tf');
 

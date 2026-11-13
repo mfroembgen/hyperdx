@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
 import React from 'react';
 import { enableMapSet } from 'immer';
+import { vi } from 'vitest';
 import { FilterState } from '@hyperdx/common-utils/dist/filters';
 import {
   BuilderChartConfigWithDateRange,
@@ -42,54 +43,57 @@ enableMapSet();
  * clause).
  */
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
-    useMe: jest.fn(),
+    useMe: vi.fn(),
   },
 }));
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   __esModule: true,
-  useSource: jest.fn(),
+  useSource: vi.fn(),
 }));
 
-jest.mock('@/searchFilters', () => {
-  const actual =
-    jest.requireActual<typeof import('@/searchFilters')>('@/searchFilters');
+vi.mock('@/searchFilters', async () => {
+  const actualModule0 =
+    await vi.importActual<typeof import('@/searchFilters')>('@/searchFilters');
+
+  const actual = actualModule0;
   return {
     __esModule: true,
     ...actual,
-    usePinnedFilters: jest.fn(),
-    escapeFilterStateKeys: jest.fn(actual.escapeFilterStateKeys),
+    usePinnedFilters: vi.fn(),
+    escapeFilterStateKeys: vi.fn(actual.escapeFilterStateKeys),
   };
 });
 
-jest.mock('@/hooks/useMetadata', () => ({
+vi.mock('@/hooks/useMetadata', () => ({
+  SINGLE_KEY_VALUES_LIMIT: 10000,
   __esModule: true,
-  useMetadataWithSettings: jest.fn(),
-  useColumns: jest.fn(),
-  useDateTimeColumns: jest.fn(),
-  useJsonColumnNames: jest.fn(),
-  useMapColumns: jest.fn(),
-  useAllFields: jest.fn(),
-  useGetKeyValues: jest.fn(),
-  useFilterKeysFetchLimit: jest.fn(),
+  useMetadataWithSettings: vi.fn(),
+  useColumns: vi.fn(),
+  useDateTimeColumns: vi.fn(),
+  useJsonColumnNames: vi.fn(),
+  useMapColumns: vi.fn(),
+  useAllFields: vi.fn(),
+  useGetKeyValues: vi.fn(),
+  useFilterKeysFetchLimit: vi.fn(),
 }));
 
-const useMe = jest.mocked(api.useMe);
-const useSource = jest.mocked(sourceModule.useSource);
-const usePinnedFilters = jest.mocked(searchFiltersModule.usePinnedFilters);
-const useMetadataWithSettings = jest.mocked(
+const useMe = vi.mocked(api.useMe);
+const useSource = vi.mocked(sourceModule.useSource);
+const usePinnedFilters = vi.mocked(searchFiltersModule.usePinnedFilters);
+const useMetadataWithSettings = vi.mocked(
   useMetadataModule.useMetadataWithSettings,
 );
-const useColumns = jest.mocked(useMetadataModule.useColumns);
-const useDateTimeColumns = jest.mocked(useMetadataModule.useDateTimeColumns);
-const useJsonColumnNames = jest.mocked(useMetadataModule.useJsonColumnNames);
-const useMapColumns = jest.mocked(useMetadataModule.useMapColumns);
-const useAllFields = jest.mocked(useMetadataModule.useAllFields);
-const useGetKeyValues = jest.mocked(useMetadataModule.useGetKeyValues);
-const useFilterKeysFetchLimit = jest.mocked(
+const useColumns = vi.mocked(useMetadataModule.useColumns);
+const useDateTimeColumns = vi.mocked(useMetadataModule.useDateTimeColumns);
+const useJsonColumnNames = vi.mocked(useMetadataModule.useJsonColumnNames);
+const useMapColumns = vi.mocked(useMetadataModule.useMapColumns);
+const useAllFields = vi.mocked(useMetadataModule.useAllFields);
+const useGetKeyValues = vi.mocked(useMetadataModule.useGetKeyValues);
+const useFilterKeysFetchLimit = vi.mocked(
   useMetadataModule.useFilterKeysFetchLimit,
 );
 
@@ -186,13 +190,13 @@ function setupDefaultMocks({ withMVs }: { withMVs: boolean }) {
   } as any);
 
   usePinnedFilters.mockReturnValue({
-    isFieldPinned: jest.fn().mockReturnValue(false),
-    isSharedFieldPinned: jest.fn().mockReturnValue(false),
+    isFieldPinned: vi.fn().mockReturnValue(false),
+    isSharedFieldPinned: vi.fn().mockReturnValue(false),
   } as any);
 
   useMetadataWithSettings.mockReturnValue({
-    getKeyValuesWithMVs: jest.fn(),
-    getAllKeyValues: jest.fn(),
+    getKeyValuesWithMVs: vi.fn(),
+    getAllKeyValues: vi.fn(),
   } as any);
 
   useGetKeyValues.mockReturnValue({
@@ -207,7 +211,7 @@ function setupDefaultMocks({ withMVs }: { withMVs: boolean }) {
 
 describe('useFetchFacets', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('pipeline selection', () => {
@@ -587,7 +591,7 @@ describe('useFetchFacets', () => {
         isLoading: false,
       } as ReturnType<typeof useMetadataModule.useColumns>);
       useMetadataWithSettings.mockReturnValue({
-        getKeyValuesWithMVs: jest.fn().mockResolvedValue([
+        getKeyValuesWithMVs: vi.fn().mockResolvedValue([
           {
             key: "ResourceAttributes['k8s.namespace.name']",
             value: ['production'],
@@ -666,7 +670,7 @@ describe('useFetchFacets', () => {
         resolveLoadMore = resolve;
       });
       useMetadataWithSettings.mockReturnValue({
-        getKeyValuesWithMVs: jest.fn().mockReturnValue(loadMorePromise),
+        getKeyValuesWithMVs: vi.fn().mockReturnValue(loadMorePromise),
       } as any);
 
       const { wrapper } = makeWrapper();
@@ -711,7 +715,7 @@ describe('useFetchFacets', () => {
         error: null,
       } as any);
       useMetadataWithSettings.mockReturnValue({
-        getKeyValuesWithMVs: jest
+        getKeyValuesWithMVs: vi
           .fn()
           .mockResolvedValue([
             { key: 'ServiceName', value: ['api', 'web', 'db'] },
@@ -749,7 +753,7 @@ describe('useFetchFacets', () => {
         error: null,
       } as any);
       useMetadataWithSettings.mockReturnValue({
-        getKeyValuesWithMVs: jest.fn().mockResolvedValue([
+        getKeyValuesWithMVs: vi.fn().mockResolvedValue([
           {
             key: 'ServiceName',
             value: ['api', 'web', 'db'],
@@ -791,7 +795,7 @@ describe('useFetchFacets', () => {
         error: null,
       } as any);
       useMetadataWithSettings.mockReturnValue({
-        getKeyValuesWithMVs: jest
+        getKeyValuesWithMVs: vi
           .fn()
           .mockResolvedValue([{ key: 'NewKey', value: ['n1', 'n2'] }]),
       } as any);
@@ -828,9 +832,9 @@ describe('useFetchFacets', () => {
       } as any);
       // Simulate the raw-tables path swallowing the error and returning undefined.
       useMetadataWithSettings.mockReturnValue({
-        getKeyValuesWithMVs: jest.fn().mockRejectedValue(new Error('boom')),
+        getKeyValuesWithMVs: vi.fn().mockRejectedValue(new Error('boom')),
       } as any);
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => undefined);
 
@@ -863,10 +867,10 @@ describe('useFetchFacets', () => {
   describe('loadMoreFacetsForKey (MV pipeline)', () => {
     it('delegates to getAllKeyValues and merges the result', async () => {
       setupDefaultMocks({ withMVs: true });
-      const getAllKeyValues = jest
+      const getAllKeyValues = vi
         .fn()
         .mockResolvedValue([{ key: 'ServiceName', value: ['api', 'web'] }]);
-      const getKeyValuesWithMVs = jest.fn();
+      const getKeyValuesWithMVs = vi.fn();
       useMetadataWithSettings.mockReturnValue({
         getAllKeyValues,
         getKeyValuesWithMVs,
@@ -906,7 +910,7 @@ describe('useFetchFacets', () => {
         error: null,
       } as any);
       useMetadataWithSettings.mockReturnValue({
-        getKeyValuesWithMVs: jest
+        getKeyValuesWithMVs: vi
           .fn()
           .mockResolvedValue([{ key: 'NewKey', value: ['n1'] }]),
       } as any);
@@ -950,7 +954,7 @@ describe('useFetchFacets', () => {
         error: null,
       } as any);
       useMetadataWithSettings.mockReturnValue({
-        getKeyValuesWithMVs: jest
+        getKeyValuesWithMVs: vi
           .fn()
           .mockResolvedValue([{ key: 'NewKey', value: ['n1'] }]),
       } as any);
@@ -995,7 +999,7 @@ describe('useFetchFacets', () => {
         error: null,
       } as any);
       useMetadataWithSettings.mockReturnValue({
-        getKeyValuesWithMVs: jest
+        getKeyValuesWithMVs: vi
           .fn()
           .mockResolvedValue([{ key: 'NewKey', value: ['n1'] }]),
       } as any);
@@ -1050,7 +1054,7 @@ describe('useFetchFacets', () => {
         error: null,
       } as any);
       useMetadataWithSettings.mockReturnValue({
-        getKeyValuesWithMVs: jest
+        getKeyValuesWithMVs: vi
           .fn()
           .mockResolvedValue([{ key: 'NewKey', value: ['n1'] }]),
       } as any);
@@ -1096,7 +1100,7 @@ describe('useFetchFacets', () => {
         error: null,
       } as any);
       useMetadataWithSettings.mockReturnValue({
-        getKeyValuesWithMVs: jest
+        getKeyValuesWithMVs: vi
           .fn()
           .mockResolvedValue([{ key: 'NewKey', value: ['n1'] }]),
       } as any);
@@ -1268,11 +1272,11 @@ describe('useFetchFacets', () => {
     it('loads more values from the connection when there is no source', async () => {
       setupDefaultMocks({ withMVs: false });
       mockSourceQuery(undefined);
-      const getAllKeyValues = jest
+      const getAllKeyValues = vi
         .fn()
         .mockResolvedValue([{ key: 'ServiceName', value: ['api'] }]);
       mockMetadata({
-        getKeyValuesWithMVs: jest.fn(),
+        getKeyValuesWithMVs: vi.fn(),
         getAllKeyValues,
       });
 
@@ -1311,8 +1315,8 @@ describe('useFetchFacets', () => {
       setupDefaultMocks({ withMVs: false });
       mockSourceQuery(undefined);
       mockMetadata({
-        getKeyValuesWithMVs: jest.fn(),
-        getAllKeyValues: jest
+        getKeyValuesWithMVs: vi.fn(),
+        getAllKeyValues: vi
           .fn()
           .mockResolvedValue([{ key: 'NewKey', value: ['n1'] }]),
       });

@@ -1,4 +1,4 @@
-import { ClickHouseError } from '@clickhouse/client-common';
+import { ClickHouseError } from '@clickhouse/client';
 
 import {
   isClientTimeoutOrAbortError,

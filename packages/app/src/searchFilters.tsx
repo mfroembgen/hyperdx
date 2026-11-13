@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import produce from 'immer';
+import { produce } from 'immer';
 import {
   type FilterState,
   filtersToQuery,

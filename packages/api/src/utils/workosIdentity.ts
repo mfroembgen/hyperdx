@@ -17,9 +17,7 @@ export class WorkosAuthenticationError extends Error {
   constructor(
     readonly status: 401 | 403 | 503,
     readonly reason:
-      | 'invalid_token'
-      | 'unmapped_identity'
-      | 'upstream_unavailable',
+      'invalid_token' | 'unmapped_identity' | 'upstream_unavailable',
   ) {
     super('WorkOS authentication failed');
   }

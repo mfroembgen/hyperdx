@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import type {
   BuilderChartConfig,
   BuilderSavedChartConfig,
@@ -24,8 +25,8 @@ import {
   validateChartForm,
 } from '@/components/ChartEditor/utils';
 
-jest.mock('../../SearchInput', () => ({
-  getStoredLanguage: jest.fn().mockReturnValue('lucene'),
+vi.mock('../../SearchInput', () => ({
+  getStoredLanguage: vi.fn().mockReturnValue('lucene'),
 }));
 
 const dateRange: [Date, Date] = [
@@ -1007,7 +1008,7 @@ describe('validateChartForm', () => {
   // ── Valid forms (no errors) ──────────────────────────────────────────
 
   it('returns no errors for a valid builder chart with a source', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({ source: 'source-log' }),
       logSource,
@@ -1018,7 +1019,7 @@ describe('validateChartForm', () => {
   });
 
   it('returns no errors for a valid raw SQL chart', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         configType: 'sql',
@@ -1034,7 +1035,7 @@ describe('validateChartForm', () => {
   });
 
   it('returns no errors for a Markdown chart without source', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({ displayType: DisplayType.Markdown }),
       undefined,
@@ -1045,7 +1046,7 @@ describe('validateChartForm', () => {
   });
 
   it('returns no errors for a Number chart with exactly one series', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Number,
@@ -1060,7 +1061,7 @@ describe('validateChartForm', () => {
   });
 
   it('returns no errors for a Pie chart with exactly one series', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Pie,
@@ -1075,7 +1076,7 @@ describe('validateChartForm', () => {
   });
 
   it('returns no errors for a Bar chart with exactly one series', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Bar,
@@ -1090,7 +1091,7 @@ describe('validateChartForm', () => {
   });
 
   it('returns no errors for a Search chart (skips series validation)', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Search,
@@ -1105,7 +1106,7 @@ describe('validateChartForm', () => {
   });
 
   it('returns no errors for count aggFn without valueExpression', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         source: 'source-log',
@@ -1119,7 +1120,7 @@ describe('validateChartForm', () => {
   });
 
   it('returns no errors for metric series where all items have metricName', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({ source: 'source-metric', series: [metricSeriesItem] }),
       metricSource,
@@ -1132,7 +1133,7 @@ describe('validateChartForm', () => {
   // ── Raw SQL validation ───────────────────────────────────────────────
 
   it('errors when raw SQL chart is missing connection', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         configType: 'sql',
@@ -1153,7 +1154,7 @@ describe('validateChartForm', () => {
   });
 
   it('errors when raw SQL chart is missing sqlTemplate', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         configType: 'sql',
@@ -1174,7 +1175,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not check connection/sqlTemplate for non-sql configType', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         configType: 'builder',
@@ -1190,7 +1191,7 @@ describe('validateChartForm', () => {
   });
 
   it('errors when raw SQL chart has alert but SQL is missing time filters and interval', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         configType: 'sql',
@@ -1217,7 +1218,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not error when raw SQL chart has alert and SQL includes required params', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         configType: 'sql',
@@ -1243,7 +1244,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not validate SQL template for alerts when no alert is configured', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         configType: 'sql',
@@ -1263,7 +1264,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not error when raw SQL Number chart has alert with date range params but no interval', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         configType: 'sql',
@@ -1289,7 +1290,7 @@ describe('validateChartForm', () => {
   });
 
   it('still requires interval params for raw SQL Line chart alerts', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         configType: 'sql',
@@ -1319,7 +1320,7 @@ describe('validateChartForm', () => {
   // ── Source validation ────────────────────────────────────────────────
 
   it('errors when builder chart has no source', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({ source: undefined }),
       logSource,
@@ -1334,7 +1335,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not require source for Markdown charts', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({ displayType: DisplayType.Markdown, source: undefined }),
       undefined,
@@ -1344,7 +1345,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not require source for raw SQL charts', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         configType: 'sql',
@@ -1372,7 +1373,7 @@ describe('validateChartForm', () => {
       const errors = validateChartForm(
         promqlChartForm({ source: 'source-promql' }),
         promqlSource,
-        jest.fn(),
+        vi.fn(),
       );
       expect(errors).toHaveLength(0);
     });
@@ -1381,7 +1382,7 @@ describe('validateChartForm', () => {
       const errors = validateChartForm(
         promqlChartForm({ source: undefined }),
         undefined,
-        jest.fn(),
+        vi.fn(),
       );
       expect(errors).toContainEqual(
         expect.objectContaining({
@@ -1397,7 +1398,7 @@ describe('validateChartForm', () => {
       const errors = validateChartForm(
         promqlChartForm({ source: 'source-log' }),
         undefined,
-        jest.fn(),
+        vi.fn(),
       );
       expect(errors).toContainEqual(
         expect.objectContaining({
@@ -1411,7 +1412,7 @@ describe('validateChartForm', () => {
   // ── Series valueExpression validation ────────────────────────────────
 
   it('errors when a non-count aggFn series is missing valueExpression', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         source: 'source-log',
@@ -1429,7 +1430,7 @@ describe('validateChartForm', () => {
   });
 
   it('errors for each series missing valueExpression with non-count aggFn', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         source: 'source-log',
@@ -1450,7 +1451,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not error for count aggFn even without valueExpression', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         source: 'source-log',
@@ -1465,7 +1466,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not validate valueExpression for Search displayType', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Search,
@@ -1483,7 +1484,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not validate valueExpression for metric sources', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         source: 'source-metric',
@@ -1500,7 +1501,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not validate valueExpression for Markdown displayType', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Markdown,
@@ -1520,7 +1521,7 @@ describe('validateChartForm', () => {
   // ── Metric name validation ───────────────────────────────────────────
 
   it('errors for each metric series item missing metricName', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const seriesWithoutName = {
       ...seriesItem,
       metricType: MetricsDataType.Gauge,
@@ -1542,7 +1543,7 @@ describe('validateChartForm', () => {
   });
 
   it('only errors on metric series items that are missing metricName', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const seriesWithoutName = {
       ...seriesItem,
       metricType: MetricsDataType.Gauge,
@@ -1564,7 +1565,7 @@ describe('validateChartForm', () => {
   });
 
   it('skips metric validation for non-metric sources', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const seriesWithoutName = {
       ...seriesItem,
       metricType: MetricsDataType.Gauge,
@@ -1582,7 +1583,7 @@ describe('validateChartForm', () => {
   });
 
   it('skips metric validation when source is undefined', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const seriesWithoutName = {
       ...seriesItem,
       metricType: MetricsDataType.Gauge,
@@ -1602,7 +1603,7 @@ describe('validateChartForm', () => {
   // ── Number / Pie single-series validation ────────────────────────────
 
   it('allows a Number chart with two series in ratio mode', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Number,
@@ -1619,7 +1620,7 @@ describe('validateChartForm', () => {
   });
 
   it('errors when Number chart has two series without ratio mode', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Number,
@@ -1640,7 +1641,7 @@ describe('validateChartForm', () => {
   });
 
   it('errors when Number chart has two series and seriesReturnType is unset', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Number,
@@ -1660,7 +1661,7 @@ describe('validateChartForm', () => {
   });
 
   it('errors when Number chart has more than two series in ratio mode', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Number,
@@ -1680,7 +1681,7 @@ describe('validateChartForm', () => {
   });
 
   it('errors when Pie chart has more than one series', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Pie,
@@ -1699,7 +1700,7 @@ describe('validateChartForm', () => {
   });
 
   it('errors when Bar chart has more than one series', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Bar,
@@ -1718,7 +1719,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not error for Line chart with multiple series', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Line,
@@ -1732,7 +1733,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not error for Table chart with multiple series', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Table,
@@ -1746,7 +1747,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not apply single-series limit for raw SQL Number charts', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         configType: 'sql',
@@ -1764,7 +1765,7 @@ describe('validateChartForm', () => {
   // ── Alert thresholdMax validation ───────────────────────────────────
 
   it('errors when between alert is missing thresholdMax', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         source: 'source-log',
@@ -1788,7 +1789,7 @@ describe('validateChartForm', () => {
   });
 
   it('errors when not_between alert is missing thresholdMax', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         source: 'source-log',
@@ -1810,7 +1811,7 @@ describe('validateChartForm', () => {
   });
 
   it('errors when thresholdMax is less than threshold', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         source: 'source-log',
@@ -1835,7 +1836,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not error when thresholdMax equals threshold', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         source: 'source-log',
@@ -1854,7 +1855,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not error when thresholdMax is greater than threshold for between', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         source: 'source-log',
@@ -1873,7 +1874,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not validate thresholdMax for non-range threshold types', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         source: 'source-log',
@@ -1891,7 +1892,7 @@ describe('validateChartForm', () => {
   });
 
   it('does not validate thresholdMax when no alert is configured', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         source: 'source-log',
@@ -1906,7 +1907,7 @@ describe('validateChartForm', () => {
   // ── Multiple validation errors at once ───────────────────────────────
 
   it('accumulates multiple errors across different validation rules', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Number,
@@ -1937,7 +1938,7 @@ describe('validateChartForm', () => {
   });
 
   it('calls setError for every accumulated error', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         configType: 'sql',
@@ -1965,7 +1966,7 @@ describe('validateChartForm', () => {
   // ── Heatmap-specific validation ───────────────────────────────────────
 
   it('returns no errors for a valid heatmap chart with trace source', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Heatmap,
@@ -1986,7 +1987,7 @@ describe('validateChartForm', () => {
   });
 
   it('rejects heatmap chart with multiple series', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Heatmap,
@@ -2012,13 +2013,13 @@ describe('validateChartForm', () => {
         series: [{ ...seriesItem, valueExpression: '' }],
       }),
       promqlSource,
-      jest.fn(),
+      vi.fn(),
     );
     expect(errors).toHaveLength(0);
   });
 
   it('rejects heatmap chart without a value expression', () => {
-    const setError = jest.fn();
+    const setError = vi.fn();
     const errors = validateChartForm(
       makeForm({
         displayType: DisplayType.Heatmap,
@@ -2042,7 +2043,7 @@ describe('validateChartForm', () => {
         series: [{ ...seriesItem, valueExpression: '' }],
       }),
       traceSource,
-      jest.fn(),
+      vi.fn(),
     );
     expect(errors).toContainEqual(
       expect.objectContaining({ path: 'series.0.valueExpression' }),
@@ -2079,7 +2080,7 @@ describe('color round-trip (sql/promql Number tile)', () => {
     };
     const result = convertFormStateToChartConfig(form, dateRange, undefined);
     expect(result).toBeDefined();
-    expect((result as any).color).toBe('chart-orange');
+    expect(result).toHaveProperty('color', 'chart-orange');
   });
 
   it('preserves color through convertFormStateToSavedChartConfig for promql Number tile', () => {
@@ -2093,7 +2094,7 @@ describe('color round-trip (sql/promql Number tile)', () => {
     };
     const result = convertFormStateToSavedChartConfig(form, undefined);
     expect(result).toBeDefined();
-    expect((result as any).color).toBe('chart-warning');
+    expect(result).toHaveProperty('color', 'chart-warning');
   });
 
   it('preserves color through convertFormStateToChartConfig for promql Number tile', () => {
@@ -2107,7 +2108,7 @@ describe('color round-trip (sql/promql Number tile)', () => {
     };
     const result = convertFormStateToChartConfig(form, dateRange, undefined);
     expect(result).toBeDefined();
-    expect((result as any).color).toBe('chart-error');
+    expect(result).toHaveProperty('color', 'chart-error');
   });
 
   it('preserves colorRules through both conversions for sql Number tile', () => {
@@ -2286,7 +2287,7 @@ describe('metric formulas (HDX-5080)', () => {
 
   describe('validateChartForm', () => {
     it('accepts a valid formula referencing existing series', () => {
-      const setError = jest.fn();
+      const setError = vi.fn();
       const errors = validateChartForm(
         makeMetricForm({
           formulas: [{ expression: 'A / (A + B) * 100' }],
@@ -2299,7 +2300,7 @@ describe('metric formulas (HDX-5080)', () => {
     });
 
     it('reports a malformed formula expression at its field path', () => {
-      const setError = jest.fn();
+      const setError = vi.fn();
       const errors = validateChartForm(
         makeMetricForm({ formulas: [{ expression: 'A +' }] }),
         metricSource,
@@ -2315,7 +2316,7 @@ describe('metric formulas (HDX-5080)', () => {
     });
 
     it('reports an unknown series reference', () => {
-      const setError = jest.fn();
+      const setError = vi.fn();
       const errors = validateChartForm(
         makeMetricForm({ formulas: [{ expression: 'A + C' }] }),
         metricSource,
@@ -2330,7 +2331,7 @@ describe('metric formulas (HDX-5080)', () => {
     });
 
     it('reports an empty formula expression', () => {
-      const setError = jest.fn();
+      const setError = vi.fn();
       const errors = validateChartForm(
         makeMetricForm({ formulas: [{ expression: '' }] }),
         metricSource,
@@ -2342,7 +2343,7 @@ describe('metric formulas (HDX-5080)', () => {
     });
 
     it('validates each formula independently', () => {
-      const setError = jest.fn();
+      const setError = vi.fn();
       const errors = validateChartForm(
         makeMetricForm({
           formulas: [{ expression: 'A + B' }, { expression: 'A *' }],
@@ -2356,7 +2357,7 @@ describe('metric formulas (HDX-5080)', () => {
     });
 
     it('validates formulas for log event sources', () => {
-      const setError = jest.fn();
+      const setError = vi.fn();
       const errors = validateChartForm(
         makeMetricForm({
           source: 'source-log',
@@ -2372,7 +2373,7 @@ describe('metric formulas (HDX-5080)', () => {
     });
 
     it('accepts a valid formula on a trace source', () => {
-      const setError = jest.fn();
+      const setError = vi.fn();
       const errors = validateChartForm(
         makeMetricForm({
           source: 'source-trace',
@@ -2386,7 +2387,7 @@ describe('metric formulas (HDX-5080)', () => {
     });
 
     it('skips formula validation for formula-incapable source kinds (formulas are stripped on save)', () => {
-      const setError = jest.fn();
+      const setError = vi.fn();
       const errors = validateChartForm(
         makeMetricForm({
           source: 'source-session',
@@ -2400,7 +2401,7 @@ describe('metric formulas (HDX-5080)', () => {
     });
 
     it('skips formula validation for non-formula display types (formulas are stripped on save)', () => {
-      const setError = jest.fn();
+      const setError = vi.fn();
       const errors = validateChartForm(
         makeMetricForm({
           displayType: DisplayType.Pie,
@@ -2414,7 +2415,7 @@ describe('metric formulas (HDX-5080)', () => {
     });
 
     it('rejects multiple formulas on a Number chart', () => {
-      const setError = jest.fn();
+      const setError = vi.fn();
       const errors = validateChartForm(
         makeMetricForm({
           displayType: DisplayType.Number,
@@ -2433,7 +2434,7 @@ describe('metric formulas (HDX-5080)', () => {
     });
 
     it('allows a single formula on a Number chart and multiple elsewhere', () => {
-      const setError = jest.fn();
+      const setError = vi.fn();
       expect(
         validateChartForm(
           makeMetricForm({
@@ -2457,7 +2458,7 @@ describe('metric formulas (HDX-5080)', () => {
     });
 
     it('lifts the Number chart series cap when formulas are present', () => {
-      const setError = jest.fn();
+      const setError = vi.fn();
       const errors = validateChartForm(
         makeMetricForm({
           displayType: DisplayType.Number,
@@ -2472,7 +2473,7 @@ describe('metric formulas (HDX-5080)', () => {
     });
 
     it('keeps the Number chart series cap without formulas', () => {
-      const setError = jest.fn();
+      const setError = vi.fn();
       const errors = validateChartForm(
         makeMetricForm({
           displayType: DisplayType.Number,
@@ -2762,12 +2763,12 @@ describe('data source variable references', () => {
       series: [seriesItem],
     };
     expect(
-      validateChartForm(form, undefined, jest.fn(), {
+      validateChartForm(form, undefined, vi.fn(), {
         sourceKind: SourceKind.Log,
       }),
     ).toEqual([]);
     expect(
-      validateChartForm(form, undefined, jest.fn(), {
+      validateChartForm(form, undefined, vi.fn(), {
         missingSourceMessage: 'Select a source for $logs',
       }),
     ).toEqual([{ path: 'source', message: 'Select a source for $logs' }]);

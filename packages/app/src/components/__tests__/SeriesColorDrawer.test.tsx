@@ -1,5 +1,6 @@
 import React from 'react';
 import { randomUUID } from 'crypto';
+import { vi } from 'vitest';
 import type { ColorCondition } from '@hyperdx/common-utils/dist/types';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -25,10 +26,10 @@ if (typeof globalThis.crypto.randomUUID !== 'function') {
 describe('SeriesColorDrawer', () => {
   it('calls onChange with the picked static color on Apply', async () => {
     const user = userEvent.setup();
-    const onChange = jest.fn();
+    const onChange = vi.fn();
 
     renderWithMantine(
-      <SeriesColorDrawer opened onChange={onChange} onClose={jest.fn()} />,
+      <SeriesColorDrawer opened onChange={onChange} onClose={vi.fn()} />,
     );
 
     await user.click(screen.getByTestId('color-swatch-input-trigger'));
@@ -43,7 +44,7 @@ describe('SeriesColorDrawer', () => {
 
   it('round-trips existing rules on Apply and strips client-side ids', async () => {
     const user = userEvent.setup();
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     const colorRules: ColorCondition[] = [
       { operator: 'gt', value: 500, color: 'chart-error' },
     ];
@@ -53,7 +54,7 @@ describe('SeriesColorDrawer', () => {
         opened
         colorRules={colorRules}
         onChange={onChange}
-        onClose={jest.fn()}
+        onClose={vi.fn()}
       />,
     );
 
@@ -69,14 +70,14 @@ describe('SeriesColorDrawer', () => {
 
   it('clears color and rules when Clear is clicked', async () => {
     const user = userEvent.setup();
-    const onChange = jest.fn();
+    const onChange = vi.fn();
 
     renderWithMantine(
       <SeriesColorDrawer
         opened
         color="chart-error"
         onChange={onChange}
-        onClose={jest.fn()}
+        onClose={vi.fn()}
       />,
     );
 

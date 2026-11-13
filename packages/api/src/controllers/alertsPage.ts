@@ -1,6 +1,6 @@
 import { MAX_ALERT_DISPLAY_NAME_LENGTH } from '@hyperdx/common-utils/dist/types';
 import { escapeRegExp } from 'lodash';
-import type { FilterQuery } from 'mongoose';
+import type { QueryFilter } from 'mongoose';
 import { z } from 'zod';
 
 import { ALERT_PAGE_POPULATE, type AlertPageRefs } from '@/controllers/alerts';
@@ -94,8 +94,8 @@ export type AlertsPageParams = z.infer<typeof alertsPageQuerySchema>;
 export function buildAlertsFilter(
   teamId: ObjectId | string,
   params: AlertsFilterParams,
-): FilterQuery<IAlert> {
-  const filter: FilterQuery<IAlert> = { team: teamId };
+): QueryFilter<IAlert> {
+  const filter: QueryFilter<IAlert> = { team: teamId };
 
   if (params.tag != null) {
     filter.tags = { $in: params.tag };
@@ -130,7 +130,7 @@ export function buildAlertsFilter(
 export function buildAlertsPageFilter(
   teamId: ObjectId | string,
   params: AlertsPageParams,
-): FilterQuery<IAlert> {
+): QueryFilter<IAlert> {
   const filter = buildAlertsFilter(teamId, params);
 
   if (params.createdBy != null) {
@@ -160,7 +160,7 @@ function inOrMissing<T extends string>(values: T[], schemaDefault: T) {
  * depends on whether the page ended inside that block.
  */
 function applyCursor(
-  filter: FilterQuery<IAlert>,
+  filter: QueryFilter<IAlert>,
   cursor: AlertsPageCursor,
 ): void {
   // When the previous page ended inside the null block of displayNames,

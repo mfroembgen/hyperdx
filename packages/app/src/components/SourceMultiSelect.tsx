@@ -1,4 +1,5 @@
 import { memo, useCallback } from 'react';
+import type { FieldPath, FieldValues } from 'react-hook-form';
 import { useController, UseControllerProps } from 'react-hook-form';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import {
@@ -17,7 +18,10 @@ import {
 } from '@/components/sourceSelectUtils';
 import { useSources } from '@/source';
 
-function SourceMultiSelectControlledComponent({
+function SourceMultiSelectControlledComponent<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({
   allowedSourceKinds,
   connectionId,
   allowSourceVariables = false,
@@ -31,7 +35,7 @@ function SourceMultiSelectControlledComponent({
   allowSourceVariables?: boolean;
   size?: string;
   placeholder?: string;
-} & UseControllerProps<any> &
+} & UseControllerProps<TFieldValues, TName> &
   Omit<MultiSelectProps, 'data' | 'value' | 'onChange' | 'name'>) {
   const { data } = useSources();
   const {
@@ -93,4 +97,4 @@ function SourceMultiSelectControlledComponent({
 
 export const SourceMultiSelectControlled = memo(
   SourceMultiSelectControlledComponent,
-);
+) as typeof SourceMultiSelectControlledComponent;

@@ -91,6 +91,7 @@ export function runAdoptionChecks(
           `Invalid alsoPattern in adoption check '${check.id}': ${
             err instanceof Error ? err.message : String(err)
           }`,
+          { cause: err },
         );
       }
     }
@@ -131,6 +132,7 @@ export function runProgrammaticChecks(
         `Invalid regex in programmatic check '${check.id}': ${
           err instanceof Error ? err.message : String(err)
         }`,
+        { cause: err },
       );
     }
     const matched = regex.test(answer);

@@ -54,7 +54,7 @@ describe('MCP Query Tools', () => {
     });
 
     traceSource = await Source.create({
-      kind: SourceKind.Trace,
+      kind: SourceKind.Trace as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -66,7 +66,7 @@ describe('MCP Query Tools', () => {
     });
 
     logSource = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -688,7 +688,7 @@ describe('MCP Query Tools', () => {
       });
 
       it('keeps the same notes when denoise fails', async () => {
-        const spy = jest
+        const spy = vi
           .spyOn(denoise, 'denoiseSearchResults')
           .mockRejectedValueOnce(new Error('denoise down'));
         try {
@@ -1241,7 +1241,7 @@ describe('MCP Query Tools', () => {
           { _id: logSource._id },
           { $set: { tableFilterExpression: "ServiceName != 'svc-b'" } },
         );
-        const spy = jest
+        const spy = vi
           .spyOn(patternDrilldown, 'userWhereAsSql')
           .mockRejectedValueOnce(new Error('cannot render'));
         try {
@@ -1587,7 +1587,7 @@ describe('MCP Query Tools', () => {
       it("rejects another team's sourceId as not found", async () => {
         const otherTeam = await Team.create({ name: 'Other Team' });
         const otherSource = await Source.create({
-          kind: SourceKind.Log,
+          kind: SourceKind.Log as const,
           team: otherTeam._id,
           from: {
             databaseName: DEFAULT_DATABASE,
@@ -1818,7 +1818,7 @@ describe('MCP Query Tools', () => {
 
       it('does not send a source whose table is missing back to clickstack_list_sources', async () => {
         const missing = await Source.create({
-          kind: SourceKind.Log,
+          kind: SourceKind.Log as const,
           team: team._id,
           from: {
             databaseName: DEFAULT_DATABASE,
@@ -1880,7 +1880,7 @@ describe('MCP Query Tools', () => {
         });
 
         deadSource = await Source.create({
-          kind: SourceKind.Trace,
+          kind: SourceKind.Trace as const,
           team: team._id,
           from: {
             databaseName: DEFAULT_DATABASE,
@@ -2043,7 +2043,7 @@ describe('MCP Query Tools', () => {
   describe('Metric sources (timeseries + table)', () => {
     const createMetricSource = () =>
       Source.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: team._id,
         from: { databaseName: DEFAULT_DATABASE, tableName: '' },
         metricTables: {

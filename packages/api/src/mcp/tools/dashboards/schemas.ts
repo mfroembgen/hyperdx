@@ -91,13 +91,13 @@ const rejectTileWhereMessage =
 
 const rejectedTileWhereFields = {
   where: z
-    .never({ invalid_type_error: rejectTileWhereMessage })
+    .never({ error: rejectTileWhereMessage })
     .optional()
     .describe(
       "Not supported on this tile type; any value is rejected. Put the filter on each select item's `where` instead.",
     ),
   whereLanguage: z
-    .never({ invalid_type_error: rejectTileWhereMessage })
+    .never({ error: rejectTileWhereMessage })
     .optional()
     .describe(
       'Not supported on this tile type; any value is rejected. Set `whereLanguage` on each select item instead.',

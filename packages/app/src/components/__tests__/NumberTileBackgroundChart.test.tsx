@@ -1,4 +1,5 @@
 import React from 'react';
+import { type Mock, vi } from 'vitest';
 import { DisplayType, PromqlReducer } from '@hyperdx/common-utils/dist/types';
 import { screen } from '@testing-library/react';
 
@@ -14,17 +15,17 @@ import {
 } from '@/hooks/useChartConfig';
 import { useSource } from '@/source';
 
-jest.mock('@/hooks/useChartConfig', () => ({
-  useQueriedChartConfig: jest.fn(),
-  getMinGranularitySeconds: jest.fn().mockReturnValue(undefined),
+vi.mock('@/hooks/useChartConfig', () => ({
+  useQueriedChartConfig: vi.fn(),
+  getMinGranularitySeconds: vi.fn().mockReturnValue(undefined),
 }));
 
-jest.mock('@/source', () => ({
-  useSource: jest.fn(),
+vi.mock('@/source', () => ({
+  useSource: vi.fn(),
 }));
 
-jest.mock('../Sparkline', () => ({
-  Sparkline: jest.fn(() => <div data-testid="sparkline" />),
+vi.mock('../Sparkline', () => ({
+  Sparkline: vi.fn(() => <div data-testid="sparkline" />),
 }));
 
 describe('sparklinePointsFromGraphResults', () => {
@@ -150,12 +151,12 @@ describe('buildSparklineQueryConfig', () => {
 });
 
 describe('NumberTileBackgroundChart', () => {
-  const mockUseQueriedChartConfig = useQueriedChartConfig as jest.Mock;
+  const mockUseQueriedChartConfig = useQueriedChartConfig as Mock;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseQueriedChartConfig.mockReturnValue({ data: undefined });
-    (useSource as jest.Mock).mockReturnValue({ data: null });
+    (useSource as Mock).mockReturnValue({ data: null });
   });
 
   it('strips groupBy from the issued query so the sparkline matches the single displayed aggregate', () => {
@@ -306,7 +307,7 @@ describe('NumberTileBackgroundChart', () => {
     // The number tile applies the source's floor to its own config, and the two
     // share one cached query, so the sparkline has to apply it identically.
     it("floors an auto granularity at the source's minimum, like the value", () => {
-      jest.mocked(getMinGranularitySeconds).mockReturnValueOnce(300);
+      vi.mocked(getMinGranularitySeconds).mockReturnValueOnce(300);
       const autoConfig = { ...promqlConfig, granularity: 'auto' };
 
       renderWithMantine(
@@ -339,7 +340,7 @@ describe('NumberTileBackgroundChart', () => {
         />,
       );
 
-      const { points } = jest.mocked(Sparkline).mock.calls[0][0];
+      const { points } = vi.mocked(Sparkline).mock.calls[0][0];
       expect(points.map(({ y }) => y)).toEqual(values);
     });
 

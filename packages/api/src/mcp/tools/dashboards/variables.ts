@@ -36,8 +36,7 @@ import type {
 } from '@/utils/zod';
 
 type ExternalFilters =
-  | (ExternalDashboardFilter | ExternalDashboardFilterWithId)[]
-  | undefined;
+  (ExternalDashboardFilter | ExternalDashboardFilterWithId)[] | undefined;
 
 /** Names of the data source and connection variables a dashboard declares. */
 function getReferenceVariableNames(filters: ExternalFilters): Set<string> {
@@ -85,8 +84,7 @@ export type McpVariableValues = z.infer<typeof mcpVariableValuesParam>;
  */
 export function resolveDashboardVariables(
   filters:
-    | (ExternalDashboardFilter | ExternalDashboardFilterWithId)[]
-    | undefined,
+    (ExternalDashboardFilter | ExternalDashboardFilterWithId)[] | undefined,
   variableValues: McpVariableValues | undefined,
 ): { variables: ChartVariable[] } | { error: string } {
   // Empty selection for every variable by default

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   SourceKind,
   TLogSource,
@@ -11,19 +12,19 @@ import {
 } from '@/hooks/useSessionLogEvents';
 import type { SessionIdKey } from '@/utils/sessionId';
 
-const mockUseSource = jest.fn();
-const mockUseQueriedChartConfig = jest.fn();
-const mockUseFieldExpressionGenerator = jest.fn();
+const mockUseSource = vi.fn();
+const mockUseQueriedChartConfig = vi.fn();
+const mockUseFieldExpressionGenerator = vi.fn();
 
-jest.mock('@/source', () => ({
-  ...jest.requireActual('@/source'),
+vi.mock('@/source', async () => ({
+  ...(await vi.importActual<typeof import('@/source')>('@/source')),
   useSource: (args: unknown) => mockUseSource(args),
 }));
-jest.mock('@/hooks/useChartConfig', () => ({
+vi.mock('@/hooks/useChartConfig', () => ({
   useQueriedChartConfig: (...args: unknown[]) =>
     mockUseQueriedChartConfig(...args),
 }));
-jest.mock('@/hooks/useFieldExpressionGenerator', () => ({
+vi.mock('@/hooks/useFieldExpressionGenerator', () => ({
   __esModule: true,
   default: (source?: TLogSource) => {
     mockUseFieldExpressionGenerator(source);
@@ -35,7 +36,7 @@ jest.mock('@/hooks/useFieldExpressionGenerator', () => ({
     };
   },
 }));
-jest.mock('@/useFormatTime', () => ({
+vi.mock('@/useFormatTime', () => ({
   useFormatTime: () => (ts: number) => `t${ts}`,
 }));
 
@@ -93,7 +94,7 @@ const queryResult = {
 };
 
 function renderLogEvents(sessionIdKey: SessionIdKey, searchedQuery = '') {
-  const onEventNavigate = jest.fn();
+  const onEventNavigate = vi.fn();
   const dateRange: [Date, Date] = [new Date(0), new Date(1)];
   const hook = renderHook(() =>
     useSessionLogEvents({
@@ -185,7 +186,7 @@ describe('useLogEventRows', () => {
       { id: 'a', timestamp: new Date(1000) },
       { id: 'b', timestamp: new Date(3000) },
     ];
-    const noLogs = { events: [], isLoading: false, open: jest.fn() };
+    const noLogs = { events: [], isLoading: false, open: vi.fn() };
     const logs = {
       ...noLogs,
       events: [1000, 2000].map(ts => ({

@@ -243,8 +243,8 @@ function MaterializedViewFormSection({
           </Text>
           <SQLInlineEditorControlled
             tableConnection={{
-              databaseName: mvDatabaseName,
-              tableName: mvTableName,
+              databaseName: mvDatabaseName ?? '',
+              tableName: mvTableName ?? '',
               connectionId: connection,
             }}
             control={control}
@@ -333,8 +333,8 @@ function MaterializedViewFormSection({
         </Text>
         <SQLInlineEditorControlled
           tableConnection={{
-            databaseName: mvDatabaseName,
-            tableName: mvTableName,
+            databaseName: mvDatabaseName ?? '',
+            tableName: mvTableName ?? '',
             connectionId: connection,
           }}
           control={control}
@@ -406,8 +406,8 @@ function AggregatedColumnsFormSection({
           ) {
             const config = await inferMaterializedViewConfig(
               {
-                databaseName: mvDatabaseName,
-                tableName: mvTableName,
+                databaseName: mvDatabaseName ?? '',
+                tableName: mvTableName ?? '',
                 connectionId: connection,
               },
               {
@@ -562,8 +562,8 @@ function AggregatedColumnRow({
           <Box flex={1}>
             <SQLInlineEditorControlled
               tableConnection={{
-                databaseName: mvDatabaseName,
-                tableName: mvTableName,
+                databaseName: mvDatabaseName ?? '',
+                tableName: mvTableName ?? '',
                 connectionId,
               }}
               control={control}

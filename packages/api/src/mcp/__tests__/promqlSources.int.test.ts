@@ -1,6 +1,7 @@
 import { Metadata } from '@hyperdx/common-utils/dist/core/metadata';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { type MockInstance, vi } from 'vitest';
 
 import * as config from '@/config';
 import {
@@ -20,7 +21,7 @@ import { Source } from '@/models/source';
 
 import { callTool, createTestClient, getFirstText } from './mcpTestUtils';
 
-const mockFetch = jest.mocked(global.fetch);
+const mockFetch = vi.mocked(global.fetch);
 const { realFetch } = globalThis as unknown as { realFetch: typeof fetch };
 
 const TABLE = 'mcp_promql_sources';
@@ -263,10 +264,10 @@ describe('MCP PromQL sources', () => {
 
     describe("through ClickHouse's prometheus_api_v1 handler", () => {
       let autoSource: any;
-      let versionSpy: jest.SpyInstance | undefined;
+      let versionSpy: MockInstance | undefined;
 
       const stubServerVersion = (version: [number, number, number, number]) => {
-        versionSpy = jest
+        versionSpy = vi
           .spyOn(Metadata.prototype, 'getServerVersion')
           .mockResolvedValue(version);
       };

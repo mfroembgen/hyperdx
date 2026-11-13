@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 
 import { useKonamiCode } from '@/hooks/useKonamiCode';
@@ -24,7 +25,7 @@ const press = (keys: string[]) =>
 
 describe('useKonamiCode', () => {
   it('fires once per full sequence', () => {
-    const onMatch = jest.fn();
+    const onMatch = vi.fn();
     renderHook(() => useKonamiCode(onMatch));
 
     press(CODE.slice(0, -1));
@@ -35,7 +36,7 @@ describe('useKonamiCode', () => {
   });
 
   it('matches after stray keys and with caps lock on', () => {
-    const onMatch = jest.fn();
+    const onMatch = vi.fn();
     renderHook(() => useKonamiCode(onMatch));
 
     press(['ArrowUp', 'x', 'ArrowUp', ...CODE.slice(0, -2), 'B', 'A']);
@@ -43,9 +44,9 @@ describe('useKonamiCode', () => {
   });
 
   it('ignores keydown events with no key', () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     window.addEventListener('error', onError);
-    renderHook(() => useKonamiCode(jest.fn()));
+    renderHook(() => useKonamiCode(vi.fn()));
 
     act(() => {
       window.dispatchEvent(new Event('keydown'));
@@ -55,7 +56,7 @@ describe('useKonamiCode', () => {
   });
 
   it('stops listening on unmount', () => {
-    const onMatch = jest.fn();
+    const onMatch = vi.fn();
     const { unmount } = renderHook(() => useKonamiCode(onMatch));
 
     unmount();

@@ -1,6 +1,7 @@
 import React from 'react';
-// The `mock` prefix is required for a jest.mock factory to close over it.
+// The `mock` prefix is required for a vi.mock factory to close over it.
 import { useController as mockUseController } from 'react-hook-form';
+import { type Mock, vi } from 'vitest';
 import {
   AlertThresholdType,
   DashboardFilter,
@@ -25,27 +26,27 @@ import { DEFAULT_TILE_ALERT } from '@/utils/alerts';
  * for CPU with the rest of the run. Verified pre-existing: the slowest tests
  * here time out the same way on a clean origin/main checkout.
  */
-jest.setTimeout(20_000);
+vi.setConfig({ testTimeout: 20_000 });
 
 // Mock the hooks that fetch data
-jest.mock('@/hooks/useFetchMetricResourceAttrs', () => ({
-  useFetchMetricResourceAttrs: jest.fn().mockReturnValue({
+vi.mock('@/hooks/useFetchMetricResourceAttrs', () => ({
+  useFetchMetricResourceAttrs: vi.fn().mockReturnValue({
     data: [],
   }),
-  parseAttributeKeysFromSuggestions: jest.fn().mockReturnValue([]),
+  parseAttributeKeysFromSuggestions: vi.fn().mockReturnValue([]),
 }));
 
-jest.mock('@/hooks/useFetchMetricMetadata', () => ({
-  useFetchMetricMetadata: jest.fn().mockReturnValue({
+vi.mock('@/hooks/useFetchMetricMetadata', () => ({
+  useFetchMetricMetadata: vi.fn().mockReturnValue({
     data: null,
   }),
 }));
 
-jest.mock('@/hooks/useMetadata', () => ({
-  useMetadataWithSettings: jest.fn().mockReturnValue({}),
+vi.mock('@/hooks/useMetadata', () => ({
+  useMetadataWithSettings: vi.fn().mockReturnValue({}),
   // The raw SQL editor's completions
-  useMultipleAllFields: jest.fn().mockReturnValue({ data: [] }),
-  useGetKeyValues: jest.fn().mockReturnValue({
+  useMultipleAllFields: vi.fn().mockReturnValue({ data: [] }),
+  useGetKeyValues: vi.fn().mockReturnValue({
     data: [
       {
         key: 'MetricName',
@@ -53,15 +54,15 @@ jest.mock('@/hooks/useMetadata', () => ({
       },
     ],
   }),
-  useGetValuesDistribution: jest.fn().mockReturnValue({
+  useGetValuesDistribution: vi.fn().mockReturnValue({
     data: undefined,
     isFetching: false,
     error: undefined,
   }),
 }));
 
-jest.mock('@/source', () => ({
-  useSource: jest.fn().mockImplementation(props => {
+vi.mock('@/source', () => ({
+  useSource: vi.fn().mockImplementation(props => {
     if (props && props.id === 'metric-source') {
       return {
         data: {
@@ -84,36 +85,35 @@ jest.mock('@/source', () => ({
     }
     return { data: undefined };
   }),
-  getFirstTimestampValueExpression: jest.fn().mockReturnValue('Timestamp'),
-  getFirstSeriesNumberFormat: jest.fn().mockReturnValue(undefined),
-  useSources: jest.fn().mockReturnValue({ data: [] }),
+  getFirstTimestampValueExpression: vi.fn().mockReturnValue('Timestamp'),
+  getFirstSeriesNumberFormat: vi.fn().mockReturnValue(undefined),
+  useSources: vi.fn().mockReturnValue({ data: [] }),
 }));
 
 // The mock handle, read back through `requireMock`, is already typed as the
-// mocked shape. `jest.mocked` on the real import would instead demand a
+// mocked shape. `vi.mocked` on the real import would instead demand a
 // complete `UseQueryResult` from a stub that only needs `data`.
-const mockUseSource = jest.requireMock<{ useSource: jest.Mock }>(
-  '@/source',
-).useSource;
+const mockUseSource = (await vi.importMock<{ useSource: Mock }>('@/source'))
+  .useSource;
 
 // Records every render's props so tests can assert what the form passes down.
 const metricNameSelectProps: any[] = [];
 
 // What the stubbed explorer reports as staged when a metric is applied. The
-// `mock` prefix is required for a jest.mock factory to close over it.
+// `mock` prefix is required for a vi.mock factory to close over it.
 const mockStagedWhere: string[] = [];
 const mockStagedGroupBy: string[] = [];
 
 // TileAlertEditor asks before removing an alert; these tests always confirm.
-// The `mock` prefix is required for a jest.mock factory to close over it.
-const mockConfirm = jest.fn().mockResolvedValue(true);
-jest.mock('@/useConfirm', () => ({ useConfirm: () => mockConfirm }));
+// The `mock` prefix is required for a vi.mock factory to close over it.
+const mockConfirm = vi.fn().mockResolvedValue(true);
+vi.mock('@/useConfirm', () => ({ useConfirm: () => mockConfirm }));
 
 // The explorer has its own suite (MetricExplorer.test.tsx). Here it is stubbed
 // down to "emit a chosen metric", so these tests cover only the form wiring —
 // mounting the real tree six times pushed this suite past the 5s-per-test
 // budget under parallel load.
-jest.mock('@/components/MetricExplorer/MetricExplorerModal', () => ({
+vi.mock('@/components/MetricExplorer/MetricExplorerModal', () => ({
   MetricExplorerModal: ({
     opened,
     onApply,
@@ -155,7 +155,7 @@ jest.mock('@/components/MetricExplorer/MetricExplorerModal', () => ({
     ) : null,
 }));
 
-jest.mock('../../MetricNameSelect', () => ({
+vi.mock('../../MetricNameSelect', () => ({
   MetricNameSelect: (props: any) => {
     metricNameSelectProps.push(props);
     const { error, onFocus, setMetricName, metricName } = props;
@@ -181,7 +181,7 @@ jest.mock('../../MetricNameSelect', () => ({
 
 // Wired into form state rather than a static select, so tests can switch the
 // tile's source the way a user does.
-jest.mock('../../SourceSelect', () => ({
+vi.mock('../../SourceSelect', () => ({
   SourceSelectControlled: ({ control, name }: any) => {
     const { field } = mockUseController({ control, name });
     return (
@@ -199,47 +199,47 @@ jest.mock('../../SourceSelect', () => ({
   },
 }));
 
-jest.mock('../../ChartSQLPreview', () => ({
+vi.mock('../../ChartSQLPreview', () => ({
   __esModule: true,
   default: () => <div>Chart SQL Preview</div>,
 }));
 
-jest.mock('../../DBTimeChart', () => ({
+vi.mock('../../DBTimeChart', () => ({
   DBTimeChart: () => <div>Time Chart</div>,
 }));
 
-jest.mock('../../DBTableChart', () => ({
+vi.mock('../../DBTableChart', () => ({
   __esModule: true,
   default: () => <div>Table Chart</div>,
 }));
 
-jest.mock('../../DBNumberChart', () => ({
+vi.mock('../../DBNumberChart', () => ({
   __esModule: true,
   default: () => <div>Number Chart</div>,
 }));
 
-jest.mock('@/components/SearchInput/SearchInputV2', () => ({
+vi.mock('@/components/SearchInput/SearchInputV2', () => ({
   __esModule: true,
   default: () => <div>Search Input</div>,
 }));
 
 // The sample-events panel (rendered for event sources) reads Next router
 // query state via nuqs, which isn't mounted in this test environment.
-jest.mock('@/components/DBSqlRowTableWithSidebar', () => ({
+vi.mock('@/components/DBSqlRowTableWithSidebar', () => ({
   __esModule: true,
   default: () => <div>SQL Row Table</div>,
 }));
 
-jest.mock('../../MaterializedViews/MVOptimizationIndicator', () => ({
+vi.mock('../../MaterializedViews/MVOptimizationIndicator', () => ({
   __esModule: true,
   default: () => <div>MV Indicator</div>,
 }));
 
-jest.mock('../../SQLEditor/SQLInlineEditor', () => ({
+vi.mock('../../SQLEditor/SQLInlineEditor', () => ({
   SQLInlineEditorControlled: () => <div>SQL Editor</div>,
 }));
 
-jest.mock('@/HDXMarkdownChart', () => ({
+vi.mock('@/HDXMarkdownChart', () => ({
   __esModule: true,
   default: () => <div>Markdown Chart</div>,
 }));
@@ -297,7 +297,7 @@ const renderComponent = (
 
 describe('DBEditTimeChartForm - Metric Name Validation', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should show validation error when clicking play without selecting a metric name', async () => {
@@ -436,7 +436,7 @@ describe('DBEditTimeChartForm - Metric Name Validation', () => {
 
     // Mock useSource to return a non-metric source
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    jest.mocked(useSource).mockReturnValueOnce({
+    vi.mocked(useSource).mockReturnValueOnce({
       data: {
         id: 'logs-source',
         kind: SourceKind.Log,
@@ -494,7 +494,7 @@ describe('DBEditTimeChartForm - Metric Name Validation', () => {
 
 describe('DBEditTimeChartForm - Metric name date range wiring', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     metricNameSelectProps.length = 0;
   });
 
@@ -527,11 +527,11 @@ describe('DBEditTimeChartForm - Metric name date range wiring', () => {
 
 describe('DBEditTimeChartForm - Save Button Metric Name Validation', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should show validation error when clicking save without selecting a metric name', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderComponent({ onSave });
 
     // Find and click the save button
@@ -565,7 +565,7 @@ describe('DBEditTimeChartForm - Add/delete alerts for display type Number', () =
     });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should add an alert when clicking the add alert button', async () => {
@@ -583,7 +583,7 @@ describe('DBEditTimeChartForm - Add/delete alerts for display type Number', () =
   });
 
   it('should remove an alert when clicking the remove alert button', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderAlertComponent({ onSave });
 
     // Find and click the add alert button
@@ -734,7 +734,7 @@ describe('DBEditTimeChartForm - Add/delete alerts for display type Number', () =
     });
 
     it('reopens the panel when a save fails on the alert', async () => {
-      const onSave = jest.fn();
+      const onSave = vi.fn();
       // No webhook picked, so it can't be saved.
       renderWithExistingAlert(DEFAULT_TILE_ALERT, { onSave });
       expect(screen.queryByTestId('alert-panel')).not.toBeInTheDocument();
@@ -784,7 +784,7 @@ describe('DBEditTimeChartForm - Alert variable warning', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('warns that an alerting tile referencing a variable runs on its empty state', async () => {
@@ -848,7 +848,7 @@ describe('DBEditTimeChartForm - Alert variable warning', () => {
 
 describe('DBEditTimeChartForm - Duplicate series', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const sourceSeries = {
@@ -884,7 +884,7 @@ describe('DBEditTimeChartForm - Duplicate series', () => {
   });
 
   it('saves both the original and the duplicated series', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderWithSingleSeries({ onSave });
 
     await userEvent.click(screen.getByTestId('series-duplicate-button'));
@@ -901,7 +901,7 @@ describe('DBEditTimeChartForm - Duplicate series', () => {
   });
 
   it('keeps the duplicated series independent of the original', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderWithSingleSeries({ onSave });
 
     await userEvent.click(screen.getByTestId('series-duplicate-button'));
@@ -935,9 +935,9 @@ describe('DBEditTimeChartForm - Column color', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    jest.mocked(useSource).mockReturnValue({
+    vi.mocked(useSource).mockReturnValue({
       data: logSource,
     } as ReturnType<typeof useSource>);
   });
@@ -986,7 +986,7 @@ describe('DBEditTimeChartForm - Column color', () => {
 
 describe('DBEditTimeChartForm - Metric formulas', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Earlier describes override the useSource mock with mockReturnValue
     // (which survives clearAllMocks), so pin the metric source back.
     mockUseSourceData({
@@ -1085,7 +1085,7 @@ describe('DBEditTimeChartForm - Metric formulas', () => {
   });
 
   it('saves formulas on the chart config', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderComponent({ chartConfig: twoSeriesConfig, onSave });
 
     await userEvent.click(screen.getByTestId('add-formula-button'));
@@ -1107,7 +1107,7 @@ describe('DBEditTimeChartForm - Metric formulas', () => {
   });
 
   it('blocks save when the formula expression is invalid', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderComponent({ chartConfig: twoSeriesConfig, onSave });
 
     await userEvent.click(screen.getByTestId('add-formula-button'));
@@ -1124,7 +1124,7 @@ describe('DBEditTimeChartForm - Metric formulas', () => {
   });
 
   it('removes the formula row and clears formulas from the saved config', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderComponent({
       chartConfig: {
         ...twoSeriesConfig,
@@ -1169,7 +1169,7 @@ describe('DBEditTimeChartForm - Metric formulas', () => {
   });
 
   it('toggles showOperandSeries via the Show input series switch', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderComponent({
       chartConfig: {
         ...twoSeriesConfig,
@@ -1188,7 +1188,7 @@ describe('DBEditTimeChartForm - Metric formulas', () => {
   });
 
   it('Number tiles take a single formula and always hide input series', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderComponent({
       chartConfig: {
         ...twoSeriesConfig,
@@ -1214,7 +1214,7 @@ describe('DBEditTimeChartForm - Metric formulas', () => {
   });
 
   it('shows formula controls and series letter badges for log event sources', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     mockUseSourceData({
       id: 'log-source',
       kind: SourceKind.Log,
@@ -1290,7 +1290,7 @@ describe('DBEditTimeChartForm - Metric formulas', () => {
 });
 
 describe('DBEditTimeChartForm - dashboard filters', () => {
-  const getDashboardFilters = jest
+  const getDashboardFilters = vi
     .fn()
     .mockReturnValue([{ type: 'sql', condition: "ServiceName IN ('api')" }]);
 
@@ -1321,7 +1321,7 @@ describe('DBEditTimeChartForm - dashboard filters', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Earlier describes pin their own source with mockReturnValue, which
     // survives clearAllMocks.
     mockUseSource.mockReturnValue({
@@ -1435,7 +1435,7 @@ describe('DBEditTimeChartForm - Inline alerts', () => {
     });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Earlier describes override the useSource mock with mockReturnValue
     // (which survives clearAllMocks), so pin the metric source back.
     mockUseSourceData({
@@ -1468,7 +1468,7 @@ describe('DBEditTimeChartForm - Inline alerts', () => {
   });
 
   it('requires a name, since there is no tile to inherit one from', async () => {
-    const onSaveAlert = jest.fn();
+    const onSaveAlert = vi.fn();
     renderInlineAlertForm({
       chartConfig: {
         ...validNumberConfig,
@@ -1508,7 +1508,7 @@ describe('DBEditTimeChartForm - Inline alerts', () => {
   // An inline alert has no tile or saved search to inherit a name from, so
   // the shared display-name field is how the alerts page gets a label for it.
   it('carries the alert display name into the save payload', async () => {
-    const onSaveAlert = jest.fn();
+    const onSaveAlert = vi.fn();
     // Seeded with a channel: an alert with no webhook fails validation before
     // the save handler runs, which is what the picker is there to prevent.
     renderInlineAlertForm({
@@ -1541,7 +1541,7 @@ describe('DBEditTimeChartForm - Inline alerts', () => {
   // With no alert there is nothing to save, and the button would read as a
   // second way to add one.
   it('shows the alert save button only once an alert exists', async () => {
-    renderInlineAlertForm({ onSaveAlert: jest.fn() });
+    renderInlineAlertForm({ onSaveAlert: vi.fn() });
 
     expect(
       screen.queryByTestId('chart-save-alert-button'),
@@ -1555,7 +1555,7 @@ describe('DBEditTimeChartForm - Inline alerts', () => {
   // The edit-alert modal saves the alert by saving the chart, so the panel's
   // action saves instead of only closing the panel.
   it('saves from the panel when the alert saves with the chart', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderInlineAlertForm({
       chartConfig: {
         ...validNumberConfig,
@@ -1640,7 +1640,7 @@ describe('DBEditTimeChartForm - Raw SQL data source variables', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("blocks the preview when the variable's source is on another connection", async () => {
@@ -1732,7 +1732,7 @@ describe('DBEditTimeChartForm - Alerts on data source variables', () => {
 
   const renderWithAlert = (
     alert: NonNullable<SavedChartConfig['alert']>,
-    onSave: jest.Mock,
+    onSave: Mock,
   ) =>
     renderWithMantine(
       <QueryClientProvider client={queryClient}>
@@ -1758,7 +1758,7 @@ describe('DBEditTimeChartForm - Alerts on data source variables', () => {
   const removalNotice = /This tile's alert will be removed when you save\./;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseSource.mockImplementation(({ id }: { id?: string }) => ({
       data:
         id === 'metric-source'
@@ -1776,7 +1776,7 @@ describe('DBEditTimeChartForm - Alerts on data source variables', () => {
   });
 
   it('keeps the alert when the source goes to a variable and back', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderWithAlert(completeAlert, onSave);
     const sourceSelector = screen.getByTestId('source-selector');
 
@@ -1793,7 +1793,7 @@ describe('DBEditTimeChartForm - Alerts on data source variables', () => {
   });
 
   it('saves without the alert while the source is a variable, even an invalid one', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     // No webhook picked, so the alert alone would block the save
     renderWithAlert(DEFAULT_TILE_ALERT, onSave);
 

@@ -1,3 +1,4 @@
+import { type Mock, vi } from 'vitest';
 import { spotlight } from '@mantine/spotlight';
 import { act, renderHook, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -8,9 +9,9 @@ import { HDXSpotlightProvider, useSpotlightActions } from '@/Spotlights';
 import { useUserPreferencesModal } from '@/UserPreferencesModal';
 import { useUserPreferences } from '@/useUserPreferences';
 
-const mockPush = jest.fn();
+const mockPush = vi.fn();
 
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   useRouter() {
     return {
       route: '/',
@@ -19,19 +20,19 @@ jest.mock('next/router', () => ({
       asPath: '',
       push: mockPush,
       events: {
-        on: jest.fn(),
-        off: jest.fn(),
+        on: vi.fn(),
+        off: vi.fn(),
       },
-      beforePopState: jest.fn(() => null),
-      prefetch: jest.fn(() => null),
+      beforePopState: vi.fn(() => null),
+      prefetch: vi.fn(() => null),
     };
   },
 }));
-jest.mock('../savedSearch');
-jest.mock('../dashboard');
+vi.mock('../savedSearch');
+vi.mock('../dashboard');
 
-const mockUseSavedSearches = useSavedSearches as jest.Mock;
-const mockUseDashboards = useDashboards as jest.Mock;
+const mockUseSavedSearches = useSavedSearches as Mock;
+const mockUseDashboards = useDashboards as Mock;
 
 describe('useSpotlightActions', () => {
   const mockSavedSearches = {
@@ -95,7 +96,7 @@ describe('useSpotlightActions', () => {
 
   // Reset mocks before each test
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     window.localStorage.clear();
     mockUseSavedSearches.mockReturnValue(mockSavedSearches);
     mockUseDashboards.mockReturnValue(mockSavedDashboard);
@@ -114,6 +115,9 @@ describe('useSpotlightActions', () => {
     );
   });
 
+  // Mantine 9.7 wraps each highlighted chunk of a label in its own element, and
+  // jsdom's accessible name drops the space between them ("MCPserver"), so the
+  // names below accept a missing space at the highlighted query.
   const selectSpotlightAction = async (query: string, name: RegExp) => {
     renderWithMantine(
       <HDXSpotlightProvider>
@@ -126,7 +130,7 @@ describe('useSpotlightActions', () => {
   };
 
   it('opens the anchored team settings section', async () => {
-    await selectSpotlightAction('mcp', /MCP server/);
+    await selectSpotlightAction('mcp', /MCP ?server/);
 
     expect(mockPush).toHaveBeenCalledWith(
       '/team?tab=api-agents#team-api-agents-mcp-server',
@@ -134,7 +138,7 @@ describe('useSpotlightActions', () => {
   });
 
   it('switches color mode without opening preferences', async () => {
-    await selectSpotlightAction('light mode', /Use light mode/);
+    await selectSpotlightAction('light mode', /Use ?light mode/);
 
     const { result } = renderHook(() => ({
       preferences: useUserPreferences(),

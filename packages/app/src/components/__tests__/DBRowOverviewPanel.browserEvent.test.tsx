@@ -1,28 +1,29 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { SourceKind, TSource } from '@hyperdx/common-utils/dist/types';
 import { screen, within } from '@testing-library/react';
 
 import { RowOverviewPanel } from '@/components/DBRowOverviewPanel';
 
 let mockRow: Record<string, unknown>;
-jest.mock('../DBRowDataPanel', () => ({
+vi.mock('../DBRowDataPanel', () => ({
   useRowData: () => ({ data: { data: [mockRow] } }),
   getJSONColumnNames: () => [],
   getMapColumnNames: () => [],
 }));
 
-jest.mock('../NetworkPropertyPanel', () => ({
+vi.mock('../NetworkPropertyPanel', () => ({
   NetworkPropertySubpanel: () => null,
 }));
 
-jest.mock('../ExceptionSubpanel', () => ({ ExceptionSubpanel: () => null }));
+vi.mock('../ExceptionSubpanel', () => ({ ExceptionSubpanel: () => null }));
 
-const mockJsonViewer = jest.fn((_props: { data: unknown }) => null);
-jest.mock('../DBRowJsonViewer', () => ({
+const mockJsonViewer = vi.fn((_props: { data: unknown }) => null);
+vi.mock('../DBRowJsonViewer', () => ({
   DBRowJsonViewer: (props: { data: unknown }) => mockJsonViewer(props),
 }));
 
-jest.mock('../linkedSpans', () => ({
+vi.mock('../linkedSpans', () => ({
   useReverseSpanLinks: () => ({ links: [] }),
   useLinkedSpanDetails: () => ({ details: new Map() }),
 }));

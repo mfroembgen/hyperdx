@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
 import React from 'react';
+import { type Mocked, vi } from 'vitest';
 import {
   optimizeFacetedKeyValuesConfig,
   optimizeGetKeyValuesCalls,
@@ -20,16 +21,16 @@ import { useQueriedDashboardFilterValues } from '@/hooks/useQueriedDashboardFilt
 import * as sourceModule from '@/source';
 
 // Mock modules
-jest.mock('@/source');
-jest.mock('../useMetadata');
-jest.mock('@hyperdx/common-utils/dist/core/materializedViews', () => ({
-  optimizeGetKeyValuesCalls: jest
+vi.mock('@/source');
+vi.mock('../useMetadata');
+vi.mock('@hyperdx/common-utils/dist/core/materializedViews', () => ({
+  optimizeGetKeyValuesCalls: vi
     .fn()
     .mockImplementation(async ({ keys, chartConfig }) => [
       { keys, chartConfig },
     ]),
   // Default: no covering MV → faceted query runs against the raw config.
-  optimizeFacetedKeyValuesConfig: jest
+  optimizeFacetedKeyValuesConfig: vi
     .fn()
     .mockImplementation(async ({ chartConfig }) => chartConfig),
 }));
@@ -37,7 +38,7 @@ jest.mock('@hyperdx/common-utils/dist/core/materializedViews', () => ({
 describe('useQueriedDashboardFilterValues', () => {
   let queryClient: QueryClient;
   let wrapper: React.ComponentType<{ children: any }>;
-  let mockMetadata: jest.Mocked<Metadata>;
+  let mockMetadata: Mocked<Metadata>;
 
   const mockSources: Partial<TSource>[] = [
     {
@@ -122,12 +123,12 @@ describe('useQueriedDashboardFilterValues', () => {
   ];
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Mock metadata with getKeyValues
     mockMetadata = {
-      getKeyValues: jest.fn(),
-    } as unknown as jest.Mocked<Metadata>;
+      getKeyValues: vi.fn(),
+    } as unknown as Mocked<Metadata>;
 
     mockMetadata.getKeyValues.mockImplementation(({ keys }) => {
       return Promise.resolve(
@@ -139,9 +140,9 @@ describe('useQueriedDashboardFilterValues', () => {
     });
 
     // Mock useMetadataWithSettings
-    jest
-      .spyOn(useMetadataModule, 'useMetadataWithSettings')
-      .mockReturnValue(mockMetadata);
+    vi.spyOn(useMetadataModule, 'useMetadataWithSettings').mockReturnValue(
+      mockMetadata,
+    );
 
     // Create a new QueryClient for each test
     queryClient = new QueryClient({
@@ -159,12 +160,12 @@ describe('useQueriedDashboardFilterValues', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should convert non-string key values to strings', async () => {
     // Arrange
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
@@ -205,7 +206,7 @@ describe('useQueriedDashboardFilterValues', () => {
 
   it('should fetch key values for filters grouped by source', async () => {
     // Arrange
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
@@ -331,7 +332,7 @@ describe('useQueriedDashboardFilterValues', () => {
       },
     ];
 
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
@@ -380,7 +381,7 @@ describe('useQueriedDashboardFilterValues', () => {
       },
     ];
 
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
@@ -409,7 +410,7 @@ describe('useQueriedDashboardFilterValues', () => {
 
   it('should not fetch when filters array is empty', () => {
     // Arrange
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
@@ -431,7 +432,7 @@ describe('useQueriedDashboardFilterValues', () => {
 
   it('should not fetch when sources are still loading', () => {
     // Arrange
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: undefined,
       isLoading: true,
     } as any);
@@ -463,7 +464,7 @@ describe('useQueriedDashboardFilterValues', () => {
       },
     ];
 
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
@@ -486,7 +487,7 @@ describe('useQueriedDashboardFilterValues', () => {
   });
 
   it('should not query filters whose source is disabled', async () => {
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: [
         ...mockSources,
         {
@@ -532,7 +533,7 @@ describe('useQueriedDashboardFilterValues', () => {
 
   it('should handle errors when fetching key values', async () => {
     // Arrange
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
@@ -559,7 +560,7 @@ describe('useQueriedDashboardFilterValues', () => {
 
   it('should pass correct parameters to getKeyValues', async () => {
     // Arrange
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
@@ -611,7 +612,7 @@ describe('useQueriedDashboardFilterValues', () => {
 
   it('should use placeholderData to keep previous data', async () => {
     // Arrange
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
@@ -653,7 +654,7 @@ describe('useQueriedDashboardFilterValues', () => {
 
   it('should flatten results from multiple sources into a single Map', async () => {
     // Arrange
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
@@ -718,13 +719,13 @@ describe('useQueriedDashboardFilterValues', () => {
 
   it('should query keys from materialized views when optimizeGetKeyValuesCalls indicates MVs are available', async () => {
     // Arrange
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
 
     // Mock optimizeGetKeyValuesCalls to return multiple calls (one for MV, one for original source)
-    jest.mocked(optimizeGetKeyValuesCalls).mockResolvedValue([
+    vi.mocked(optimizeGetKeyValuesCalls).mockResolvedValue([
       {
         chartConfig: {
           from: { databaseName: 'telemetry', tableName: 'logs_rollup_1m' },
@@ -822,17 +823,15 @@ describe('useQueriedDashboardFilterValues', () => {
 
   it('should provide partial results when some keys have loaded and others have not', async () => {
     // Arrange
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
 
     // Mock optimizeGetKeyValuesCalls to return separate calls
-    jest
-      .mocked(optimizeGetKeyValuesCalls)
-      .mockImplementation(async ({ chartConfig, keys }) => [
-        { chartConfig, keys },
-      ]);
+    vi.mocked(optimizeGetKeyValuesCalls).mockImplementation(
+      async ({ chartConfig, keys }) => [{ chartConfig, keys }],
+    );
 
     // First query resolves quickly, second query takes longer
     let resolveQuery;
@@ -891,17 +890,15 @@ describe('useQueriedDashboardFilterValues', () => {
 
   it('should provide partial results when some keys have failed and others have not', async () => {
     // Arrange
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
 
     // Mock optimizeGetKeyValuesCalls to return separate calls
-    jest
-      .mocked(optimizeGetKeyValuesCalls)
-      .mockImplementationOnce(async ({ chartConfig, keys }) => [
-        { chartConfig, keys },
-      ]);
+    vi.mocked(optimizeGetKeyValuesCalls).mockImplementationOnce(
+      async ({ chartConfig, keys }) => [{ chartConfig, keys }],
+    );
 
     // First query succeeds, second query fails
     mockMetadata.getKeyValues
@@ -952,16 +949,14 @@ describe('useQueriedDashboardFilterValues', () => {
 
   it('keeps a filter that returned no values present and interactive', async () => {
     // Arrange
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
 
-    jest
-      .mocked(optimizeGetKeyValuesCalls)
-      .mockImplementationOnce(async ({ chartConfig, keys }) => [
-        { chartConfig, keys },
-      ]);
+    vi.mocked(optimizeGetKeyValuesCalls).mockImplementationOnce(
+      async ({ chartConfig, keys }) => [{ chartConfig, keys }],
+    );
 
     // Query succeeds but returns no rows for the requested key.
     mockMetadata.getKeyValues.mockResolvedValueOnce([]);
@@ -990,7 +985,7 @@ describe('useQueriedDashboardFilterValues', () => {
 
   it('should keep previous data while fetching new data (placeholderData behavior)', async () => {
     // Arrange
-    jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+    vi.spyOn(sourceModule, 'useSources').mockReturnValue({
       data: mockSources,
       isLoading: false,
     } as any);
@@ -1005,14 +1000,14 @@ describe('useQueriedDashboardFilterValues', () => {
     ];
 
     // Mock optimizeGetKeyValuesCalls for both date ranges
-    jest
-      .mocked(optimizeGetKeyValuesCalls)
-      .mockImplementation(async ({ chartConfig }) => [
+    vi.mocked(optimizeGetKeyValuesCalls).mockImplementation(
+      async ({ chartConfig }) => [
         {
           chartConfig,
           keys: ['environment'],
         },
-      ]);
+      ],
+    );
 
     // Initial data
     mockMetadata.getKeyValues.mockResolvedValueOnce([
@@ -1138,21 +1133,19 @@ describe('useQueriedDashboardFilterValues', () => {
     ];
 
     beforeEach(() => {
-      jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+      vi.spyOn(sourceModule, 'useSources').mockReturnValue({
         data: mockSources,
         isLoading: false,
       } as any);
       // Unconstrained groups still go through the optimizer; restore its
       // passthrough (clearAllMocks resets call data but not implementations).
-      jest
-        .mocked(optimizeGetKeyValuesCalls)
-        .mockImplementation(async ({ keys, chartConfig }) => [
-          { keys, chartConfig },
-        ]);
+      vi.mocked(optimizeGetKeyValuesCalls).mockImplementation(
+        async ({ keys, chartConfig }) => [{ keys, chartConfig }],
+      );
       // Default: faceted queries run against the raw config (no covering MV).
-      jest
-        .mocked(optimizeFacetedKeyValuesConfig)
-        .mockImplementation(async ({ chartConfig }) => chartConfig);
+      vi.mocked(optimizeFacetedKeyValuesConfig).mockImplementation(
+        async ({ chartConfig }) => chartConfig,
+      );
     });
 
     // What a filter narrowed by an `environment: production` selection should
@@ -1421,12 +1414,12 @@ describe('useQueriedDashboardFilterValues', () => {
     it('runs the faceted scan against a covering materialized view when one is found', async () => {
       // Simulate a covering MV: the resolver points the faceted query at the
       // rollup table.
-      jest
-        .mocked(optimizeFacetedKeyValuesConfig)
-        .mockImplementation(async ({ chartConfig }) => ({
+      vi.mocked(optimizeFacetedKeyValuesConfig).mockImplementation(
+        async ({ chartConfig }) => ({
           ...chartConfig,
           from: { databaseName: 'telemetry', tableName: 'logs_rollup_1m' },
-        }));
+        }),
+      );
 
       const { result } = renderHook(
         () =>
@@ -1507,15 +1500,13 @@ describe('useQueriedDashboardFilterValues', () => {
         .at(-1)?.[0].chartConfig.where;
 
     beforeEach(() => {
-      jest.spyOn(sourceModule, 'useSources').mockReturnValue({
+      vi.spyOn(sourceModule, 'useSources').mockReturnValue({
         data: mockSources,
         isLoading: false,
       } as unknown as ReturnType<typeof sourceModule.useSources>);
-      jest
-        .mocked(optimizeGetKeyValuesCalls)
-        .mockImplementation(async ({ keys, chartConfig }) => [
-          { keys, chartConfig },
-        ]);
+      vi.mocked(optimizeGetKeyValuesCalls).mockImplementation(
+        async ({ keys, chartConfig }) => [{ keys, chartConfig }],
+      );
     });
 
     it('expands a macro against the selected values', async () => {

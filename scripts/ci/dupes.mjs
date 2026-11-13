@@ -111,7 +111,7 @@ if (markdown) {
     `[jscpd](https://github.com/kucherenko/jscpd) compared this branch against \`${base}\``,
     'across app, api and common-utils. Only new clones are listed; the codebase',
     `currently holds ${total.clones ?? 0} in total (${(total.percentage ?? 0).toFixed(2)}%).`,
-    'Run `yarn dupes` locally to reproduce, or `yarn dupes:all` for the full picture.',
+    'Run `bun run dupes` locally to reproduce, or `bun run dupes:all` for the full picture.',
   );
   console.log(lines.join('\n'));
   process.exit(0);
@@ -132,6 +132,6 @@ if (duplicates.length === 0) {
 if (!all) {
   console.log(
     `Total duplication: ${total.clones ?? 0} clones (${(total.percentage ?? 0).toFixed(2)}%). ` +
-      'Run `yarn dupes:all` to list them.',
+      'Run `bun run dupes:all` to list them.',
   );
 }

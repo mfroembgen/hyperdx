@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { ClickHouseQueryError } from '@hyperdx/common-utils/dist/clickhouse';
 import { SourceKind, TLogSource } from '@hyperdx/common-utils/dist/types';
 import { MantineProvider } from '@mantine/core';
@@ -8,25 +9,25 @@ import { DBRowSidePanelErrorState } from '@/components/DBRowSidePanelErrorState'
 
 // The hint only renders when the target table is a Distributed/Merge pointer
 // table; drive that via the metadata hook.
-const mockUseTableMetadata = jest.fn();
-jest.mock('@/hooks/useMetadata', () => ({
+const mockUseTableMetadata = vi.fn();
+vi.mock('@/hooks/useMetadata', () => ({
   __esModule: true,
   useTableMetadata: (...args: unknown[]) => mockUseTableMetadata(...args),
 }));
 
 // Non-local mode so the source-settings link (not the inline edit modal /
 // TableSourceForm) is rendered, keeping the module graph cheap.
-jest.mock('@/config', () => ({
+vi.mock('@/config', () => ({
   __esModule: true,
   IS_LOCAL_MODE: false,
 }));
 
-jest.mock('../ChartSQLPreview', () => ({
+vi.mock('../ChartSQLPreview', () => ({
   __esModule: true,
   SQLPreview: ({ data }: { data?: string }) => <pre>{data}</pre>,
 }));
 
-jest.mock('../Sources/SourceForm', () => ({
+vi.mock('../Sources/SourceForm', () => ({
   __esModule: true,
   TableSourceForm: () => null,
 }));
@@ -51,7 +52,7 @@ function renderErrorState(error: Error, src: TLogSource = source) {
 
 describe('DBRowSidePanelErrorState', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseTableMetadata.mockReturnValue({ data: { isPointerTable: true } });
   });
 

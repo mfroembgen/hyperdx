@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import {
   buildPrometheusRequest,
   CLICKHOUSE_HTTP_API_UNAVAILABLE_MESSAGE,
@@ -5,7 +7,7 @@ import {
   runPromqlQuery,
 } from '@/controllers/promql';
 
-const mockFetch = jest.mocked(global.fetch);
+const mockFetch = vi.mocked(global.fetch);
 
 const respond = (status: number, body: unknown) =>
   mockFetch.mockResolvedValueOnce(

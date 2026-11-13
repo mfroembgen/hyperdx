@@ -8,16 +8,16 @@ import workosAuthRouter, {
 } from '@/routers/api/workosAuth';
 import { generateSessionId } from '@/utils/workosSessionStore';
 
-const fixture = {
-  authorize: jest.fn(),
-  exchange: jest.fn(),
-  authenticate: jest.fn(),
-  resolve: jest.fn(),
-  logout: jest.fn(),
-  load: jest.fn(),
-};
-jest.mock('@/config', () => ({
-  ...jest.requireActual<typeof import('@/config')>('@/config'),
+const fixture = vi.hoisted(() => ({
+  authorize: vi.fn(),
+  exchange: vi.fn(),
+  authenticate: vi.fn(),
+  resolve: vi.fn(),
+  logout: vi.fn(),
+  load: vi.fn(),
+}));
+vi.mock('@/config', async () => ({
+  ...(await vi.importActual<typeof import('@/config')>('@/config')),
   WORKOS: {
     frontendOrigin: 'https://app.example.com',
     redirectUri: 'https://app.example.com/api/auth/workos/callback',
@@ -26,44 +26,32 @@ jest.mock('@/config', () => ({
   },
   EXPRESS_SESSION_SECRET: 'fixture-shared-secret-at-least-32-characters',
 }));
-jest.mock('@/utils/workosClient', () => ({
+vi.mock('@/utils/workosClient', () => ({
   workos: {
     userManagement: {
-      get getAuthorizationUrlWithPKCE() {
-        return fixture.authorize;
-      },
-      get authenticateWithCode() {
-        return fixture.exchange;
-      },
-      get getLogoutUrl() {
-        return fixture.logout;
-      },
-      get loadSealedSession() {
-        return fixture.load;
-      },
+      getAuthorizationUrlWithPKCE: fixture.authorize,
+      authenticateWithCode: fixture.exchange,
+      getLogoutUrl: fixture.logout,
+      loadSealedSession: fixture.load,
     },
   },
 }));
-jest.mock('@/utils/workosIdentity', () => ({
-  ...jest.requireActual<typeof import('@/utils/workosIdentity')>(
+vi.mock('@/utils/workosIdentity', async () => ({
+  ...(await vi.importActual<typeof import('@/utils/workosIdentity')>(
     '@/utils/workosIdentity',
-  ),
-  get resolveWorkosUser() {
-    return fixture.resolve;
-  },
+  )),
+  resolveWorkosUser: fixture.resolve,
 }));
-jest.mock('@/utils/workosSession', () => ({
-  ...jest.requireActual<typeof import('@/utils/workosSession')>(
+vi.mock('@/utils/workosSession', async () => ({
+  ...(await vi.importActual<typeof import('@/utils/workosSession')>(
     '@/utils/workosSession',
-  ),
-  get authenticateSealedWorkosSession() {
-    return fixture.authenticate;
-  },
+  )),
+  authenticateSealedWorkosSession: fixture.authenticate,
 }));
 
 // Sequential MemoryStore behavior only; Mongo tests prove atomicity.
-jest.mock('@/utils/workosSessionStore', () => {
-  const actual = jest.requireActual<
+vi.mock('@/utils/workosSessionStore', async () => {
+  const actual = await vi.importActual<
     typeof import('@/utils/workosSessionStore')
   >('@/utils/workosSessionStore');
   const save = (req: express.Request) =>
@@ -117,7 +105,7 @@ describe('WorkOS browser login and logout', () => {
     res.json({ seal: req.session.workosSession }),
   );
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     fixture.authorize.mockResolvedValue({
       url: 'https://identity.example.com/authorize',
       state: 'fixture-state',
@@ -139,7 +127,7 @@ describe('WorkOS browser login and logout', () => {
       'https://api.workos.com/user_management/sessions/logout?session_id=session_example',
     );
   });
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => vi.restoreAllMocks());
 
   it('publishes protected-resource discovery without requiring login', async () => {
     const result = await request(app)
@@ -190,7 +178,7 @@ describe('WorkOS browser login and logout', () => {
   });
 
   it('rejects an invalid new code-exchange seal even with an existing login', async () => {
-    const { authenticateSealedWorkosSession } = await jest.requireActual<
+    const { authenticateSealedWorkosSession } = await vi.importActual<
       typeof import('@/utils/workosSession')
     >('@/utils/workosSession');
     fixture.authenticate.mockImplementation(authenticateSealedWorkosSession);
@@ -210,8 +198,7 @@ describe('WorkOS browser login and logout', () => {
     expect(denied.headers.location).toBe(
       'https://app.example.com/login?err=workosDenied',
     );
-    expect(fixture.load).toHaveBeenCalledTimes(1);
-    expect(fixture.load).toHaveBeenCalledWith(
+    expect(fixture.load).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ sessionData: 'invalid-new-login' }),
     );
     expect(fixture.resolve).not.toHaveBeenCalled();
@@ -230,7 +217,7 @@ describe('WorkOS browser login and logout', () => {
       .get('/auth/workos/callback?state=fixture-state&code=fixture-code')
       .expect(400);
     const clock = Date.now();
-    jest.spyOn(Date, 'now').mockReturnValue(clock + 11 * 60 * 1000);
+    vi.spyOn(Date, 'now').mockReturnValue(clock + 11 * 60 * 1000);
     await agent
       .get('/auth/workos/callback?state=fixture-state&code=fixture-code')
       .expect(400);

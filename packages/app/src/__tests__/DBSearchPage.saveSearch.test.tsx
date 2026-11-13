@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { MantineProvider } from '@mantine/core';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -6,20 +7,18 @@ import userEvent from '@testing-library/user-event';
 
 import { DBSearchPage } from '@/DBSearchPage';
 
-const mockRouterPush = jest.fn();
-const mockSetSearchedConfig = jest
-  .fn()
-  .mockResolvedValue(new URLSearchParams());
-const mockCreateSavedSearch = jest.fn();
+const mockRouterPush = vi.fn();
+const mockSetSearchedConfig = vi.fn().mockResolvedValue(new URLSearchParams());
+const mockCreateSavedSearch = vi.fn();
 
 let mockSearchedConfig: Record<string, any> = {};
 let mockSources: any[] = [];
 
-jest.mock('@/layout', () => ({
+vi.mock('@/layout', () => ({
   withAppNav: (component: unknown) => component,
 }));
 
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   __esModule: true,
   default: {
     basePath: '/clickstack',
@@ -27,12 +26,12 @@ jest.mock('next/router', () => ({
   },
 }));
 
-jest.mock('next/head', () => ({
+vi.mock('next/head', () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-jest.mock('next/link', () => ({
+vi.mock('next/link', () => ({
   __esModule: true,
   default: ({
     children,
@@ -43,31 +42,29 @@ jest.mock('next/link', () => ({
   }) => <a href={href}>{children}</a>,
 }));
 
-jest.mock('nuqs', () => ({
-  parseAsBoolean: {
-    withDefault: () => 'parseAsBoolean',
-  },
-  parseAsInteger: {
-    withDefault: () => 'parseAsInteger',
-  },
-  parseAsString: 'parseAsString',
-  parseAsStringEnum: () => ({
-    withDefault: () => 'parseAsStringEnum',
-  }),
-  useQueryState: (key: string) => {
-    switch (key) {
-      case 'isLive':
-        return [true, jest.fn()];
-      case 'denoise':
-        return [false, jest.fn()];
-      default:
-        return [null, jest.fn()];
-    }
-  },
-  useQueryStates: () => [mockSearchedConfig, mockSetSearchedConfig],
-}));
+vi.mock('nuqs', () => {
+  // Chainable stand-in: the page only hands parsers to the mocked hooks.
+  const parser = { withDefault: () => parser, withOptions: () => parser };
+  return {
+    parseAsBoolean: parser,
+    parseAsInteger: parser,
+    parseAsString: parser,
+    parseAsStringEnum: () => parser,
+    useQueryState: (key: string) => {
+      switch (key) {
+        case 'isLive':
+          return [true, vi.fn()];
+        case 'denoise':
+          return [false, vi.fn()];
+        default:
+          return [null, vi.fn()];
+      }
+    },
+    useQueryStates: () => [mockSearchedConfig, mockSetSearchedConfig],
+  };
+});
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   getEventBody: () => 'Body',
   getFirstTimestampValueExpression: () => 'Timestamp',
   useSources: () => ({ data: mockSources }),
@@ -77,7 +74,7 @@ jest.mock('@/source', () => ({
   }),
 }));
 
-jest.mock('@/timeQuery', () => ({
+vi.mock('@/timeQuery', () => ({
   parseRelativeTimeQuery: () => [new Date(0), new Date(1)],
   parseTimeQuery: () => [new Date(0), new Date(1)],
   useDefaultTimeRange: () => [new Date(0), new Date(1)],
@@ -87,46 +84,48 @@ jest.mock('@/timeQuery', () => ({
       new Date('2024-04-01T00:00:00.000Z'),
       new Date('2024-04-02T00:00:00.000Z'),
     ],
-    onSearch: jest.fn(),
-    onTimeRangeSelect: jest.fn(),
+    onSearch: vi.fn(),
+    onTimeRangeSelect: vi.fn(),
   }),
 }));
 
-jest.mock('@/savedSearch', () => ({
+vi.mock('@/savedSearch', () => ({
   useCreateSavedSearch: () => ({
     mutateAsync: (...args: unknown[]) => mockCreateSavedSearch(...args),
     isPending: false,
   }),
-  useDeleteSavedSearch: () => ({ mutate: jest.fn() }),
+  useDeleteSavedSearch: () => ({ mutate: vi.fn() }),
   useSavedSearch: () => ({ data: undefined }),
-  useUpdateSavedSearch: () => ({ mutate: jest.fn(), isPending: false }),
+  useUpdateSavedSearch: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
-jest.mock('@/searchFilters', () => ({
+vi.mock('@/searchFilters', () => ({
   useSearchPageFilterState: () => ({
     filters: [],
     whereSuggestions: [],
-    setFilterValue: jest.fn(),
-    clearAllFilters: jest.fn(),
+    setFilterValue: vi.fn(),
+    clearAllFilters: vi.fn(),
   }),
 }));
 
-jest.mock('@/hooks/useChartConfig', () => ({
+vi.mock('@/hooks/useChartConfig', () => ({
   useAliasMapFromChartConfig: () => ({ data: {} }),
 }));
 
-jest.mock('@/hooks/useExplainQuery', () => ({
+vi.mock('@/hooks/useExplainQuery', () => ({
   useExplainQuery: () => ({}),
 }));
 
-jest.mock('@/brand', () => ({
+vi.mock('@/brand', () => ({
   useBrandDisplayName: () => 'ClickStack',
   usePageTitle: (page?: string) =>
     page ? `${page} - ClickStack` : 'ClickStack',
 }));
 
-jest.mock('../hooks/useMetadata', () => ({
-  ...jest.requireActual('../hooks/useMetadata'),
+vi.mock('../hooks/useMetadata', async () => ({
+  ...(await vi.importActual<typeof import('../hooks/useMetadata')>(
+    '../hooks/useMetadata',
+  )),
   useTableMetadata: () => ({
     data: { sorting_key: 'Timestamp' },
     isLoading: false,
@@ -134,107 +133,111 @@ jest.mock('../hooks/useMetadata', () => ({
   useColumns: () => ({ data: undefined, isLoading: false }),
 }));
 
-jest.mock('../hooks/useSqlSuggestions', () => ({
+vi.mock('../hooks/useSqlSuggestions', () => ({
   useSqlSuggestions: () => [],
 }));
 
-jest.mock('../components/Search/DirectTraceSidePanel', () => ({
+vi.mock('../components/Search/DirectTraceSidePanel', () => ({
   __esModule: true,
   default: () => <div />,
 }));
 
-jest.mock('@/components/DBSearchPageFilters', () => ({
+vi.mock('@/components/DBSearchPageFilters', () => ({
   DBSearchPageFilters: () => <div />,
 }));
-jest.mock('@/components/DBTimeChart', () => ({
+vi.mock('@/components/DBTimeChart', () => ({
   DBTimeChart: () => <div />,
 }));
-jest.mock('@/components/ActiveFilterPills', () => ({
+vi.mock('@/components/ActiveFilterPills', () => ({
   ActiveFilterPills: () => <div />,
 }));
-jest.mock('@/components/ContactSupportText', () => ({
+vi.mock('@/components/ContactSupportText', () => ({
   ContactSupportText: () => <div />,
 }));
-jest.mock('@/components/FavoriteButton', () => ({
+vi.mock('@/components/FavoriteButton', () => ({
   FavoriteButton: () => <div />,
 }));
-jest.mock('@/components/OnboardingModal', () => () => <div />);
-jest.mock('@/components/SearchInput/SearchWhereInput', () => ({
+vi.mock('@/components/OnboardingModal', () => ({ default: () => <div /> }));
+vi.mock('@/components/SearchInput/SearchWhereInput', () => ({
   __esModule: true,
   default: () => <div />,
   getStoredLanguage: () => 'lucene',
 }));
-jest.mock('@/components/SearchGroupBy/SearchGroupBySelect', () => ({
+vi.mock('@/components/SearchGroupBy/SearchGroupBySelect', () => ({
   SearchGroupBySelect: () => <div />,
 }));
-jest.mock('@/components/SearchPageActionBar', () => () => <div />);
-jest.mock('@/components/SearchTotalCountChart', () => () => <div />);
-jest.mock('@/components/Sources/SourceForm', () => ({
+vi.mock('@/components/SearchPageActionBar', () => ({ default: () => <div /> }));
+vi.mock('@/components/SearchTotalCountChart', () => ({
+  default: () => <div />,
+}));
+vi.mock('@/components/Sources/SourceForm', () => ({
   TableSourceForm: () => <div />,
 }));
-jest.mock('@/components/SourceSelect', () => ({
+vi.mock('@/components/SourceSelect', () => ({
   SourceSelectControlled: () => <div />,
 }));
-jest.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
+vi.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
   SQLInlineEditorControlled: () => <div />,
 }));
-jest.mock('@/components/Tags', () => ({
+vi.mock('@/components/Tags', () => ({
   Tags: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
-jest.mock('@/components/TimePicker', () => ({
+vi.mock('@/components/TimePicker', () => ({
   TimePicker: () => <div />,
 }));
-jest.mock('../components/ChartSQLPreview', () => ({
+vi.mock('../components/ChartSQLPreview', () => ({
   SQLPreview: () => <div />,
 }));
-jest.mock('../components/DBSqlRowTableWithSidebar', () => () => <div />);
-jest.mock('../components/PatternTable', () => () => <div />);
-jest.mock('../components/Search/DBSearchHeatmapChart', () => ({
+vi.mock('../components/DBSqlRowTableWithSidebar', () => ({
+  default: () => <div />,
+}));
+vi.mock('../components/PatternTable', () => ({ default: () => <div /> }));
+vi.mock('../components/Search/DBSearchHeatmapChart', () => ({
   DBSearchHeatmapChart: () => <div />,
 }));
-jest.mock('../components/SourceSchemaPreview', () => ({
+vi.mock('../components/SourceSchemaPreview', () => ({
   __esModule: true,
   default: () => <div />,
   isSourceSchemaPreviewEnabled: () => false,
   getSourceSchemaTables: () => [],
 }));
-jest.mock('../components/Error/ErrorBoundary', () => ({
+vi.mock('../components/Error/ErrorBoundary', () => ({
   ErrorBoundary: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
 }));
 
-jest.mock('../utils/queryParsers', () => ({
+vi.mock('../utils/queryParsers', () => ({
   parseAsJsonEncoded: () => 'parseAsJsonEncoded',
   parseAsSortingStateString: { parse: () => null },
   parseAsStringEncoded: 'parseAsStringEncoded',
 }));
 
-jest.mock('../api', () => ({
+vi.mock('../api', () => ({
   __esModule: true,
   default: {
     useMe: () => ({ data: { team: {} }, isSuccess: true }),
   },
-  useCompleteOnboardingTask: () => ({ mutate: jest.fn() }),
+  useCompleteOnboardingTask: () => ({ mutate: vi.fn() }),
 }));
 
-jest.mock('@/utils', () => ({
+vi.mock('@/utils', () => ({
   QUERY_LOCAL_STORAGE: 'query-local-storage',
   useLocalStorage: (_key: string, initialValue: unknown) => [
     initialValue,
-    jest.fn(),
+    vi.fn(),
   ],
   usePrevious: (value: unknown) => value,
   useWindowSize: () => ({ width: 1200, height: 800 }),
 }));
 
-jest.mock('@tanstack/react-query', () => ({
+vi.mock('@tanstack/react-query', () => ({
   useIsFetching: () => 0,
 }));
 
 describe('DBSearchPage save search flow', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockCreateSavedSearch.mockResolvedValue({ id: 'new-saved-search' });
     mockSearchedConfig = {
       source: 'log-source',

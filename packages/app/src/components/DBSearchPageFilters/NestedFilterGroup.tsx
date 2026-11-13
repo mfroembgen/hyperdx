@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FilterState } from '@hyperdx/common-utils/dist/filters';
 import { Accordion, Group, Text, Tooltip, UnstyledButton } from '@mantine/core';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -111,7 +111,9 @@ export const NestedFilterGroup = ({
     );
   }, [childFilters, search]);
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(
+    null,
+  );
   const keyHasSelections = (key: string) => {
     const entry = selectedValues[key];
     return entry != null && entry.included.size + entry.excluded.size > 0;
@@ -139,7 +141,7 @@ export const NestedFilterGroup = ({
 
   const rowVirtualizer = useVirtualizer({
     count: isExpanded ? matchingChildFilters.length : 0,
-    getScrollElement: () => scrollContainerRef.current,
+    getScrollElement: () => scrollContainer,
     estimateSize: () => VIRTUAL_ITEM_HEIGHT_ESTIMATE,
     overscan: 10,
     getItemKey: index => matchingChildFilters[index]?.key ?? index,
@@ -213,7 +215,7 @@ export const NestedFilterGroup = ({
                 </Group>
               ) : (
                 <div
-                  ref={scrollContainerRef}
+                  ref={setScrollContainer}
                   style={{
                     maxHeight: MAX_VIRTUAL_LIST_HEIGHT,
                     overflow: 'auto',

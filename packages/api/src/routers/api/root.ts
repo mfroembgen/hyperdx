@@ -2,11 +2,11 @@ import type { InstallationApiResponse } from '@hyperdx/common-utils/dist/types';
 import express from 'express';
 import { serializeError } from 'serialize-error';
 import { z } from 'zod';
-import { validateRequest } from 'zod-express-middleware';
 
 import * as config from '@/config';
 import { createTeam, isTeamExisting } from '@/controllers/team';
 import { handleAuthError, redirectToDashboard } from '@/middleware/auth';
+import { validateRequest } from '@/middleware/validation';
 import TeamInvite from '@/models/teamInvite';
 import User from '@/models/user'; // TODO -> do not import model directly
 import { setupTeamDefaults } from '@/setupDefaults';
@@ -211,7 +211,7 @@ router.post('/team/setup/:token', async (req, res, next) => {
           );
         }
 
-        await TeamInvite.findByIdAndRemove(teamInvite._id);
+        await TeamInvite.findByIdAndDelete(teamInvite._id);
 
         req.login(user, err => {
           if (err) {

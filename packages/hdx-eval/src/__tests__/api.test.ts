@@ -1,9 +1,11 @@
+import { vi } from 'vitest';
+
 import { HyperdxApiClient } from '@/hyperdx/api';
 
 const originalFetch = global.fetch;
 
 function mockMcpContent(text: string): void {
-  global.fetch = jest.fn().mockResolvedValue({
+  global.fetch = vi.fn().mockResolvedValue({
     ok: true,
     status: 200,
     text: async () =>

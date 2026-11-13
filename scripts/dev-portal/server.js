@@ -11,8 +11,8 @@
 //      (for non-Docker local dev services like API, App, alerts)
 //
 // Usage:
-//   node scripts/dev-portal/server.js          # default port 9900
-//   HDX_PORTAL_PORT=9901 node scripts/dev-portal/server.js
+//   bun scripts/dev-portal/server.js          # default port 9900
+//   HDX_PORTAL_PORT=9901 bun scripts/dev-portal/server.js
 //
 // Zero external dependencies — uses only Node.js built-ins.
 // ---------------------------------------------------------------------------
@@ -46,6 +46,30 @@ const PROJECT_PREFIX_TO_ENV = {
 
 function discoverDockerContainers() {
   try {
+    if (process.platform === 'darwin') {
+      return JSON.parse(
+        execFileSync('container', ['list', '--format', 'json'], {
+          encoding: 'utf-8',
+          timeout: 5000,
+        }),
+      )
+        .filter(
+          container =>
+            container.configuration.labels['com.docker.compose.project'],
+        )
+        .map(container => ({
+          ID: container.id,
+          State: container.status.state,
+          Labels: Object.entries(container.configuration.labels)
+            .map(([key, value]) => `${key}=${value}`)
+            .join(','),
+          Ports: container.configuration.publishedPorts
+            .map(
+              port => `${port.hostPort}->${port.containerPort}/${port.proto}`,
+            )
+            .join(','),
+        }));
+    }
     // Fetch ALL running containers — we filter by project prefix in JS so
     // that a single `docker ps` call covers dev, E2E and CI environments.
     const raw = execSync('docker ps --format "{{json .}}"', {
@@ -559,6 +583,13 @@ function getDockerLogs(slot, service, tail, envType = 'dev') {
   const config = ENV_COMPOSE_CONFIG[envType] || ENV_COMPOSE_CONFIG.dev;
   const project = `${config.prefix}${slot}`;
   try {
+    if (process.platform === 'darwin') {
+      return execFileSync(
+        'container',
+        ['logs', '-n', String(tail), `${project}-${composeService}`],
+        { encoding: 'utf-8', timeout: 5000 },
+      );
+    }
     const logs = execSync(
       `docker compose -p "${project}" -f "${config.composeFile}" logs --no-color --tail ${tail} "${composeService}"`,
       { encoding: 'utf-8', timeout: 5000, cwd: process.cwd() },
@@ -617,20 +648,22 @@ function streamLogs(slot, service, req, res, envType = 'dev') {
     const config = ENV_COMPOSE_CONFIG[envType] || ENV_COMPOSE_CONFIG.dev;
     const project = `${config.prefix}${slot}`;
     const child = spawn(
-      'docker',
-      [
-        'compose',
-        '-p',
-        project,
-        '-f',
-        config.composeFile,
-        'logs',
-        '--no-color',
-        '--follow',
-        '--tail',
-        '50',
-        composeService,
-      ],
+      process.platform === 'darwin' ? 'container' : 'docker',
+      process.platform === 'darwin'
+        ? ['logs', '--follow', '-n', '50', `${project}-${composeService}`]
+        : [
+            'compose',
+            '-p',
+            project,
+            '-f',
+            config.composeFile,
+            'logs',
+            '--no-color',
+            '--follow',
+            '--tail',
+            '50',
+            composeService,
+          ],
       { cwd: process.cwd() },
     );
 

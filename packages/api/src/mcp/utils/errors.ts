@@ -84,21 +84,21 @@ export function sanitizeFetchError(e: unknown): string {
   return message.replace(/\s+/g, ' ').trim().slice(0, 200);
 }
 
-function formatZodPath(path: (string | number)[]): string {
+function formatZodPath(path: readonly PropertyKey[]): string {
   return path
     .map((segment, index) =>
       typeof segment === 'number'
         ? `[${segment}]`
         : index === 0
-          ? segment
-          : `.${segment}`,
+          ? String(segment)
+          : `.${String(segment)}`,
     )
     .join('');
 }
 
 /** Render a Zod error as one `path: message` line per issue. */
 export function formatZodIssues(error: z.ZodError): string {
-  return error.errors
+  return error.issues
     .map(issue => {
       const path = formatZodPath(issue.path);
       return path ? `${path}: ${issue.message}` : issue.message;
@@ -106,32 +106,37 @@ export function formatZodIssues(error: z.ZodError): string {
     .join('\n');
 }
 
-type UnionOptions = readonly [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]];
-type Path = (string | number)[];
+type UnionOptions = readonly [z.ZodType, z.ZodType, ...z.ZodType[]];
+type Path = PropertyKey[];
+type InvalidValueIssue = z.core.$ZodIssueInvalidValue;
+type AnySchema = z.core.$ZodType;
 
-function unwrapSchema(schema: z.ZodTypeAny): z.ZodTypeAny {
-  if (schema instanceof z.ZodEffects) return unwrapSchema(schema.innerType());
-  if (schema instanceof z.ZodOptional || schema instanceof z.ZodNullable) {
+function unwrapSchema(schema: AnySchema): AnySchema {
+  if (schema instanceof z.ZodPipe) {
+    // A transform's input side is what the caller sends; a preprocess pipe
+    // validates on its output side.
+    const side = schema.in instanceof z.ZodTransform ? schema.out : schema.in;
+    return unwrapSchema(side);
+  }
+  if (
+    schema instanceof z.ZodOptional ||
+    schema instanceof z.ZodNullable ||
+    schema instanceof z.ZodDefault
+  ) {
     return unwrapSchema(schema.unwrap());
   }
-  if (schema instanceof z.ZodDefault)
-    return unwrapSchema(schema.removeDefault());
   return schema;
 }
 
-function objectShape(schema: z.ZodTypeAny): Map<string, z.ZodTypeAny> | null {
+function objectShape(schema: AnySchema): Map<string, AnySchema> | null {
   const inner = unwrapSchema(schema);
   if (!(inner instanceof z.ZodObject)) return null;
-  const shape: z.ZodRawShape = inner.shape;
+  const shape: Record<string, AnySchema> = inner.shape;
   return new Map(Object.entries(shape));
 }
 
 /** Records every object path at which `schema` requires a literal value. */
-function collectLiteralPaths(
-  schema: z.ZodTypeAny,
-  path: Path,
-  into: Set<string>,
-) {
+function collectLiteralPaths(schema: AnySchema, path: Path, into: Set<string>) {
   if (unwrapSchema(schema) instanceof z.ZodLiteral)
     into.add(formatZodPath(path));
   for (const [key, field] of objectShape(schema) ?? []) {
@@ -144,7 +149,7 @@ function collectLiteralPaths(
  * each one it satisfies, -1 for each one it sets that the branch doesn't have.
  */
 function scoreBranch(
-  schema: z.ZodTypeAny,
+  schema: AnySchema,
   data: unknown,
   path: Path,
   discriminators: Set<string>,
@@ -178,31 +183,25 @@ function scoreBranch(
  * rejects a discriminator, it lists the values the best-fitting branches
  * accept.
  */
-export function mcpUnion<T extends UnionOptions>(options: T) {
+export function mcpUnion<const T extends UnionOptions>(options: T) {
   const discriminators = new Set<string>();
   for (const option of options) collectLiteralPaths(option, [], discriminators);
 
-  const errorMap: z.ZodErrorMap = (issue, ctx) => {
-    if (issue.code !== z.ZodIssueCode.invalid_union) {
-      return { message: ctx.defaultError };
-    }
-    // Paths relative to the union, so nested unions don't repeat their prefix.
-    const relativePath = (i: z.ZodIssue) =>
-      formatZodPath(i.path.slice(issue.path.length));
-    const isDiscriminatorIssue = (
-      i: z.ZodIssue,
-    ): i is z.ZodIssue &
-      (z.ZodInvalidLiteralIssue | z.ZodInvalidEnumValueIssue) =>
-      (i.code === z.ZodIssueCode.invalid_literal ||
-        i.code === z.ZodIssueCode.invalid_enum_value) &&
-      discriminators.has(relativePath(i));
+  // Branch issues carry paths relative to the union, so nested unions don't
+  // repeat their prefix.
+  const isDiscriminatorIssue = (i: z.core.$ZodIssue): i is InvalidValueIssue =>
+    i.code === 'invalid_value' && discriminators.has(formatZodPath(i.path));
+
+  const error = (issue: z.core.$ZodRawIssue) => {
+    if (issue.code !== 'invalid_union') return undefined;
+    const branchIssues: z.core.$ZodIssue[][] = issue.errors;
 
     const ranked = options
       .map((option, index) => {
-        const issues = issue.unionErrors.at(index)?.issues ?? [];
+        const issues = branchIssues.at(index) ?? [];
         return {
           issues,
-          score: scoreBranch(option, ctx.data, [], discriminators),
+          score: scoreBranch(option, issue.input, [], discriminators),
           mismatches: issues.filter(isDiscriminatorIssue).length,
         };
       })
@@ -216,20 +215,17 @@ export function mcpUnion<T extends UnionOptions>(options: T) {
     const best = ranked.filter(branch => branch.score === closest.score);
 
     const mismatched = new Set(
-      closest.issues.filter(isDiscriminatorIssue).map(relativePath),
+      closest.issues
+        .filter(isDiscriminatorIssue)
+        .map(i => formatZodPath(i.path)),
     );
     const acceptedLines = [...mismatched].map(path => {
       const accepted = new Set(
         best
           .flatMap(branch => branch.issues)
-          .filter(i => isDiscriminatorIssue(i) && relativePath(i) === path)
-          .flatMap(i =>
-            i.code === z.ZodIssueCode.invalid_literal
-              ? [i.expected]
-              : i.code === z.ZodIssueCode.invalid_enum_value
-                ? i.options
-                : [],
-          )
+          .filter(isDiscriminatorIssue)
+          .filter(i => formatZodPath(i.path) === path)
+          .flatMap(i => i.values)
           .map(value => JSON.stringify(value)),
       );
       const expected = `expected one of ${[...accepted].join(', ')}`;
@@ -242,11 +238,11 @@ export function mcpUnion<T extends UnionOptions>(options: T) {
         ? closest.issues
             .filter(i => !isDiscriminatorIssue(i))
             .map(i => {
-              const path = relativePath(i);
+              const path = formatZodPath(i.path);
               return path ? `${path}: ${i.message}` : i.message;
             })
         : [];
-    return { message: [...acceptedLines, ...otherLines].join('; ') };
+    return [...acceptedLines, ...otherLines].join('; ');
   };
-  return z.union(options, { errorMap });
+  return z.union(options, { error });
 }

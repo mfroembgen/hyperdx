@@ -859,8 +859,7 @@ export const deployRegressionScenario: Scenario = {
           rng,
           nowMs: t,
           serviceName: service as
-            | 'inventory-service'
-            | 'recommendation-service',
+            'inventory-service' | 'recommendation-service',
         });
         body = tmpl.body;
         attrs = tmpl.attrs;

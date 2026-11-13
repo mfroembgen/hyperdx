@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { vi } from 'vitest';
 import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import { MantineProvider } from '@mantine/core';
 import { render, screen } from '@testing-library/react';
@@ -14,7 +15,7 @@ type Props = Record<string, unknown>;
 
 // DBHeatmapChart's default export is a `dynamic()` wrapper; render its inner
 // component once the loader resolves.
-jest.mock('next/dynamic', () => ({
+vi.mock('next/dynamic', () => ({
   __esModule: true,
   default: (loader: () => Promise<React.ComponentType<Props>>) => {
     const Wrapped = (props: Props) => {
@@ -37,8 +38,8 @@ jest.mock('next/dynamic', () => ({
 
 // HeatmapPlot passes uPlot `[[], [time, bucket, count, ...cellExtents]]`
 // plus its options; record what it plots and with which axes.
-const mockPlot = jest.fn();
-jest.mock('uplot-react', () => ({
+const mockPlot = vi.fn();
+vi.mock('uplot-react', () => ({
   __esModule: true,
   default: ({
     data,
@@ -52,8 +53,8 @@ jest.mock('uplot-react', () => ({
   },
 }));
 
-const mockUseQueriedChartConfig = jest.fn();
-jest.mock('@/hooks/useChartConfig', () => ({
+const mockUseQueriedChartConfig = vi.fn();
+vi.mock('@/hooks/useChartConfig', () => ({
   useQueriedChartConfig: (...args: unknown[]) =>
     mockUseQueriedChartConfig(...args),
 }));

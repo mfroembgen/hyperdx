@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 
 import {
@@ -26,8 +27,8 @@ function renderLayout({
   defaultOpened?: boolean;
   withContent?: boolean;
 }) {
-  const onOpen = jest.fn();
-  const onCancel = jest.fn();
+  const onOpen = vi.fn();
+  const onCancel = vi.fn();
   renderWithMantine(
     <AlertPanelLayout
       defaultOpened={defaultOpened}
@@ -94,7 +95,7 @@ describe('AlertPanel', () => {
 
   it('widens when its edge is dragged left', () => {
     // jsdom lays nothing out, and useResizable caps widths by the body's.
-    jest.spyOn(document.body, 'offsetWidth', 'get').mockReturnValue(1024);
+    vi.spyOn(document.body, 'offsetWidth', 'get').mockReturnValue(1024);
     renderLayout({ defaultOpened: true });
 
     const panel = screen.getByTestId('alert-panel');

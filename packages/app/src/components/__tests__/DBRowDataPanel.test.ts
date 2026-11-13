@@ -1,3 +1,4 @@
+import { type Mock, vi } from 'vitest';
 import { ClickHouseQueryError } from '@hyperdx/common-utils/dist/clickhouse';
 import { SourceKind, TLogSource } from '@hyperdx/common-utils/dist/types';
 import { renderHook } from '@testing-library/react';
@@ -9,8 +10,8 @@ import {
 } from '@/components/DBRowDataPanel';
 import { useQueriedChartConfig } from '@/hooks/useChartConfig';
 
-jest.mock('@/hooks/useChartConfig', () => ({
-  useQueriedChartConfig: jest.fn(),
+vi.mock('@/hooks/useChartConfig', () => ({
+  useQueriedChartConfig: vi.fn(),
 }));
 
 type ColumnsResult = {
@@ -18,15 +19,15 @@ type ColumnsResult = {
   isLoading: boolean;
 };
 let mockColumns: ColumnsResult;
-const mockUseColumns = jest.fn(
+const mockUseColumns = vi.fn(
   (_table: unknown, _options: { enabled?: boolean }) => mockColumns,
 );
-jest.mock('@/hooks/useMetadata', () => ({
+vi.mock('@/hooks/useMetadata', () => ({
   useColumns: (table: unknown, options: { enabled?: boolean }) =>
     mockUseColumns(table, options),
 }));
 
-const mockUseQueriedChartConfig = useQueriedChartConfig as jest.Mock;
+const mockUseQueriedChartConfig = useQueriedChartConfig as Mock;
 const showMaterializedAliasColumns = () =>
   localStorage.setItem('hdx-row-show-materialized-alias-columns', 'true');
 
@@ -43,7 +44,7 @@ describe('DBRowDataPanel', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     localStorage.clear();
     mockColumns = { data: undefined, isLoading: false };
     mockUseQueriedChartConfig.mockReturnValue({

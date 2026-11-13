@@ -43,4 +43,11 @@ describe('rateLimiterKeyGenerator', () => {
     expect((await get(app, 'Basic dXNlcjpi')).status).toBe(200);
     expect((await get(app, 'Basic dXNlcjpj')).status).toBe(429);
   });
+
+  it('shares one unauthenticated bucket across addresses in an IPv6 subnet', () => {
+    const key = (ip: string) =>
+      rateLimiterKeyGenerator({ headers: {}, ip } as express.Request);
+    expect(key('2001:db8:1234:5600::1')).toBe(key('2001:db8:1234:5600::2'));
+    expect(key('2001:db8:1234:5600::1')).not.toBe(key('2001:db8:1234:5800::1'));
+  });
 });

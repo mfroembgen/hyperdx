@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { sample, times } from 'lodash';
 import { Box } from '@mantine/core';
-import { Meta, StoryObj } from '@storybook/nextjs';
+import { Meta, StoryObj } from '@storybook/react-vite';
 
 import { VirtualMultiSelect } from './VirtualMultiSelect';
 

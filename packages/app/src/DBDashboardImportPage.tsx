@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { uniq } from 'lodash';
 import { parseAsString, useQueryState } from 'nuqs';
+import type { Resolver } from 'react-hook-form';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -699,7 +700,7 @@ export function Mapping({ input }: { input: DashboardTemplate }) {
 
   const { handleSubmit, getFieldState, control, setValue } =
     useForm<MappingFormState>({
-      resolver: zodResolver(formSchema),
+      resolver: zodResolver(formSchema) as Resolver<MappingFormState>,
       mode: 'onChange',
       defaultValues: {
         dashboardName: input.name,
@@ -1021,8 +1022,7 @@ export function Mapping({ input }: { input: DashboardTemplate }) {
     if (connectionMappings && tileIdx !== -1) {
       prevConnectionMappingsRef.current = connectionMappings;
       const config = input.tiles[tileIdx]?.config as
-        | SavedChartConfig
-        | undefined;
+        SavedChartConfig | undefined;
       if (config && isRawSqlSavedChartConfig(config)) {
         inputConnectionName = config.connection;
         connectionId = connectionMappings[tileIdx] ?? '';

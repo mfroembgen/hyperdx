@@ -1,4 +1,5 @@
 import { useForm } from 'react-hook-form';
+import { vi } from 'vitest';
 import { WebhookService } from '@hyperdx/common-utils/dist/types';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
@@ -10,19 +11,19 @@ const WEBHOOKS = [
   { _id: 'w3', name: 'Gamma Hook', service: WebhookService.IncidentIO },
 ];
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useWebhooks: () => ({
       data: { data: WEBHOOKS },
-      refetch: jest.fn().mockResolvedValue({ data: { data: WEBHOOKS } }),
+      refetch: vi.fn().mockResolvedValue({ data: { data: WEBHOOKS } }),
     }),
   },
 }));
 
 // The creation modal pulls in the whole webhook settings form; the channel
 // picker's own behaviour is what's under test here.
-jest.mock('@/components/TeamSettings/WebhookForm', () => ({
+vi.mock('@/components/TeamSettings/WebhookForm', () => ({
   WebhookForm: () => <div data-testid="webhook-form" />,
 }));
 
@@ -55,7 +56,7 @@ const Harness = ({
 
 // jsdom has no layout, and Mantine's combobox scrolls the active option.
 beforeAll(() => {
-  Element.prototype.scrollIntoView = jest.fn();
+  Element.prototype.scrollIntoView = vi.fn();
 });
 
 const rows = () => screen.getAllByTestId('select-webhook');

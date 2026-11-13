@@ -14,9 +14,9 @@ export type ServiceMapSearchFormValues = {
   groupBy: string;
 };
 
-function validateGroupBy(value: string): true | string {
+function validateGroupBy(value: string | undefined): true | string {
   return (
-    splitAndTrimWithBracket(value).length <= MAX_SERVICE_MAP_GROUP_BY ||
+    splitAndTrimWithBracket(value ?? '').length <= MAX_SERVICE_MAP_GROUP_BY ||
     `Up to ${MAX_SERVICE_MAP_GROUP_BY} group by expressions`
   );
 }

@@ -451,8 +451,7 @@ export function expandTemplate(
 // -- Variable expansion -----------------------------------------------------
 
 export type TemplateLanguage =
-  | NonNullable<SearchConditionLanguage>
-  | 'markdown';
+  NonNullable<SearchConditionLanguage> | 'markdown';
 
 export type VariableContext = {
   variables: ChartVariable[];

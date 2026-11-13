@@ -1,3 +1,4 @@
+import type { FieldValues } from 'react-hook-form';
 import { UseControllerProps, useWatch } from 'react-hook-form';
 import { parseVariableReference } from '@hyperdx/common-utils/dist/referenceVariables';
 import { SelectProps } from '@mantine/core';
@@ -10,7 +11,7 @@ import {
 } from '@/components/sourceSelectUtils';
 import { useConnectionItems } from '@/hooks/useConnectionItems';
 
-export function ConnectionSelectControlled({
+export function ConnectionSelectControlled<TFieldValues extends FieldValues>({
   size,
   allowConnectionVariables = false,
   placeholder = 'Connection',
@@ -21,7 +22,7 @@ export function ConnectionSelectControlled({
   /** Whether to offer the dashboard's connection variables. */
   allowConnectionVariables?: boolean;
 } & Pick<SelectProps, 'placeholder' | 'clearable'> &
-  UseControllerProps<any>) {
+  UseControllerProps<TFieldValues>) {
   const selected = useWatch({ control: props.control, name: props.name });
   const connectionItems = useConnectionItems();
   const items = useWithConnectionVariableItems(

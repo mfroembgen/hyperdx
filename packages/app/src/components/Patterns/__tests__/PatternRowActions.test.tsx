@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 
 import { parsePatternFilter } from '@/components/Patterns/patternFilter';
@@ -5,7 +6,7 @@ import { PatternRowActions } from '@/components/Patterns/PatternRowActions';
 
 describe('PatternRowActions', () => {
   it('filters for or excludes the row pattern', () => {
-    const onFilter = jest.fn();
+    const onFilter = vi.fn();
     renderWithMantine(
       <PatternRowActions
         template="GetCartAsync called with userId <*>"
@@ -51,7 +52,7 @@ describe('PatternRowActions', () => {
       <PatternRowActions
         template={'word '.repeat(1000)}
         valueExpression="Body"
-        onFilter={jest.fn()}
+        onFilter={vi.fn()}
       />,
     );
     expect(screen.queryAllByRole('button')).toHaveLength(0);

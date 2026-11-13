@@ -1,7 +1,6 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import storybook from 'eslint-plugin-storybook';
-import nextPlugin from '@next/eslint-plugin-next';
 import eslintReactPlugin from '@eslint-react/eslint-plugin';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import prettierConfig from 'eslint-config-prettier';
@@ -88,6 +87,7 @@ export default [
   prettierPlugin,
   {
     ignores: [
+      'vinext-env.d.ts',
       'next-env.d.ts',
       'playwright-report/**',
       '.next/**',
@@ -99,6 +99,7 @@ export default [
       'build/**',
       'coverage/**',
       'dist/**',
+      '.vercel/**',
       '**/*.config.js',
       '**/*.config.ts',
       '**/*.config.cjs',
@@ -107,23 +108,31 @@ export default [
       'public/__ENV.js',
       'public/pyodide/**',
       'global-setup.js',
+      '**/*.config.mts',
       'scripts/**',
     ],
   },
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
-      '@next/next': nextPlugin,
       'react-hooks': reactHooksPlugin,
       'simple-import-sort': simpleImportSort,
       'react-hook-form': fixupPluginRules(reactHookFormPlugin), // not compatible with eslint 9 yet
       ...eslintReactPlugin.configs.recommended.plugins,
     },
     rules: {
-      ...nextPlugin.configs.recommended.rules,
-      ...nextPlugin.configs['core-web-vitals'].rules,
       ...reactHooksPlugin.configs.recommended.rules,
       ...eslintReactPlugin.configs['recommended-type-checked'].rules,
+      // Preserve the v3 recommended rule scope; keep all existing Hooks checks.
+      '@eslint-react/static-components': 'off',
+      '@eslint-react/jsx-no-children-prop': 'off',
+      '@eslint-react/jsx-no-children-prop-with-children': 'off',
+      '@eslint-react/jsx-no-key-after-spread': 'off',
+      '@eslint-react/jsx-no-leaked-dollar': 'off',
+      '@eslint-react/jsx-no-leaked-semicolon': 'off',
+      '@eslint-react/jsx-no-namespace': 'off',
+      '@eslint-react/web-api-no-leaked-fetch': 'off',
+      '@eslint-react/web-api-no-leaked-intersection-observer': 'off',
       
       // Non-default react-hooks rules
       'react-hooks/set-state-in-render': 'error',
@@ -154,7 +163,7 @@ export default [
       '@eslint-react/no-use-context': 'error',
       '@eslint-react/no-forward-ref': 'error',
       // useRef values must be named `ref` or end in `Ref` for readability.
-      '@eslint-react/naming-convention/ref-name': 'error',
+      '@eslint-react/naming-convention-ref-name': 'error',
       '@typescript-eslint/ban-ts-comment': 'error',
       // Empty no-op functions are common and intentional (test mocks, default
       // callback props like onClose/onChange). Flagging them adds noise without
@@ -262,7 +271,6 @@ export default [
       'no-console': 'off',
       'no-empty': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      '@next/next/no-html-link-for-pages': 'off',
       'playwright/no-networkidle': 'off', // temporary until we have a better way to deal with react re-renders
       // Shared helpers that assert on our behalf, so a test calling only these
       // still counts as having assertions.

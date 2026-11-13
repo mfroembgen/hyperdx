@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { JSDataType } from '@/clickhouse';
 import { ClickhouseClient } from '@/clickhouse/node';
 import { getMetadata } from '@/core/metadata';
@@ -15,11 +17,11 @@ import { UseTextIndex } from '@/types';
 // Suppress expected console.error/warn noise from mocked setting fetches
 // and parse failures in edge-case tests
 beforeAll(() => {
-  jest.spyOn(console, 'warn').mockImplementation(() => {});
-  jest.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 afterAll(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 describe('special token encoding', () => {
@@ -44,7 +46,7 @@ describe('CustomSchemaSQLSerializerV2 - json', () => {
   const metadata = getMetadata(
     new ClickhouseClient({ host: 'http://localhost:8123' }),
   );
-  metadata.getColumn = jest.fn().mockImplementation(async ({ column }) => {
+  metadata.getColumn = vi.fn().mockImplementation(async ({ column }) => {
     if (column === 'ResourceAttributesJSON') {
       return { name: 'ResourceAttributesJSON', type: 'JSON' };
     } else if (column === 'LogAttributes') {
@@ -61,7 +63,7 @@ describe('CustomSchemaSQLSerializerV2 - json', () => {
       return undefined;
     }
   });
-  metadata.getMaterializedColumnsLookupTable = jest
+  metadata.getMaterializedColumnsLookupTable = vi
     .fn()
     .mockImplementation(async () => {
       return new Map([
@@ -773,7 +775,7 @@ describe('CustomSchemaSQLSerializerV2 - numeric range bounds on String values', 
     new ClickhouseClient({ host: 'http://localhost:8123' }),
   );
   // The OTel schema's attribute maps hold every value as a String.
-  metadata.getColumn = jest.fn().mockImplementation(async ({ column }) => {
+  metadata.getColumn = vi.fn().mockImplementation(async ({ column }) => {
     if (column === 'LogAttributes') {
       return {
         name: 'LogAttributes',
@@ -788,7 +790,7 @@ describe('CustomSchemaSQLSerializerV2 - numeric range bounds on String values', 
     }
     return undefined;
   });
-  metadata.getMaterializedColumnsLookupTable = jest
+  metadata.getMaterializedColumnsLookupTable = vi
     .fn()
     .mockImplementation(async () => new Map());
 
@@ -862,7 +864,7 @@ describe('CustomSchemaSQLSerializerV2 - range bounds', () => {
   const metadata = getMetadata(
     new ClickhouseClient({ host: 'http://localhost:8123' }),
   );
-  metadata.getColumn = jest.fn().mockImplementation(async ({ column }) => {
+  metadata.getColumn = vi.fn().mockImplementation(async ({ column }) => {
     if (column === 'Duration') {
       return { name: 'Duration', type: 'UInt64' };
     } else if (column === 'Timestamp') {
@@ -874,7 +876,7 @@ describe('CustomSchemaSQLSerializerV2 - range bounds', () => {
     }
     return undefined;
   });
-  metadata.getMaterializedColumnsLookupTable = jest
+  metadata.getMaterializedColumnsLookupTable = vi
     .fn()
     .mockImplementation(async () => new Map());
 
@@ -992,7 +994,7 @@ describe('CustomSchemaSQLSerializerV2 - numeric and Bool field searches', () => 
   const metadata = getMetadata(
     new ClickhouseClient({ host: 'http://localhost:8123' }),
   );
-  metadata.getColumn = jest.fn().mockImplementation(async ({ column }) => {
+  metadata.getColumn = vi.fn().mockImplementation(async ({ column }) => {
     if (column === 'NumericAttributes') {
       return { name: 'NumericAttributes', type: 'Map(String, Float64)' };
     } else if (column === 'BoolAttributes') {
@@ -1008,15 +1010,15 @@ describe('CustomSchemaSQLSerializerV2 - numeric and Bool field searches', () => 
     }
     return undefined;
   });
-  metadata.getMaterializedColumnsLookupTable = jest.fn().mockImplementation(
+  metadata.getMaterializedColumnsLookupTable = vi.fn().mockImplementation(
     async () =>
       new Map([
         ["LogAttributes['is_error']", 'MatIsError'],
         ["LogAttributes['duration']", 'MatDuration'],
       ]),
   );
-  metadata.getColumns = jest.fn().mockImplementation(async () => []);
-  metadata.getSkipIndices = jest.fn().mockImplementation(async () => []);
+  metadata.getColumns = vi.fn().mockImplementation(async () => []);
+  metadata.getSkipIndices = vi.fn().mockImplementation(async () => []);
 
   const databaseName = 'testName';
   const tableName = 'testTable';
@@ -1096,7 +1098,7 @@ describe('CustomSchemaSQLSerializerV2 - bloom_filter tokens() indices', () => {
 
   beforeEach(() => {
     // Mock getColumn to return Body as String column
-    metadata.getColumn = jest.fn().mockImplementation(async ({ column }) => {
+    metadata.getColumn = vi.fn().mockImplementation(async ({ column }) => {
       if (column === 'Body') {
         return { name: 'Body', type: 'String' };
       } else if (column === 'ServiceName') {
@@ -1108,7 +1110,7 @@ describe('CustomSchemaSQLSerializerV2 - bloom_filter tokens() indices', () => {
 
   it('should use hasAll when bloom_filter tokens() index exists', async () => {
     // Mock getSkipIndices to return bloom_filter with tokens(lower(Body))
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_tokens',
         type: 'bloom_filter',
@@ -1132,7 +1134,7 @@ describe('CustomSchemaSQLSerializerV2 - bloom_filter tokens() indices', () => {
   });
 
   it('should use hasAll for multi-token terms with single call', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_tokens',
         type: 'bloom_filter',
@@ -1160,7 +1162,7 @@ describe('CustomSchemaSQLSerializerV2 - bloom_filter tokens() indices', () => {
 
   it('should fallback to hasToken when no bloom_filter tokens() index found', async () => {
     // Mock getSkipIndices to return empty
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([]);
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([]);
 
     const serializer = new CustomSchemaSQLSerializerV2({
       metadata,
@@ -1179,7 +1181,7 @@ describe('CustomSchemaSQLSerializerV2 - bloom_filter tokens() indices', () => {
 
   it('should handle bloom_filter without tokens() expression', async () => {
     // Mock index with type=bloom_filter but expression='TraceId' (not tokens)
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_trace_id',
         type: 'bloom_filter',
@@ -1205,7 +1207,7 @@ describe('CustomSchemaSQLSerializerV2 - bloom_filter tokens() indices', () => {
 
   it('should ignore tokenbf_v1 indices and use hasToken', async () => {
     // Mock getSkipIndices to return tokenbf_v1 (should be ignored)
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_lower_body',
         type: 'tokenbf_v1',
@@ -1230,7 +1232,7 @@ describe('CustomSchemaSQLSerializerV2 - bloom_filter tokens() indices', () => {
   });
 
   it('should handle negated searches with hasAll', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_tokens',
         type: 'bloom_filter',
@@ -1257,7 +1259,7 @@ describe('CustomSchemaSQLSerializerV2 - bloom_filter tokens() indices', () => {
   });
 
   it('should not use bloom_filter index for explicit field searches', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_tokens',
         type: 'bloom_filter',
@@ -1285,7 +1287,7 @@ describe('CustomSchemaSQLSerializerV2 - bloom_filter tokens() indices', () => {
   });
 
   it('should match index expression with different whitespace', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_tokens',
         type: 'bloom_filter',
@@ -1310,7 +1312,7 @@ describe('CustomSchemaSQLSerializerV2 - bloom_filter tokens() indices', () => {
   });
 
   it('should use hasAll for multiple separate terms', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_tokens',
         type: 'bloom_filter',
@@ -1337,7 +1339,7 @@ describe('CustomSchemaSQLSerializerV2 - bloom_filter tokens() indices', () => {
   });
 
   it('should not apply lower() to the search term if the index expression includes lower with extra whitespace', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_tokens',
         type: 'bloom_filter',
@@ -1371,7 +1373,7 @@ describe('CustomSchemaSQLSerializerV2 - bloom_filter tokens() indices', () => {
   });
 
   it('should not apply lower() to the search term if the index expression does not have lower()', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_tokens',
         type: 'bloom_filter',
@@ -1414,7 +1416,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
 
   beforeEach(() => {
     // Mock getColumn to return Body as String column
-    metadata.getColumn = jest.fn().mockImplementation(async ({ column }) => {
+    metadata.getColumn = vi.fn().mockImplementation(async ({ column }) => {
       if (column === 'Body') {
         return { name: 'Body', type: 'String' };
       } else if (column === 'ServiceName') {
@@ -1423,7 +1425,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
       return undefined;
     });
 
-    metadata.getSetting = jest
+    metadata.getSetting = vi
       .fn()
       .mockImplementation(async ({ settingName }) => {
         if (settingName === 'enable_full_text_index') {
@@ -1434,7 +1436,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
   });
 
   it('should use hasAllTokens when text index exists', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_text',
         type: 'text',
@@ -1462,7 +1464,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     // Pins that shouldUseTokenBf widening preserves the
     // hasAllTokens optimization when the resolver falls back to
     // bodyExpression (implicitColumnExpression unset on the source).
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_text',
         type: 'text',
@@ -1488,7 +1490,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
   });
 
   it('should use hasAllTokens when text index exists on multi-column expression', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_text',
         type: 'text',
@@ -1516,7 +1518,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
   });
 
   it('should use hasAllTokens for multi-token terms with single call', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_text',
         type: 'text',
@@ -1543,7 +1545,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
 
   it('should fallback to hasToken when no text indexes are found', async () => {
     // Mock getSkipIndices to return empty
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([]);
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([]);
 
     const serializer = new CustomSchemaSQLSerializerV2({
       metadata,
@@ -1561,7 +1563,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
   });
 
   it('should handle text index on a different column', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_text',
         type: 'text',
@@ -1587,7 +1589,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
   });
 
   it('should handle negated searches with hasAllTokens', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_text',
         type: 'text',
@@ -1613,7 +1615,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
   });
 
   it('should not use text index for explicit field searches', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_text',
         type: 'text',
@@ -1642,7 +1644,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
   });
 
   it('should batch tokens into groups to avoid hitting the hasAllTokens limit', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_text',
         type: 'text',
@@ -1673,7 +1675,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
   });
 
   it('should use hasAllTokens for multiple separate terms', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_text',
         type: 'text',
@@ -1701,7 +1703,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
   });
 
   it('should not use text index when enable_full_text_index is disabled', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_text',
         type: 'text',
@@ -1712,7 +1714,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     ]);
 
     // Mock getSetting to disable full text index
-    metadata.getSetting = jest
+    metadata.getSetting = vi
       .fn()
       .mockImplementation(async ({ settingName }) => {
         if (settingName === 'enable_full_text_index') {
@@ -1737,7 +1739,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
   });
 
   it('should not use text index when enable_full_text_index is unavailable (ClickHouse version is old)', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_text',
         type: 'text',
@@ -1748,7 +1750,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     ]);
 
     // Mock getSetting to disable full text index
-    metadata.getSetting = jest.fn().mockResolvedValue(undefined);
+    metadata.getSetting = vi.fn().mockResolvedValue(undefined);
 
     const serializer = new CustomSchemaSQLSerializerV2({
       metadata,
@@ -1766,7 +1768,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
   });
 
   it('should not use text index when getSetting throws an error', async () => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_body_text',
         type: 'text',
@@ -1777,7 +1779,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     ]);
 
     // Mock getSetting to disable full text index
-    metadata.getSetting = jest
+    metadata.getSetting = vi
       .fn()
       .mockRejectedValue(new Error('Failed to get setting'));
 
@@ -1798,7 +1800,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
 
   describe('lower(Body) text index (no preprocessor)', () => {
     it('should use hasAllTokens(lower(Body), lower(...)) when index expression is lower(Body)', async () => {
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([
         {
           name: 'idx_lower_body',
           type: 'text',
@@ -1823,7 +1825,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     });
 
     it('should use hasAllTokens(lower(Body), lower(...)) for multi-token terms', async () => {
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([
         {
           name: 'idx_lower_body',
           type: 'text',
@@ -1849,7 +1851,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     });
 
     it('should handle negated searches with lower(Body) index', async () => {
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([
         {
           name: 'idx_lower_body',
           type: 'text',
@@ -1874,7 +1876,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     });
 
     it('should NOT use lower() when index is directly on Body', async () => {
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([
         {
           name: 'idx_body_text',
           type: 'text',
@@ -1899,7 +1901,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     });
 
     it('should batch tokens with lower() when index is on lower(Body)', async () => {
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([
         {
           name: 'idx_lower_body',
           type: 'text',
@@ -1926,7 +1928,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     });
 
     it('should detect LOWER(Body) case-insensitively', async () => {
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([
         {
           name: 'idx_lower_body',
           type: 'text',
@@ -1953,7 +1955,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
 
   describe('useTextIndexForImplicitColumn source preference', () => {
     it('Auto preserves the existing detection behavior when a text index is found', async () => {
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([
         {
           name: 'idx_body_text',
           type: 'text',
@@ -1977,7 +1979,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     });
 
     it('Auto falls back to hasToken when no text index is found', async () => {
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([]);
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([]);
 
       const serializer = new CustomSchemaSQLSerializerV2({
         metadata,
@@ -1993,7 +1995,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     });
 
     it('Enabled emits hasAllTokens even when no text index is detected', async () => {
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([]);
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([]);
 
       const serializer = new CustomSchemaSQLSerializerV2({
         metadata,
@@ -2009,8 +2011,8 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     });
 
     it('Enabled emits hasAllTokens even when enable_full_text_index = 0', async () => {
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([]);
-      metadata.getSetting = jest
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([]);
+      metadata.getSetting = vi
         .fn()
         .mockImplementation(async ({ settingName }) => {
           if (settingName === 'enable_full_text_index') {
@@ -2034,7 +2036,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     });
 
     it('Disabled skips hasAllTokens even when a covering text index exists', async () => {
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([
         {
           name: 'idx_body_text',
           type: 'text',
@@ -2062,7 +2064,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     it('Disabled still permits a bloom_filter tokens() index path', async () => {
       // Source-level disable only suppresses the text-index hasAllTokens branch.
       // Bloom filter tokens() optimization is still allowed to run.
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([
         {
           name: 'idx_body_bloom',
           type: 'bloom_filter',
@@ -2087,7 +2089,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     });
 
     it('Enabled uses lower() wrapping when a lower(Body) text index exists', async () => {
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([
         {
           name: 'idx_lower_body',
           type: 'text',
@@ -2111,7 +2113,7 @@ describe('CustomSchemaSQLSerializerV2 - text indices', () => {
     });
 
     it('Enabled with a multi-token term still falls back to LIKE when separators exist', async () => {
-      metadata.getSkipIndices = jest.fn().mockResolvedValue([]);
+      metadata.getSkipIndices = vi.fn().mockResolvedValue([]);
 
       const serializer = new CustomSchemaSQLSerializerV2({
         metadata,
@@ -2135,13 +2137,13 @@ describe('CustomSchemaSQLSerializerV2 - FixedString implicit search', () => {
   const metadata = getMetadata(
     new ClickhouseClient({ host: 'http://localhost:8123' }),
   );
-  metadata.getSkipIndices = jest.fn().mockResolvedValue([]);
-  metadata.getSetting = jest.fn().mockResolvedValue(undefined);
-  metadata.getColumns = jest.fn().mockResolvedValue([]);
-  metadata.getMaterializedColumnsLookupTable = jest
+  metadata.getSkipIndices = vi.fn().mockResolvedValue([]);
+  metadata.getSetting = vi.fn().mockResolvedValue(undefined);
+  metadata.getColumns = vi.fn().mockResolvedValue([]);
+  metadata.getMaterializedColumnsLookupTable = vi
     .fn()
     .mockResolvedValue(new Map());
-  metadata.getColumn = jest.fn().mockImplementation(async ({ column }) => {
+  metadata.getColumn = vi.fn().mockImplementation(async ({ column }) => {
     if (column === 'TraceId') {
       return { name: 'TraceId', type: 'FixedString(32)' };
     }
@@ -2312,7 +2314,7 @@ describe('CustomSchemaSQLSerializerV2 - FixedString implicit search', () => {
   it('keeps a FixedString text index on the raw column', async () => {
     const getSkipIndices = metadata.getSkipIndices;
     const getSetting = metadata.getSetting;
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_trace_text',
         type: 'text',
@@ -2321,7 +2323,7 @@ describe('CustomSchemaSQLSerializerV2 - FixedString implicit search', () => {
         granularity: '1',
       },
     ]);
-    metadata.getSetting = jest
+    metadata.getSetting = vi
       .fn()
       .mockImplementation(async ({ settingName }) => {
         if (settingName === 'enable_full_text_index') {
@@ -2375,7 +2377,7 @@ describe('CustomSchemaSQLSerializerV2 - FixedString implicit search', () => {
 
   it('falls back to uncast hasToken when the column lookup fails', async () => {
     const getColumn = metadata.getColumn;
-    metadata.getColumn = jest
+    metadata.getColumn = vi
       .fn()
       .mockRejectedValue(new Error('describe failed'));
     try {
@@ -2404,7 +2406,7 @@ describe('CustomSchemaSQLSerializerV2 - indexCoversColumn', () => {
   const connectionId = 'test';
 
   beforeEach(() => {
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([]);
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([]);
   });
 
   it.each([
@@ -2486,7 +2488,7 @@ describe('CustomSchemaSQLSerializerV2 - Array and Nested Fields', () => {
   const metadata = getMetadata(
     new ClickhouseClient({ host: 'http://localhost:8123' }),
   );
-  metadata.getColumn = jest.fn().mockImplementation(async ({ column }) => {
+  metadata.getColumn = vi.fn().mockImplementation(async ({ column }) => {
     if (column === 'Events.Name') {
       return { name: 'Events.Name', type: 'Array(String)' };
     } else if (column === 'Events.Count') {
@@ -2503,10 +2505,10 @@ describe('CustomSchemaSQLSerializerV2 - Array and Nested Fields', () => {
       return undefined;
     }
   });
-  metadata.getMaterializedColumnsLookupTable = jest
+  metadata.getMaterializedColumnsLookupTable = vi
     .fn()
     .mockResolvedValue(new Map());
-  metadata.getSetting = jest.fn().mockResolvedValue(undefined);
+  metadata.getSetting = vi.fn().mockResolvedValue(undefined);
   const databaseName = 'testName';
   const tableName = 'testTable';
   const connectionId = 'testId';
@@ -2873,8 +2875,8 @@ describe('genEnglishExplanation', () => {
   const metadata = getMetadata(
     new ClickhouseClient({ host: 'http://localhost:8123' }),
   );
-  metadata.getColumn = jest.fn().mockImplementation(async () => undefined);
-  metadata.getMaterializedColumnsLookupTable = jest
+  metadata.getColumn = vi.fn().mockImplementation(async () => undefined);
+  metadata.getMaterializedColumnsLookupTable = vi
     .fn()
     .mockImplementation(async () => new Map());
 
@@ -3067,7 +3069,7 @@ describe('CustomSchemaSQLSerializerV2 - KV items index optimization', () => {
   const tableName = 'otel_logs';
   const connectionId = 'test';
 
-  metadata.getColumn = jest.fn().mockImplementation(async ({ column }) => {
+  metadata.getColumn = vi.fn().mockImplementation(async ({ column }) => {
     if (column === 'LogAttributes') {
       return { name: 'LogAttributes', type: 'Map(String, String)' };
     } else if (column === 'Body') {
@@ -3075,10 +3077,10 @@ describe('CustomSchemaSQLSerializerV2 - KV items index optimization', () => {
     }
     return undefined;
   });
-  metadata.getMaterializedColumnsLookupTable = jest
+  metadata.getMaterializedColumnsLookupTable = vi
     .fn()
     .mockImplementation(async () => new Map());
-  metadata.getColumns = jest.fn().mockImplementation(async () => [
+  metadata.getColumns = vi.fn().mockImplementation(async () => [
     {
       name: 'LogAttributes',
       type: 'Map(String, String)',
@@ -3094,7 +3096,7 @@ describe('CustomSchemaSQLSerializerV2 - KV items index optimization', () => {
         "arrayMap((arr) -> concat(arr.1, '=', arr.2), LogAttributes::Array(Tuple(String, String)))",
     },
   ]);
-  metadata.getSkipIndices = jest.fn().mockImplementation(async () => [
+  metadata.getSkipIndices = vi.fn().mockImplementation(async () => [
     {
       name: 'idx_log_attr_items',
       type: 'text',
@@ -3103,8 +3105,8 @@ describe('CustomSchemaSQLSerializerV2 - KV items index optimization', () => {
       granularity: 1,
     },
   ]);
-  metadata.getSetting = jest.fn().mockImplementation(async () => '0');
-  metadata.getServerVersion = jest
+  metadata.getSetting = vi.fn().mockImplementation(async () => '0');
+  metadata.getServerVersion = vi
     .fn()
     .mockImplementation(async () => [26, 5, 0, 0] as const);
 
@@ -3182,7 +3184,7 @@ describe('CustomSchemaSQLSerializerV2 - KV items with MATERIALIZED column', () =
   const tableName = 'otel_logs';
   const connectionId = 'test';
 
-  metadata.getColumn = jest.fn().mockImplementation(async ({ column }) => {
+  metadata.getColumn = vi.fn().mockImplementation(async ({ column }) => {
     if (column === 'LogAttributes') {
       return { name: 'LogAttributes', type: 'Map(String, String)' };
     } else if (column === 'Body') {
@@ -3190,10 +3192,10 @@ describe('CustomSchemaSQLSerializerV2 - KV items with MATERIALIZED column', () =
     }
     return undefined;
   });
-  metadata.getMaterializedColumnsLookupTable = jest
+  metadata.getMaterializedColumnsLookupTable = vi
     .fn()
     .mockImplementation(async () => new Map());
-  metadata.getColumns = jest.fn().mockImplementation(async () => [
+  metadata.getColumns = vi.fn().mockImplementation(async () => [
     {
       name: 'LogAttributes',
       type: 'Map(String, String)',
@@ -3209,7 +3211,7 @@ describe('CustomSchemaSQLSerializerV2 - KV items with MATERIALIZED column', () =
         "arrayMap((arr) -> concat(arr.1, '=', arr.2), LogAttributes::Array(Tuple(String, String)))",
     },
   ]);
-  metadata.getSkipIndices = jest.fn().mockImplementation(async () => [
+  metadata.getSkipIndices = vi.fn().mockImplementation(async () => [
     {
       name: 'idx_log_attr_items',
       type: 'text',
@@ -3218,8 +3220,8 @@ describe('CustomSchemaSQLSerializerV2 - KV items with MATERIALIZED column', () =
       granularity: 1,
     },
   ]);
-  metadata.getSetting = jest.fn().mockImplementation(async () => '0');
-  metadata.getServerVersion = jest
+  metadata.getSetting = vi.fn().mockImplementation(async () => '0');
+  metadata.getServerVersion = vi
     .fn()
     .mockImplementation(async () => [26, 5, 0, 0] as const);
 
@@ -3256,7 +3258,7 @@ describe('CustomSchemaSQLSerializerV2 - KV items with ALIAS column (expanded ind
   const aliasDefaultExpression =
     "arrayMap(arr -> concat(arr.1, '=', arr.2), CAST(LogAttributes, 'Array(Tuple(String, String))'))";
 
-  metadata.getColumn = jest.fn().mockImplementation(async ({ column }) => {
+  metadata.getColumn = vi.fn().mockImplementation(async ({ column }) => {
     if (column === 'LogAttributes') {
       return { name: 'LogAttributes', type: 'Map(String, String)' };
     } else if (column === 'Body') {
@@ -3264,10 +3266,10 @@ describe('CustomSchemaSQLSerializerV2 - KV items with ALIAS column (expanded ind
     }
     return undefined;
   });
-  metadata.getMaterializedColumnsLookupTable = jest
+  metadata.getMaterializedColumnsLookupTable = vi
     .fn()
     .mockResolvedValue(new Map());
-  metadata.getColumns = jest.fn().mockResolvedValue([
+  metadata.getColumns = vi.fn().mockResolvedValue([
     {
       name: 'LogAttributes',
       type: 'Map(String, String)',
@@ -3281,7 +3283,7 @@ describe('CustomSchemaSQLSerializerV2 - KV items with ALIAS column (expanded ind
       default_expression: aliasDefaultExpression,
     },
   ]);
-  metadata.getSkipIndices = jest.fn().mockResolvedValue([
+  metadata.getSkipIndices = vi.fn().mockResolvedValue([
     {
       name: 'idx_log_attr_items',
       type: 'text',
@@ -3290,10 +3292,8 @@ describe('CustomSchemaSQLSerializerV2 - KV items with ALIAS column (expanded ind
       granularity: 1,
     },
   ]);
-  metadata.getSetting = jest.fn().mockResolvedValue('0');
-  metadata.getServerVersion = jest
-    .fn()
-    .mockResolvedValue([26, 5, 0, 0] as const);
+  metadata.getSetting = vi.fn().mockResolvedValue('0');
+  metadata.getServerVersion = vi.fn().mockResolvedValue([26, 5, 0, 0] as const);
 
   const serializer = new CustomSchemaSQLSerializerV2({
     metadata,
@@ -3331,7 +3331,7 @@ describe('CustomSchemaSQLSerializerV2 - KV items fallback cases', () => {
     );
     metadata.getColumn =
       overrides.getColumn ??
-      jest.fn().mockImplementation(async ({ column }) => {
+      vi.fn().mockImplementation(async ({ column }) => {
         if (column === 'LogAttributes') {
           return { name: 'LogAttributes', type: 'Map(String, String)' };
         } else if (column === 'Body') {
@@ -3339,23 +3339,23 @@ describe('CustomSchemaSQLSerializerV2 - KV items fallback cases', () => {
         }
         return undefined;
       });
-    metadata.getMaterializedColumnsLookupTable = jest
+    metadata.getMaterializedColumnsLookupTable = vi
       .fn()
       .mockImplementation(async () => new Map());
-    metadata.getColumns = jest
+    metadata.getColumns = vi
       .fn()
       .mockImplementation(async () => overrides.columns ?? []);
-    metadata.getSkipIndices = jest
+    metadata.getSkipIndices = vi
       .fn()
       .mockImplementation(async () => overrides.skipIndices ?? []);
-    metadata.getSetting = jest.fn().mockImplementation(async () => '0');
+    metadata.getSetting = vi.fn().mockImplementation(async () => '0');
     const serverVersion = Object.prototype.hasOwnProperty.call(
       overrides,
       'serverVersion',
     )
       ? overrides.serverVersion
       : ([26, 5, 0, 0] as const);
-    metadata.getServerVersion = jest
+    metadata.getServerVersion = vi
       .fn()
       .mockImplementation(async () => serverVersion);
 
@@ -3464,7 +3464,7 @@ describe('CustomSchemaSQLSerializerV2 - KV items fallback cases', () => {
 
   it('falls back for Map(String, Float64) value type', async () => {
     const serializer = buildSerializer({
-      getColumn: jest.fn().mockImplementation(async ({ column }) => {
+      getColumn: vi.fn().mockImplementation(async ({ column }) => {
         if (column === 'NumericAttributes') {
           return { name: 'NumericAttributes', type: 'Map(String, Float64)' };
         } else if (column === 'Body') {
@@ -3520,7 +3520,7 @@ describe('CustomSchemaSQLSerializerV2 - KV items version gate', () => {
     const metadata = getMetadata(
       new ClickhouseClient({ host: 'http://localhost:8123' }),
     );
-    metadata.getColumn = jest.fn().mockImplementation(async ({ column }) => {
+    metadata.getColumn = vi.fn().mockImplementation(async ({ column }) => {
       if (column === 'LogAttributes') {
         return { name: 'LogAttributes', type: 'Map(String, String)' };
       } else if (column === 'Body') {
@@ -3528,10 +3528,10 @@ describe('CustomSchemaSQLSerializerV2 - KV items version gate', () => {
       }
       return undefined;
     });
-    metadata.getMaterializedColumnsLookupTable = jest
+    metadata.getMaterializedColumnsLookupTable = vi
       .fn()
       .mockResolvedValue(new Map());
-    metadata.getColumns = jest.fn().mockResolvedValue([
+    metadata.getColumns = vi.fn().mockResolvedValue([
       {
         name: 'LogAttributes',
         type: 'Map(String, String)',
@@ -3546,7 +3546,7 @@ describe('CustomSchemaSQLSerializerV2 - KV items version gate', () => {
           "arrayMap((arr) -> concat(arr.1, '=', arr.2), LogAttributes::Array(Tuple(String, String)))",
       },
     ]);
-    metadata.getSkipIndices = jest.fn().mockResolvedValue([
+    metadata.getSkipIndices = vi.fn().mockResolvedValue([
       {
         name: 'idx_log_attr_items',
         type: 'text',
@@ -3555,8 +3555,8 @@ describe('CustomSchemaSQLSerializerV2 - KV items version gate', () => {
         granularity: 1,
       },
     ]);
-    metadata.getSetting = jest.fn().mockResolvedValue('0');
-    metadata.getServerVersion = jest.fn().mockResolvedValue(serverVersion);
+    metadata.getSetting = vi.fn().mockResolvedValue('0');
+    metadata.getServerVersion = vi.fn().mockResolvedValue(serverVersion);
 
     return new CustomSchemaSQLSerializerV2({
       metadata,

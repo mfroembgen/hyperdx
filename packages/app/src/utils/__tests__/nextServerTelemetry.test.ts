@@ -1,18 +1,20 @@
+import { vi } from 'vitest';
+
 import {
   getNextServerServiceName,
   isStaticAssetRequest,
   startNextServerTelemetry,
 } from '@/utils/nextServerTelemetry';
 
-const mockInit = jest.fn();
+const mockInit = vi.fn();
 let mockExporterEnabled = true;
 let mockBasePath = '';
 
-jest.mock('@clickhouse/clickstack-node', () => ({
+vi.mock('@clickhouse/clickstack-node', () => ({
   init: (...args: unknown[]) => mockInit(...args),
 }));
-jest.mock('@/config', () => ({
-  ...jest.requireActual('@/config'),
+vi.mock('@/config', async () => ({
+  ...(await vi.importActual<typeof import('@/config')>('@/config')),
   get HDX_EXPORTER_ENABLED() {
     return mockExporterEnabled;
   },

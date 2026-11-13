@@ -11,8 +11,8 @@ selected at run time.
 
 ## Prerequisites
 
-- **`yarn dev` running** on at least one worktree — this handles
-  `yarn install`, `yarn build:common-utils`, Docker containers (ClickHouse,
+- **`bun run dev` running** on at least one worktree — this handles
+  `bun install`, `bun run build:common-utils`, Docker containers (ClickHouse,
   MongoDB), and the API server. See `agent_docs/development.md` for setup.
 - **`claude` CLI installed** (the harness spawns it in streaming JSON mode)
 - **`ANTHROPIC_API_KEY`** or **`AI_API_KEY`** in `.env.local` at the monorepo
@@ -26,31 +26,31 @@ selected at run time.
 All eval commands derive ClickHouse and API ports from the `HDX_DEV_SLOT`
 environment variable. If your dev stack is running in a different worktree,
 the auto-detected slot won't match. Set `HDX_DEV_SLOT` to the slot your dev
-stack is using — you can find this in the banner printed by `yarn dev`.
+stack is using — you can find this in the banner printed by `bun run dev`.
 
 ```bash
 # Set the slot for your session (must match the running dev stack)
 export HDX_DEV_SLOT=98
 
 # 1. One-time setup: register eval account + create Sources + write config
-yarn workspace @hyperdx/hdx-eval dev setup-hyperdx
+bun --bun run --filter @hyperdx/hdx-eval dev setup-hyperdx
 
 # 2. Seed a scenario (use --volume-factor 0.1 for faster iteration)
-yarn workspace @hyperdx/hdx-eval dev seed error-root-cause --volume-factor 0.1
+bun --bun run --filter @hyperdx/hdx-eval dev seed error-root-cause --volume-factor 0.1
 
 # 3. Run the eval (all enabled MCPs, 3 runs each)
 #    First run saves an anchorTime to eval.config.json automatically.
-yarn workspace @hyperdx/hdx-eval dev run error-root-cause
+bun --bun run --filter @hyperdx/hdx-eval dev run error-root-cause
 
 # 4. Re-run later — reuses saved anchor, skips reseed
-yarn workspace @hyperdx/hdx-eval dev run error-root-cause
+bun --bun run --filter @hyperdx/hdx-eval dev run error-root-cause
 
 # 5. Grade + report (auto-runs after step 3 by default)
-yarn workspace @hyperdx/hdx-eval dev grade <batch>
-yarn workspace @hyperdx/hdx-eval dev report <batch>
+bun --bun run --filter @hyperdx/hdx-eval dev grade <batch>
+bun --bun run --filter @hyperdx/hdx-eval dev report <batch>
 
 # 6. Browse results in the web viewer
-yarn workspace @hyperdx/hdx-eval viewer
+bun --bun run --filter @hyperdx/hdx-eval viewer
 ```
 
 ## Recommended: Dual-Slot Eval Setup
@@ -64,10 +64,10 @@ simultaneously.
 
 ```bash
 # Slot 98: "baseline" — run from your main branch checkout
-HDX_DEV_SLOT=98 yarn dev
+HDX_DEV_SLOT=98 bun run dev
 
 # Slot 99: "candidate" — run from your feature branch checkout
-HDX_DEV_SLOT=99 yarn dev
+HDX_DEV_SLOT=99 bun run dev
 ```
 
 This gives you:
@@ -83,10 +83,10 @@ This gives you:
 
 ```bash
 # Setup baseline (slot 98)
-yarn workspace @hyperdx/hdx-eval dev setup-hyperdx --api-url http://localhost:30198
+bun --bun run --filter @hyperdx/hdx-eval dev setup-hyperdx --api-url http://localhost:30198
 
 # Setup candidate (slot 99)
-yarn workspace @hyperdx/hdx-eval dev setup-hyperdx --api-url http://localhost:30199
+bun --bun run --filter @hyperdx/hdx-eval dev setup-hyperdx --api-url http://localhost:30199
 ```
 
 After setup, `eval.config.json` will have the `hyperdx` MCP pointing at the
@@ -98,14 +98,14 @@ slot it was set up against. You can then manually add the second MCP entry
 Both instances need the eval data. Use `HDX_DEV_SLOT` to target each:
 
 ```bash
-HDX_DEV_SLOT=98 yarn workspace @hyperdx/hdx-eval dev seed error-root-cause
-HDX_DEV_SLOT=99 yarn workspace @hyperdx/hdx-eval dev seed error-root-cause
+HDX_DEV_SLOT=98 bun --bun run --filter @hyperdx/hdx-eval dev seed error-root-cause
+HDX_DEV_SLOT=99 bun --bun run --filter @hyperdx/hdx-eval dev seed error-root-cause
 ```
 
 ### 4. Run the comparison
 
 ```bash
-yarn workspace @hyperdx/hdx-eval dev run error-root-cause \
+bun --bun run --filter @hyperdx/hdx-eval dev run error-root-cause \
   --mcp hyperdx-main,hyperdx-feature \
   --baseline hyperdx-main \
   --runs 5
@@ -273,15 +273,15 @@ Planted anomaly counts stay fixed.
 
 ```bash
 # Full volume (default) — realistic needle-in-haystack difficulty
-yarn workspace @hyperdx/hdx-eval dev seed error-root-cause
+bun --bun run --filter @hyperdx/hdx-eval dev seed error-root-cause
 
 # 10% volume — much faster, still structurally valid
-yarn workspace @hyperdx/hdx-eval dev seed error-root-cause --volume-factor 0.1
+bun --bun run --filter @hyperdx/hdx-eval dev seed error-root-cause --volume-factor 0.1
 ```
 
 ## CLI Reference
 
-All commands are run via `yarn workspace @hyperdx/hdx-eval dev <command>`.
+All commands are run via `bun --bun run --filter @hyperdx/hdx-eval dev <command>`.
 
 ### Setup
 
@@ -379,7 +379,7 @@ while an OpenAI grader uses `OPENAI_API_KEY` without the two colliding.
 ### Viewer
 
 ```bash
-yarn workspace @hyperdx/hdx-eval viewer    # web UI at http://localhost:5176
+bun --bun run --filter @hyperdx/hdx-eval viewer    # web UI at http://localhost:5176
 ```
 
 The viewer shows a **comparison dashboard** when you select a batch:
@@ -485,8 +485,8 @@ fresh reseed is much slower than reusing cached seed data).
 ## Tests
 
 ```bash
-yarn workspace @hyperdx/hdx-eval ci:unit   # all unit tests
-yarn workspace @hyperdx/hdx-eval dev:unit  # watch mode
+bun --bun run --filter @hyperdx/hdx-eval ci:unit   # all unit tests
+bun --bun run --filter @hyperdx/hdx-eval dev:unit  # watch mode
 ```
 
 Unit tests verify PRNG determinism, planted anomaly invariants, grading

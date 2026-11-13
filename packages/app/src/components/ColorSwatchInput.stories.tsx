@@ -1,6 +1,6 @@
 import React from 'react';
 import { Group, Stack, Text, TextInput } from '@mantine/core';
-import type { Meta } from '@storybook/nextjs';
+import type { Meta } from '@storybook/react-vite';
 
 import {
   CATEGORICAL_PALETTE_TOKENS,

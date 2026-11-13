@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import {
   validateRawSqlChartConfig,
   validateRawSqlForAlert,
@@ -215,7 +217,7 @@ describe('validateRawSqlChartConfig', () => {
     // The editor revalidates on every keystroke, so an unterminated argument
     // list is the expected path, not a bug. Logging it would put a stack trace
     // in the console on each debounce tick.
-    const consoleError = jest
+    const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
     try {

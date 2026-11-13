@@ -8,6 +8,7 @@ import {
   SourceKind,
 } from '@hyperdx/common-utils/dist/types';
 import { Types } from 'mongoose';
+import { vi } from 'vitest';
 
 import * as config from '@/config';
 import {
@@ -30,9 +31,9 @@ import Connection from '@/models/connection';
 import { Source } from '@/models/source';
 import { PROMETHEUS_MAX_EXEMPLAR_WINDOW_SEC } from '@/routers/api/prometheus';
 
-const mockFetch = jest.mocked(global.fetch);
+const mockFetch = vi.mocked(global.fetch);
 
-// Set by jest.setup.ts before it stubs `fetch`, for tests that must reach a
+// Set by vi.setup.ts before it stubs `fetch`, for tests that must reach a
 // live service.
 const { realFetch } = globalThis as unknown as { realFetch: typeof fetch };
 
@@ -60,8 +61,8 @@ function fakeUpstreamResponse(
     status,
     headers: new Headers({ 'content-type': contentType }),
     body,
-    text: jest.fn().mockResolvedValue(JSON.stringify(payload)),
-    json: jest.fn().mockResolvedValue(payload),
+    text: vi.fn().mockResolvedValue(JSON.stringify(payload)),
+    json: vi.fn().mockResolvedValue(payload),
   } as unknown as Response;
 }
 
@@ -104,7 +105,7 @@ describe('prometheus router', () => {
     } = {},
   ) =>
     Source.create({
-      kind: SourceKind.Promql,
+      kind: SourceKind.Promql as const,
       team: connection.team,
       connection: connection._id,
       name,
@@ -922,7 +923,7 @@ describe('prometheus router', () => {
       // A stock ClickHouse answers the probe with a plain-text 404.
       mockFetch.mockResolvedValueOnce({
         status: 404,
-        text: jest
+        text: vi
           .fn()
           .mockResolvedValue(
             'There is no handle /prometheus/api/v1/format_query',
@@ -1284,13 +1285,13 @@ describe('prometheus router', () => {
       });
 
       beforeEach(() => {
-        jest
-          .spyOn(Metadata.prototype, 'getServerVersion')
-          .mockResolvedValue([26, 5, 0, 0]);
+        vi.spyOn(Metadata.prototype, 'getServerVersion').mockResolvedValue([
+          26, 5, 0, 0,
+        ]);
       });
 
       afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
       });
 
       it('evaluates through prometheusQueryRange() instead of proxying', async () => {
@@ -2224,12 +2225,12 @@ describe('prometheus router', () => {
     ] as const;
 
     const stubServerVersion = (version: [number, number, number, number]) =>
-      jest
+      vi
         .spyOn(Metadata.prototype, 'getServerVersion')
         .mockResolvedValue(version);
 
     afterEach(() => {
-      jest.restoreAllMocks();
+      vi.restoreAllMocks();
     });
 
     it.each(ROUTES)(
@@ -2661,7 +2662,7 @@ describe('prometheus router', () => {
         const { agent, team } = await getLoggedInAgent(server);
         const promql = await seedPrometheusSource(team._id);
         const logSource = await Source.create({
-          kind: SourceKind.Log,
+          kind: SourceKind.Log as const,
           team: team._id,
           connection: promql.connection,
           name: 'Logs',

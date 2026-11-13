@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { renderChartConfig } from '@hyperdx/common-utils/dist/core/renderChartConfig';
 import { SourceKind, TTraceSource } from '@hyperdx/common-utils/dist/types';
 
@@ -11,8 +12,8 @@ import {
 
 // The two CTEs are rendered by renderChartConfig; the shape of the outer join
 // and grouping query is what these tests pin down.
-jest.mock('@hyperdx/common-utils/dist/core/renderChartConfig', () => ({
-  renderChartConfig: jest.fn(),
+vi.mock('@hyperdx/common-utils/dist/core/renderChartConfig', () => ({
+  renderChartConfig: vi.fn(),
 }));
 
 describe('serviceMapErrorCountSql', () => {
@@ -438,8 +439,7 @@ describe('getServiceMapQuery', () => {
   const normalize = (sql: string) => sql.replace(/\s+/g, ' ').trim();
 
   async function render(groupBy?: string[]) {
-    jest
-      .mocked(renderChartConfig)
+    vi.mocked(renderChartConfig)
       .mockResolvedValueOnce({ sql: 'SERVER_CTE', params: {} })
       .mockResolvedValueOnce({ sql: 'CLIENT_CTE', params: {} });
     const query = await getServiceMapQuery({
@@ -453,7 +453,7 @@ describe('getServiceMapQuery', () => {
   }
 
   beforeEach(() => {
-    jest.mocked(renderChartConfig).mockReset();
+    vi.mocked(renderChartConfig).mockReset();
   });
 
   it('groups by service name only when no dimensions are given', async () => {
@@ -473,7 +473,7 @@ describe('getServiceMapQuery', () => {
     );
     expect(sql).not.toContain('dim0');
 
-    const [serverConfig] = jest.mocked(renderChartConfig).mock.calls[0];
+    const [serverConfig] = vi.mocked(renderChartConfig).mock.calls[0];
     expect(serverConfig).not.toMatchObject({
       select: expect.arrayContaining([
         expect.objectContaining({ alias: 'dim0' }),
@@ -487,8 +487,8 @@ describe('getServiceMapQuery', () => {
       "SpanAttributes['http.route']",
     ]);
 
-    expect(jest.mocked(renderChartConfig).mock.calls).toHaveLength(2);
-    for (const [config] of jest.mocked(renderChartConfig).mock.calls) {
+    expect(vi.mocked(renderChartConfig).mock.calls).toHaveLength(2);
+    for (const [config] of vi.mocked(renderChartConfig).mock.calls) {
       expect(config).toMatchObject({
         select: expect.arrayContaining([
           {

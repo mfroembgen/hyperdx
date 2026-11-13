@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 
 import { makeLogSource, makeTraceSource } from '@/llm/__fixtures__/sources';
@@ -6,7 +7,7 @@ import { getLLMExpressions, getLLMLogExpressions } from '@/llm/lib/expressions';
 
 // Capture the configs handed to the row tables.
 const rowTableProps: any[] = [];
-jest.mock('@/components/DBSqlRowTableWithSidebar', () => ({
+vi.mock('@/components/DBSqlRowTableWithSidebar', () => ({
   __esModule: true,
   default: (props: unknown) => {
     rowTableProps.push(props);

@@ -28,7 +28,7 @@ import AlertHistory, {
 import Connection, { IConnection } from '@/models/connection';
 import Dashboard from '@/models/dashboard';
 import { type ISavedSearch, SavedSearch } from '@/models/savedSearch';
-import { type ISource, Source } from '@/models/source';
+import { type ISource, Source, type SourceDocument } from '@/models/source';
 import Webhook, { IWebhook } from '@/models/webhook';
 import {
   AggregatedAlertHistory,
@@ -54,7 +54,7 @@ async function getSavedSearchDetails(
   const savedSearch = await SavedSearch.findOne({
     _id: savedSearchId,
     team: alert.team,
-  }).populate<Omit<ISavedSearch, 'source'> & { source: ISource }>({
+  }).populate<{ source: SourceDocument }>({
     path: 'source',
     match: { team: alert.team },
   });
@@ -88,7 +88,7 @@ async function getSavedSearchDetails(
     conn,
     {
       alert,
-      source,
+      source: { ...source.toJSON({ virtuals: true }), connection: conn.id },
       taskType: AlertTaskType.SAVED_SEARCH,
       savedSearch,
     },
@@ -218,7 +218,7 @@ async function getTileDetails(
   const source = await Source.findOne({
     _id: tile.config.source,
     team: alert.team,
-  }).populate<Omit<ISource, 'connection'> & { connection: IConnection }>({
+  }).populate<{ connection: IConnection }>({
     path: 'connection',
     match: { team: alert.team },
     select: '+password',
@@ -313,7 +313,7 @@ async function getInlineAlertDetails(
   const source = await Source.findOne({
     _id: chartConfig.source,
     team: alert.team,
-  }).populate<Omit<ISource, 'connection'> & { connection: IConnection }>({
+  }).populate<{ connection: IConnection }>({
     path: 'connection',
     match: { team: alert.team },
     select: '+password',
@@ -361,9 +361,8 @@ async function loadAlert(
   }
 
   if (config.IS_LOCAL_APP_MODE) {
-    // The id is the 12 character string `_local_team_', which will become an ObjectId
-    // as the ASCII hex values, so 5f6c6f63616c5f7465616d5f.
-    alert.team = new mongoose.Types.ObjectId(LOCAL_APP_TEAM.id);
+    // Reuse the canonical ObjectId for the synthetic local team.
+    alert.team = LOCAL_APP_TEAM._id;
   }
 
   let conn: IConnection | undefined;
@@ -489,7 +488,7 @@ export default class DefaultAlertProvider implements AlertProvider {
   }: {
     dashboardId: string;
     endTime: Date;
-    granularity: string;
+    granularity: ms.StringValue;
     startTime: Date;
     tileId?: string;
   }): string {
@@ -517,7 +516,7 @@ export default class DefaultAlertProvider implements AlertProvider {
   }: {
     chartConfig: AlertChartConfig;
     endTime: Date;
-    granularity: string;
+    granularity: ms.StringValue;
     startTime: Date;
   }): string {
     const url = new URL(`${config.FRONTEND_URL}/chart`);

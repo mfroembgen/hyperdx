@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
-exports[`logParser mapObjectToKeyValuePairs 1`] = `
+exports[`logParser > mapObjectToKeyValuePairs 1`] = `
 {
   "bool.names": [
     "foo2",
@@ -31,7 +31,7 @@ exports[`logParser mapObjectToKeyValuePairs 1`] = `
 }
 `;
 
-exports[`logParser mapObjectToKeyValuePairs 2`] = `
+exports[`logParser > mapObjectToKeyValuePairs 2`] = `
 {
   "bool.names": [],
   "bool.values": [],

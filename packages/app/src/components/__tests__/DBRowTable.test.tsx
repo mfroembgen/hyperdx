@@ -1,5 +1,6 @@
 import { Provider } from 'jotai';
 import type { ReactElement } from 'react';
+import { type Mock, type MockInstance, vi } from 'vitest';
 import type { BuilderChartConfigWithDateRange } from '@hyperdx/common-utils/dist/types';
 import { renderHook, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -14,55 +15,64 @@ import * as useChartConfigModule from '@/hooks/useChartConfig';
 import { RowWhereResult, WithClause } from '@/hooks/useRowWhere';
 import { RowClickAction, UserPreferences } from '@/useUserPreferences';
 
-const mockSetQueryState = jest.fn();
+const mockSetQueryState = vi.fn();
 
 // useConfigWithAdditionalSelect reads table metadata through react-query
 // hooks that return a large UseQueryResult; the hook only reads `data`.
 // Reading the handles back through `requireMock` keeps them typed as mocks
 // without asserting a complete UseQueryResult.
-jest.mock('@/hooks/useMetadata', () => ({
-  ...jest.requireActual('@/hooks/useMetadata'),
-  useTableMetadata: jest.fn(),
-  useColumns: jest.fn(),
-  useMergeTreeSettings: jest.fn(),
-}));
+vi.mock('@/hooks/useMetadata', async () => {
+  const actualModule0 = await vi.importActual<
+    typeof import('@/hooks/useMetadata')
+  >('@/hooks/useMetadata');
+  return {
+    ...actualModule0,
+    useTableMetadata: vi.fn(),
+    useColumns: vi.fn(),
+    useMergeTreeSettings: vi.fn(),
+  };
+});
 
 const {
   useTableMetadata: mockUseTableMetadata,
   useColumns: mockUseColumns,
   useMergeTreeSettings: mockUseMergeTreeSettings,
-} = jest.requireMock<{
-  useTableMetadata: jest.Mock;
-  useColumns: jest.Mock;
-  useMergeTreeSettings: jest.Mock;
+} = await vi.importMock<{
+  useTableMetadata: Mock;
+  useColumns: Mock;
+  useMergeTreeSettings: Mock;
 }>('@/hooks/useMetadata');
 
 // The inline expanded row reads the row query params through nuqs, which needs
 // a mounted Next router. Routing every setter through one mock lets tests assert
 // which param the expanded row's side panel button writes.
-jest.mock('nuqs', () => ({
-  ...jest.requireActual('nuqs'),
-  useQueryState: (key: string) => [
-    null,
-    (value: unknown) => mockSetQueryState(key, value),
-  ],
-}));
+vi.mock('nuqs', async () => {
+  const actualModule1 = await vi.importActual<typeof import('nuqs')>('nuqs');
+  return {
+    ...actualModule1,
+    useQueryState: (key: string) => [
+      null,
+      (value: unknown) => mockSetQueryState(key, value),
+    ],
+  };
+});
 
 const mockRowWhereResult: RowWhereResult = { where: '', aliasWith: [] };
 
 describe('RawLogTable', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest
-      .spyOn(useChartConfigModule, 'useAliasMapFromChartConfig')
-      .mockReturnValue({
-        data: {},
-        isLoading: false,
-        error: null,
-      } as any);
+    vi.clearAllMocks();
+    vi.spyOn(
+      useChartConfigModule,
+      'useAliasMapFromChartConfig',
+    ).mockReturnValue({
+      data: {},
+      isLoading: false,
+      error: null,
+    } as any);
 
     // Suppress console errors for expected errors in tests. Keeps the test output clean.
-    jest.spyOn(console, 'error').mockImplementation(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {
       /* noop */
     });
   });
@@ -150,7 +160,7 @@ describe('RawLogTable', () => {
     });
 
     it('Should allow changing sort', async () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
 
       renderWithMantine(
         <RawLogTable {...baseProps} enableSorting onSortingChange={callback} />,
@@ -193,18 +203,19 @@ describe('RawLogTable', () => {
     });
 
     it('Should reference alias map when possible', async () => {
-      jest
-        .spyOn(useChartConfigModule, 'useAliasMapFromChartConfig')
-        .mockReturnValue({
-          data: {
-            col1: 'col1_alias',
-            col2: 'col2_alias',
-          },
-          isLoading: false,
-          error: null,
-        } as any);
+      vi.spyOn(
+        useChartConfigModule,
+        'useAliasMapFromChartConfig',
+      ).mockReturnValue({
+        data: {
+          col1: 'col1_alias',
+          col2: 'col2_alias',
+        },
+        isLoading: false,
+        error: null,
+      } as any);
 
-      const callback = jest.fn();
+      const callback = vi.fn();
       renderWithMantine(
         <RawLogTable {...baseProps} enableSorting onSortingChange={callback} />,
       );
@@ -285,11 +296,11 @@ describe('RawLogTable', () => {
     // The table is virtualized and jsdom performs no layout, so every element
     // measures 0px and the virtualizer renders no rows at all. Fake just enough
     // geometry for one screenful. Same approach as the MetricExplorer tests.
-    let rectSpy: jest.SpyInstance;
-    let clientHeightSpy: jest.SpyInstance;
+    let rectSpy: MockInstance;
+    let clientHeightSpy: MockInstance;
 
     beforeAll(() => {
-      rectSpy = jest
+      rectSpy = vi
         .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
         .mockImplementation(function (this: HTMLElement) {
           const height =
@@ -308,7 +319,7 @@ describe('RawLogTable', () => {
             toJSON: () => ({}),
           };
         });
-      clientHeightSpy = jest
+      clientHeightSpy = vi
         .spyOn(HTMLElement.prototype, 'clientHeight', 'get')
         .mockReturnValue(VIEWPORT_HEIGHT);
     });
@@ -347,7 +358,7 @@ describe('RawLogTable', () => {
     };
 
     it('opens the side panel on row click by default', async () => {
-      const onRowDetailsClick = jest.fn();
+      const onRowDetailsClick = vi.fn();
 
       renderTable(
         <RawLogTable {...baseProps} onRowDetailsClick={onRowDetailsClick} />,
@@ -371,7 +382,7 @@ describe('RawLogTable', () => {
     });
 
     it('expands the row inline when its body is clicked', async () => {
-      const onRowDetailsClick = jest.fn();
+      const onRowDetailsClick = vi.fn();
 
       renderTable(
         <RawLogTable {...baseProps} onRowDetailsClick={onRowDetailsClick} />,
@@ -407,7 +418,7 @@ describe('RawLogTable', () => {
           isSubquery: false,
         },
       ];
-      const renderRowDetails = jest.fn(() => <div>row details</div>);
+      const renderRowDetails = vi.fn(() => <div>row details</div>);
 
       renderTable(
         <RawLogTable
@@ -451,7 +462,7 @@ describe('RawLogTable', () => {
     });
 
     it('opens the side panel from the row hover button', async () => {
-      const onRowDetailsClick = jest.fn();
+      const onRowDetailsClick = vi.fn();
 
       renderTable(
         <RawLogTable {...baseProps} onRowDetailsClick={onRowDetailsClick} />,
@@ -471,7 +482,7 @@ describe('RawLogTable', () => {
     // The expanded row is rendered by the expand-button column, so tables that
     // hide it have nowhere to put inline details.
     it('opens the side panel on row click when the expand button is hidden', async () => {
-      const onRowDetailsClick = jest.fn();
+      const onRowDetailsClick = vi.fn();
 
       renderTable(
         <RawLogTable
@@ -516,7 +527,7 @@ describe('RawLogTable', () => {
     // With the panel open it stays the active surface, so a row click moves it
     // rather than expanding rows behind it.
     it('moves the open side panel on row click instead of expanding', async () => {
-      const onRowDetailsClick = jest.fn();
+      const onRowDetailsClick = vi.fn();
 
       renderTable(
         <RawLogTable
@@ -553,7 +564,7 @@ describe('RawLogTable', () => {
     };
 
     it('should not request another page while the query is in an error state', async () => {
-      const fetchNextPage = jest.fn();
+      const fetchNextPage = vi.fn();
 
       renderWithMantine(
         <RawLogTable
@@ -569,7 +580,7 @@ describe('RawLogTable', () => {
     });
 
     it('should still request another page when there is no error', async () => {
-      const fetchNextPage = jest.fn();
+      const fetchNextPage = vi.fn();
 
       renderWithMantine(
         <RawLogTable {...paginationProps} fetchNextPage={fetchNextPage} />,
@@ -582,7 +593,7 @@ describe('RawLogTable', () => {
     // pages. Both auto-advance paths are active in jsdom, so these two cases
     // pin the highlighted-line guard alongside the scroll one.
     it('should not look for a highlighted row while the query is in an error state', async () => {
-      const fetchNextPage = jest.fn();
+      const fetchNextPage = vi.fn();
 
       renderWithMantine(
         <RawLogTable
@@ -600,7 +611,7 @@ describe('RawLogTable', () => {
     });
 
     it('should look for a highlighted row when there is no error', async () => {
-      const fetchNextPage = jest.fn();
+      const fetchNextPage = vi.fn();
 
       renderWithMantine(
         <RawLogTable

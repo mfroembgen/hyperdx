@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -46,7 +47,7 @@ describe('ColorSwatchInput', () => {
   });
 
   it('calls onChange with the picked palette token', async () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     const user = userEvent.setup();
     renderWithMantine(<ColorSwatchInput onChange={onChange} />);
 
@@ -85,7 +86,7 @@ describe('ColorSwatchInput', () => {
   });
 
   it('clears the selection via the Clear button', async () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     const user = userEvent.setup();
     renderWithMantine(
       <ColorSwatchInput value="chart-blue" onChange={onChange} />,
@@ -113,7 +114,7 @@ describe('ColorSwatchInput', () => {
   });
 
   it('treats a legacy non-token value as unset and never echoes it back', async () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     const user = userEvent.setup();
     renderWithMantine(
       <ColorSwatchInput
@@ -150,7 +151,7 @@ describe('ColorSwatchInput', () => {
     renderWithMantine(
       <ColorSwatchInput
         value={'chart-1' as unknown as ChartPaletteToken}
-        onChange={jest.fn()}
+        onChange={vi.fn()}
       />,
     );
 
@@ -199,7 +200,7 @@ describe('ColorSwatchInput', () => {
   });
 
   it('keyboard activates the trigger and selects a swatch with Enter', async () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     renderWithMantine(<ColorSwatchInput onChange={onChange} />);
 
     const trigger = screen.getByTestId('color-swatch-input-trigger');

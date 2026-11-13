@@ -1,19 +1,13 @@
+import { type Mock } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  jest,
-} from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { uploadSourcemaps } from '@/sourcemaps';
 
-type FetchMock = jest.Mock<typeof fetch>;
+type FetchMock = Mock<typeof fetch>;
 
 describe('uploadSourcemaps', () => {
   let tempDir: string;
@@ -26,10 +20,10 @@ describe('uploadSourcemaps', () => {
   beforeEach(() => {
     tempDir = mkdtempSync(join(tmpdir(), 'sourcemaps-test-'));
     originalFetch = globalThis.fetch;
-    mockFetch = jest.fn<typeof fetch>();
+    mockFetch = vi.fn<typeof fetch>();
     globalThis.fetch = mockFetch;
     // Silence stdout/stderr by swapping write() with a no-op. Doing this via
-    // jest.spyOn() trips overload-resolution on TS, so swap directly.
+    // vi.spyOn() trips overload-resolution on TS, so swap directly.
     originalStdoutWrite = process.stdout.write.bind(process.stdout);
     originalStderrWrite = process.stderr.write.bind(process.stderr);
     process.stdout.write = (() => true) as typeof process.stdout.write;
@@ -121,11 +115,7 @@ describe('uploadSourcemaps', () => {
     createFile('a.js.map');
     mockFetch
       .mockResolvedValueOnce(okJson({ user: { team: 'team-1' } }))
-      .mockResolvedValueOnce(
-        okJson({
-          /* missing data field */
-        }),
-      );
+      .mockResolvedValueOnce(okJson({/* missing data field */}));
 
     await expect(
       uploadSourcemaps({ serviceKey: 'key', path: tempDir }),

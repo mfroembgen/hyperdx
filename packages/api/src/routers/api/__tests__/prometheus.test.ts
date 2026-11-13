@@ -1,7 +1,10 @@
-const mockCounterAdd = jest.fn();
+import { vi } from 'vitest';
+const mockCounterAdd = vi.hoisted(() => vi.fn());
 
-jest.mock('@/utils/instrumentation', () => {
-  const actual = jest.requireActual('@/utils/instrumentation');
+vi.mock('@/utils/instrumentation', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/utils/instrumentation')
+  >('@/utils/instrumentation');
   return {
     ...actual,
     getCounter: () => ({ add: mockCounterAdd }),

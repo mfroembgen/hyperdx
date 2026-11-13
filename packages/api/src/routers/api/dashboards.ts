@@ -18,7 +18,6 @@ import {
 import express from 'express';
 import _ from 'lodash';
 import { z } from 'zod';
-import { validateRequest } from 'zod-express-middleware';
 
 import { getConnectionsByTeam } from '@/controllers/connection';
 import {
@@ -36,6 +35,7 @@ import {
 } from '@/controllers/presetDashboardFilters';
 import { getSources } from '@/controllers/sources';
 import { getNonNullUserWithTeam } from '@/middleware/auth';
+import { validateRequest } from '@/middleware/validation';
 import type { ObjectId } from '@/models';
 import {
   getChangedFilterSourceRefs,

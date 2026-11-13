@@ -1,5 +1,6 @@
 import { ClickhouseClient } from '@hyperdx/common-utils/dist/clickhouse/node';
 import mongoose from 'mongoose';
+import { type Mocked, type MockInstance, vi } from 'vitest';
 
 import * as config from '@/config';
 import { ObjectId } from '@/models';
@@ -25,10 +26,12 @@ import {
 } from '@/tasks/checkAlerts/providers';
 import { CheckAlertsTaskArgs, TaskName } from '@/tasks/types';
 
-jest.mock('@/tasks/checkAlerts/providers', () => {
+vi.mock('@/tasks/checkAlerts/providers', async () => {
   return {
-    ...jest.requireActual('@/tasks/checkAlerts/providers'),
-    loadProvider: jest.fn(),
+    ...(await vi.importActual<typeof import('@/tasks/checkAlerts/providers')>(
+      '@/tasks/checkAlerts/providers',
+    )),
+    loadProvider: vi.fn(),
   };
 });
 
@@ -158,36 +161,34 @@ describe('partitionPreviousMapsByAlert', () => {
 
 describe('CheckAlertTask', () => {
   describe('execute', () => {
-    let mockAlertProvider: jest.Mocked<AlertProvider>;
-    let mockProcessAlert: jest.SpyInstance;
+    let mockAlertProvider: Mocked<AlertProvider>;
+    let mockProcessAlert: MockInstance;
 
     beforeEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
 
       mockAlertProvider = {
-        init: jest.fn(),
-        getAlertTasks: jest.fn(),
-        getWebhooks: jest.fn(),
-        updateAlertState: jest.fn(),
-        recordAlertErrors: jest.fn(),
-        asyncDispose: jest.fn(),
-        buildChartLink: jest.fn(),
-        buildChartExplorerLink: jest.fn(),
-        buildLogSearchLink: jest.fn(),
-        getClickHouseClient: jest
-          .fn()
-          .mockResolvedValue({} as ClickhouseClient),
+        init: vi.fn(),
+        getAlertTasks: vi.fn(),
+        getWebhooks: vi.fn(),
+        updateAlertState: vi.fn(),
+        recordAlertErrors: vi.fn(),
+        asyncDispose: vi.fn(),
+        buildChartLink: vi.fn(),
+        buildChartExplorerLink: vi.fn(),
+        buildLogSearchLink: vi.fn(),
+        getClickHouseClient: vi.fn().mockResolvedValue({} as ClickhouseClient),
       };
 
-      jest.mocked(loadProvider).mockResolvedValue(mockAlertProvider);
+      vi.mocked(loadProvider).mockResolvedValue(mockAlertProvider);
 
-      mockProcessAlert = jest
+      mockProcessAlert = vi
         .spyOn(checkAlerts, 'processAlert')
         .mockResolvedValue(undefined);
     });
 
     afterEach(async () => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     it('should throw error for invalid task name', async () => {
@@ -208,7 +209,7 @@ describe('CheckAlertTask', () => {
 
       await task.execute();
 
-      const mockLoadProvider = jest.mocked(loadProvider);
+      const mockLoadProvider = vi.mocked(loadProvider);
       expect(mockLoadProvider).toHaveBeenCalledWith(undefined);
       expect(mockAlertProvider.init).toHaveBeenCalled();
       expect(mockAlertProvider.getAlertTasks).toHaveBeenCalled();
@@ -228,7 +229,7 @@ describe('CheckAlertTask', () => {
 
       await task.execute();
 
-      const mockLoadProvider = jest.mocked(loadProvider);
+      const mockLoadProvider = vi.mocked(loadProvider);
       expect(mockLoadProvider).toHaveBeenCalledWith('custom-provider');
       expect(mockAlertProvider.init).toHaveBeenCalled();
     });

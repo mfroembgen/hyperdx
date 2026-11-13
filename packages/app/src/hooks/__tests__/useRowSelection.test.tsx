@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 
 import { useRowSelection } from '@/hooks/useRowSelection';
@@ -190,7 +191,7 @@ describe('useRowSelection', () => {
 
   it('reports whether a selection exists', () => {
     const rows = makeRows(3);
-    const onSelectionChange = jest.fn();
+    const onSelectionChange = vi.fn();
     const { result } = renderHook(() =>
       useRowSelection(rows, { onSelectionChange }),
     );

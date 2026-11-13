@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
 import {
@@ -6,11 +7,11 @@ import {
 } from '@/components/CompactViewport/useCompactViewport';
 import { useWindowSize } from '@/utils';
 
-jest.mock('@/utils', () => ({
-  useWindowSize: jest.fn(() => ({ width: undefined, height: undefined })),
+vi.mock('@/utils', () => ({
+  useWindowSize: vi.fn(() => ({ width: undefined, height: undefined })),
 }));
 
-const useWindowSizeMock = jest.mocked(useWindowSize);
+const useWindowSizeMock = vi.mocked(useWindowSize);
 
 describe('useCompactViewport', () => {
   it('treats an unknown width as desktop', () => {

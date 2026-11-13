@@ -51,6 +51,8 @@ test.describe('Mobile app shell', { tag: ['@core'] }, () => {
   test.use({ viewport: LARGE_VIEWPORT, isMobile: true, hasTouch: true });
 
   test.beforeEach(async ({ page }) => {
+    // Chromium drops the override on navigation, so it goes on after the load.
+    await page.goto('/search');
     const cdp = await page.context().newCDPSession(page);
     await cdp.send('Emulation.setSmallViewportHeightDifferenceOverride', {
       difference: SMALL_VIEWPORT_DIFFERENCE,
@@ -60,7 +62,6 @@ test.describe('Mobile app shell', { tag: ['@core'] }, () => {
   test('keeps the user menu on screen behind a browser toolbar', async ({
     page,
   }) => {
-    await page.goto('/search');
     await expect(page.locator('[data-testid="app-nav"]')).toBeVisible();
 
     const viewport = await measureViewportHeights(page);
@@ -88,7 +89,6 @@ test.describe('Mobile app shell', { tag: ['@core'] }, () => {
   test('does not leave the page content taller than the shell', async ({
     page,
   }) => {
-    await page.goto('/search');
     await expect(page.locator('[data-testid="search-page"]')).toBeVisible();
 
     const viewport = await measureViewportHeights(page);

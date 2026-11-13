@@ -1,11 +1,9 @@
 import { assembleRecord } from '@/harness/runRun';
-import type { ParsedEvent } from '@/harness/streamParser';
+import { type ParsedEvent, parseStreamLine } from '@/harness/streamParser';
 
 function event(raw: object): ParsedEvent | null {
   // Round-trip through the JSON parser so we exercise the same code path
   // the runtime would.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { parseStreamLine } = require('@/harness/streamParser');
   return parseStreamLine(JSON.stringify(raw));
 }
 
