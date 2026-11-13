@@ -22,3 +22,12 @@ global.fetch = vi.fn().mockResolvedValue({
   text: vi.fn().mockResolvedValue(''),
   json: vi.fn().mockResolvedValue({}),
 } as any);
+
+// Webhook delivery uses undici's fetch; route it to the global mock so tests
+// stub and assert on `global.fetch` as before.
+vi.mock('undici/index.js', async () => ({
+  ...(await vi.importActual<typeof import('undici/index.js')>(
+    'undici/index.js',
+  )),
+  fetch: (...args: Parameters<typeof fetch>) => global.fetch(...args),
+}));

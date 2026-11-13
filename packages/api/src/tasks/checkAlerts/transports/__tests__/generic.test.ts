@@ -95,14 +95,18 @@ describe('handleSendGenericWebhook — per-attempt timeout', () => {
 });
 
 describe('handleSendGenericWebhook — DNS resolution', () => {
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => vi.restoreAllMocks());
 
   it('blocks a public hostname that resolves to loopback, without retrying', async () => {
     // The real undici fetch + Agent pair that production uses.
-    jest
-      .mocked(global.fetch)
-      .mockImplementationOnce(jest.requireActual('undici').fetch);
-    const lookupSpy = jest
+    vi.mocked(global.fetch).mockImplementationOnce(
+      (
+        await vi.importActual<typeof import('undici/index.js')>(
+          'undici/index.js',
+        )
+      ).fetch as unknown as typeof fetch,
+    );
+    const lookupSpy = vi
       .spyOn(dns, 'lookup')
       .mockImplementation((...args: any[]) =>
         args[2](null, [{ address: '127.0.0.1', family: 4 }]),
@@ -120,8 +124,7 @@ describe('handleSendGenericWebhook — DNS resolution', () => {
 
   it('unwraps a block nested deeper in the cause chain, without retrying', async () => {
     const blocked = new WebhookUrlValidationError('blocked');
-    jest
-      .mocked(global.fetch)
+    vi.mocked(global.fetch)
       .mockClear()
       .mockRejectedValueOnce(
         new TypeError('fetch failed', {
