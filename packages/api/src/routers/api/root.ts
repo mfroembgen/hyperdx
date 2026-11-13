@@ -15,6 +15,8 @@ import passport from '@/utils/passport';
 import { isMongoConnected, mongoReadyStateName } from '@/utils/readiness';
 import { passwordSchema } from '@/utils/validators';
 
+import workosAuthRouter, { logoutWorkos } from './workosAuth';
+
 const registrationSchema = z
   .object({
     email: z.string().email(),
@@ -27,6 +29,18 @@ const registrationSchema = z
   });
 
 const router = express.Router();
+router.use(workosAuthRouter);
+
+// WorkOS mode accepts only existing members authenticated by AuthKit.
+router.use(
+  ['/login', '/register', '/team/setup', '/forgot-password', '/reset-password'],
+  (_req, res, next) => {
+    if (config.WORKOS) {
+      return res.status(403).json({ error: 'workosRequired' });
+    }
+    next();
+  },
+);
 
 // Liveness: 200 whenever the process can serve HTTP. Deliberately checks no
 // external dependencies — restarting the pod does not fix a Mongo outage.
@@ -62,6 +76,7 @@ router.get('/installation', async (_, res: InstallationEspRes, next) => {
     const _isTeamExisting = await isTeamExisting();
     return res.json({
       isTeamExisting: _isTeamExisting,
+      workosEnabled: !!config.WORKOS,
     });
   } catch (e) {
     next(e);
@@ -139,14 +154,22 @@ router.post(
   },
 );
 
-router.get('/logout', (req, res, next) => {
-  req.logout(function (err) {
-    if (err) {
-      return next(err);
-    }
-    res.redirect(`${config.FRONTEND_REDIRECT_BASE}/login`);
+router
+  .route('/logout')
+  .get((req, res, next) => {
+    if (config.WORKOS) return res.set('Allow', 'POST').sendStatus(405);
+    req.logout(err =>
+      err ? next(err) : res.redirect(`${config.FRONTEND_REDIRECT_BASE}/login`),
+    );
+  })
+  .post((req, res, next) => {
+    if (config.WORKOS) return logoutWorkos(req, res, next);
+    req.logout(err =>
+      err
+        ? next(err)
+        : res.redirect(303, `${config.FRONTEND_REDIRECT_BASE}/login`),
+    );
   });
-});
 
 // TODO: rename this ?
 router.post('/team/setup/:token', async (req, res, next) => {

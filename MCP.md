@@ -9,8 +9,9 @@ data sources directly.
 
 - A running HyperDX instance (see [CONTRIBUTING.md](/CONTRIBUTING.md) for local
   development setup, or [DEPLOY.md](/DEPLOY.md) for self-hosted deployment)
-- A **Personal API access key** — find yours in the HyperDX UI under **Team
-  Settings > API keys > Personal API access key**
+- An instance configured for WorkOS AuthKit OAuth, or a **Personal API access
+  key** for the default authentication mode. Find personal keys under **Team
+  Settings > API keys > Personal API access key**.
 
 > **Note:** HyperDX v1 ([hyperdx.io](https://hyperdx.io)) does not yet support
 > the MCP server. The documentation below applies to self-hosted HyperDX v2
@@ -32,11 +33,50 @@ the defaults.
 > also reach the MCP server directly at `<backend_url>/mcp`, but not all
 > deployments expose the backend, so these docs use frontend paths.
 
-## Connecting an MCP Client
+## Connecting with Google login
 
-The MCP server uses the **Streamable HTTP** transport with Bearer token
-authentication. In the examples below, replace `<your-hyperdx-url>` with your
-instance URL (e.g. `http://localhost:8080`).
+When your administrator has enabled [WorkOS AuthKit](DEPLOY.md#workos-authkit),
+use browser OAuth instead of supplying a personal API key:
+
+```bash
+codex mcp add clickstack --url https://hyperdx.example.com/api/mcp
+codex mcp login clickstack
+```
+
+For Claude Code:
+
+```bash
+claude mcp add --transport http clickstack https://hyperdx.example.com/api/mcp
+```
+
+Open `/mcp` in Claude Code to sign in. For Claude's hosted connector, use the
+same MCP URL in its connector settings. Replace the example host with your
+instance and complete the organization's Google login in the browser.
+
+WorkOS handles client registration, browser consent and token refresh. HyperDX
+advertises protected-resource metadata and validates each Connect access token
+against its fixed AuthKit issuer and this exact MCP URL as the audience. It
+verifies the WorkOS profile when first linking an identity, then checks that
+stored identity and current local membership on each request. By default, only
+existing team members can sign in. If the administrator sets
+`WORKOS_AUTO_JOIN_DOMAIN`, first sign-in with a verified email in that exact
+domain creates a passwordless member in the configured existing team. The server
+grants access only to its configured team. Remove a previous static
+Authorization header or bearer-token environment binding when switching a client
+to OAuth; WorkOS mode does not accept personal keys for MCP. Keep legacy
+bindings until the administrator has deployed and verified the OAuth
+configuration.
+
+See the official
+[Codex commands](https://learn.chatgpt.com/docs/developer-commands#codex-mcp)
+and
+[Claude OAuth setup](https://claude.com/docs/connectors/building/authentication).
+
+## Connecting with a personal API access key
+
+In legacy authentication mode, the MCP server uses the **Streamable HTTP**
+transport with a personal Bearer token. In the examples below, replace
+`<your-hyperdx-url>` with your instance URL (e.g. `http://localhost:8080`).
 
 ### Install with the CLI (recommended)
 
@@ -166,21 +206,24 @@ with:
 
 > **Maintainers:** when adding/removing/renaming a query tool, update this table
 > and — for builder (non-SQL) tools — the hand-curated `BUILDER_TOOLS_LIST` in
-> `packages/api/src/mcp/tools/query/builderCatalog.ts`. It isn't auto-derived, so
-> it drifts silently.
+> `packages/api/src/mcp/tools/query/builderCatalog.ts`. It isn't auto-derived,
+> so it drifts silently.
 
 ### Metric Sources
 
 `clickstack_timeseries`, `clickstack_table`, and the dashboard builder tile
-tools accept metric sources transparently. Each `select` item on a metric
-query must set `metricType` (`"gauge"`, `"sum"`, `"histogram"`, or
-`"exponential histogram"`) and
-`metricName` (the OTel metric name, e.g. `system.cpu.utilization`).
-`valueExpression` defaults to `"Value"` when omitted, so a typical metric
-series looks like:
+tools accept metric sources transparently. Each `select` item on a metric query
+must set `metricType` (`"gauge"`, `"sum"`, `"histogram"`, or
+`"exponential histogram"`) and `metricName` (the OTel metric name, e.g.
+`system.cpu.utilization`). `valueExpression` defaults to `"Value"` when omitted,
+so a typical metric series looks like:
 
 ```jsonc
-{ "aggFn": "avg", "metricType": "gauge", "metricName": "system.cpu.utilization" }
+{
+  "aggFn": "avg",
+  "metricType": "gauge",
+  "metricName": "system.cpu.utilization",
+}
 ```
 
 Per-kind aggregation guidance:
@@ -188,28 +231,27 @@ Per-kind aggregation guidance:
 - **Gauge**: `avg`, `last_value`, `min`, or `max`. Set `"isDelta": true` for
   Prometheus-style delta over each bucket.
 - **Sum (counter)**: `"increase"` returns the per-bucket counter increase
-  (reset-aware), or `sum` / `avg` on the computed rate. `increase` combined
-  with `groupBy` is capped at the top 20 groups by the renderer; the tool
-  emits a neutral hint when the cap may apply.
+  (reset-aware), or `sum` / `avg` on the computed rate. `increase` combined with
+  `groupBy` is capped at the top 20 groups by the renderer; the tool emits a
+  neutral hint when the cap may apply.
 - **Histogram**: `"quantile"` with `level` ∈ {0.5, 0.9, 0.95, 0.99} for
   percentiles, or `"count"` for the total bucket count.
-- **Exponential histogram**: `"quantile"` with `level` ∈
-  {0.5, 0.9, 0.95, 0.99} for percentiles, or `"count"` for the total bucket
-  count.
+- **Exponential histogram**: `"quantile"` with `level` ∈ {0.5, 0.9, 0.95, 0.99}
+  for percentiles, or `"count"` for the total bucket count.
 
 `summary` metrics are not yet supported by the query renderer.
 
 Discovery workflow for metrics:
 
-1. `clickstack_list_sources` to find the metric source ID and its
-   `metricTables` map.
-2. `clickstack_describe_source` to see columns, attribute keys, and a
-   per-kind metric-name sample.
-3. `clickstack_list_metrics` for paginated catalog access with optional
-   kind / namePattern / time-window filters; pass `nextCursor` unchanged
-   for the next page.
-4. `clickstack_describe_metric` to drill into a specific metric and
-   discover its attribute keys + sampled values before authoring queries.
+1. `clickstack_list_sources` to find the metric source ID and its `metricTables`
+   map.
+2. `clickstack_describe_source` to see columns, attribute keys, and a per-kind
+   metric-name sample.
+3. `clickstack_list_metrics` for paginated catalog access with optional kind /
+   namePattern / time-window filters; pass `nextCursor` unchanged for the next
+   page.
+4. `clickstack_describe_metric` to drill into a specific metric and discover its
+   attribute keys + sampled values before authoring queries.
 5. `clickstack_timeseries` / `clickstack_table` to chart the metric.
 
 ### PromQL Sources
