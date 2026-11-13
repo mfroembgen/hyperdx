@@ -23,6 +23,12 @@ describe('telemetry preload', () => {
     });
   };
 
+  const httpInstrumentation = {
+    '@opentelemetry/instrumentation-http': {
+      applyCustomAttributesOnSpan: expect.any(Function),
+    },
+  };
+
   beforeEach(() => {
     mockInit.mockClear();
     mockIsMainThread = true;
@@ -43,7 +49,7 @@ describe('telemetry preload', () => {
 
     expect(mockInit).toHaveBeenCalledWith({
       apiKey: 'ingest-key',
-      instrumentations: undefined,
+      instrumentations: httpInstrumentation,
     });
   });
 
@@ -67,6 +73,7 @@ describe('telemetry preload', () => {
     expect(mockInit).toHaveBeenCalledWith({
       apiKey: 'ingest-key',
       instrumentations: {
+        ...httpInstrumentation,
         '@opentelemetry/instrumentation-host-metrics': { enabled: true },
       },
     });

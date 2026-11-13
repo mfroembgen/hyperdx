@@ -3305,6 +3305,7 @@ export type RotateApiKeyApiResponse = z.infer<
 // Installation
 export const InstallationApiResponseSchema = z.object({
   isTeamExisting: z.boolean(),
+  workosEnabled: z.boolean().optional(),
 });
 
 export type InstallationApiResponse = z.infer<
