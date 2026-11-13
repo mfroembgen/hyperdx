@@ -32,6 +32,11 @@ export default defineConfig({
           appDir,
           'src/__mocks__/react-syntax-highlighter.tsx',
         ),
+        // Unit tests never start RUM, so each export behaves as before init.
+        '@clickhouse/clickstack-browser': resolve(
+          appDir,
+          'src/__mocks__/clickstack-browser.ts',
+        ),
       }).map(([find, replacement]) => ({ find, replacement })),
     ],
   },

@@ -966,7 +966,7 @@ describe('renderChartConfig', () => {
     it.each(cases)(
       'leaves flagged points out of the %s source scan (%o)',
       async (metricType, select) => {
-        mockMetadata.getColumn = jest
+        mockMetadata.getColumn = vi
           .fn()
           .mockImplementation(async ({ column }) =>
             column === 'Flags' ? { name: 'Flags', type: 'UInt32' } : undefined,
@@ -996,7 +996,7 @@ describe('renderChartConfig', () => {
     );
 
     it('reads the table as before when the Flags lookup fails', async () => {
-      mockMetadata.getColumn = jest
+      mockMetadata.getColumn = vi
         .fn()
         .mockImplementation(async ({ column }) => {
           if (column === 'Flags') throw new Error('DESCRIBE failed');
@@ -1011,7 +1011,7 @@ describe('renderChartConfig', () => {
     it.each(['UInt8', 'Int64', 'LowCardinality(UInt32)'])(
       'leaves flagged points out when Flags is %s',
       async flagsType => {
-        mockMetadata.getColumn = jest
+        mockMetadata.getColumn = vi
           .fn()
           .mockImplementation(async ({ column }) =>
             column === 'Flags' ? { name: 'Flags', type: flagsType } : undefined,
@@ -1026,7 +1026,7 @@ describe('renderChartConfig', () => {
     it.each(['String', 'Nullable(UInt32)', 'LowCardinality(Nullable(UInt32))'])(
       'reads the table as before when Flags is %s',
       async flagsType => {
-        mockMetadata.getColumn = jest
+        mockMetadata.getColumn = vi
           .fn()
           .mockImplementation(async ({ column }) =>
             column === 'Flags' ? { name: 'Flags', type: flagsType } : undefined,

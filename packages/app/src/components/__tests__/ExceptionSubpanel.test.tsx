@@ -188,7 +188,7 @@ describe('ExceptionSubpanel stack frames', () => {
     );
     const causes = () =>
       screen
-        .getAllByRole('button', { name: /^Caused by: / })
+        .getAllByRole('button', { name: /^Caused by:/ })
         .map(cause => [cause.textContent, cause.getAttribute('aria-expanded')]);
 
     expect(causes()).toEqual([
@@ -306,7 +306,7 @@ describe('ExceptionSubpanel stack frames', () => {
         logData={{ timestamp: 0 }}
       />,
     );
-    const cause = screen.getByRole('button', { name: /^Caused by: / });
+    const cause = screen.getByRole('button', { name: /^Caused by:/ });
     const title = () => within(cause).getByText('Error').parentElement;
 
     expect(cause.textContent).toBe(

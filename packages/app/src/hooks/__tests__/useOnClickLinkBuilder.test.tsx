@@ -13,9 +13,9 @@ import { useSources } from '@/source';
 import { TimeZoneOverrideProvider } from '@/timeZoneOverride';
 
 let mockTz: string | null = null;
-jest.mock('nuqs', () => ({
+vi.mock('nuqs', () => ({
   parseAsString: {},
-  useQueryState: () => [mockTz, jest.fn()],
+  useQueryState: () => [mockTz, vi.fn()],
 }));
 
 vi.mock('@/source', () => ({

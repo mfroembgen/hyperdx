@@ -268,7 +268,7 @@ describe('useAdhocFilterOptions', () => {
     };
     renderOptions(filter('sql', ['logs']), 'SeverityText', suggestionsWhere);
 
-    expect(jest.mocked(useMultipleAllFields).mock.calls.at(-1)![1]).toEqual(
+    expect(vi.mocked(useMultipleAllFields).mock.calls.at(-1)![1]).toEqual(
       expect.objectContaining({
         conditions: [
           expect.objectContaining({
@@ -292,7 +292,7 @@ describe('useAdhocFilterOptions', () => {
     });
 
     expect(
-      jest.mocked(useMultipleAllFields).mock.calls.at(-1)![1]?.conditions,
+      vi.mocked(useMultipleAllFields).mock.calls.at(-1)![1]?.conditions,
     ).toBeUndefined();
   });
 

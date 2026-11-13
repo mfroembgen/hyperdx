@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import {
   DeadlineExceededError,
   runWithTimeout,
@@ -141,7 +143,7 @@ describe('withDeadline', () => {
     // Work scheduled after the batch budget is spent must fail fast WITHOUT
     // invoking the thunk — this is what keeps the post-deadline drain from
     // issuing any (un-cancellable) ClickHouse queries.
-    const start = jest.fn(() => Promise.resolve('too late'));
+    const start = vi.fn(() => Promise.resolve('too late'));
     await expect(withDeadline(start, Date.now() - 1)).rejects.toBeInstanceOf(
       DeadlineExceededError,
     );

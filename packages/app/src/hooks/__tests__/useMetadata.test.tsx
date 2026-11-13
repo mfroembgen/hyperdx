@@ -943,9 +943,9 @@ describe('useMergeTreeSettings', () => {
   const settings = new Map([['enable_block_number_column', '1']]);
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockMetadata = createMockMetadata();
-    jest.spyOn(metadataModule, 'getMetadata').mockReturnValue(mockMetadata);
+    vi.spyOn(metadataModule, 'getMetadata').mockReturnValue(mockMetadata);
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -955,7 +955,7 @@ describe('useMergeTreeSettings', () => {
   });
 
   it('keeps a successful result fresh across mounts', async () => {
-    const spy = jest
+    const spy = vi
       .spyOn(mockMetadata, 'getMergeTreeSettings')
       .mockResolvedValue(settings);
 
@@ -969,7 +969,7 @@ describe('useMergeTreeSettings', () => {
   });
 
   it('returns null on failure and refetches on the next mount', async () => {
-    const spy = jest
+    const spy = vi
       .spyOn(mockMetadata, 'getMergeTreeSettings')
       .mockResolvedValueOnce(undefined)
       .mockResolvedValueOnce(settings);
@@ -984,7 +984,7 @@ describe('useMergeTreeSettings', () => {
   });
 
   it('does not query without a connection', () => {
-    const spy = jest.spyOn(mockMetadata, 'getMergeTreeSettings');
+    const spy = vi.spyOn(mockMetadata, 'getMergeTreeSettings');
 
     const { result } = renderHook(() => useMergeTreeSettings(''), { wrapper });
 

@@ -2493,7 +2493,7 @@ describe('checkAlerts', () => {
         new Date('2023-11-16T22:12:00.000Z'),
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
@@ -2503,14 +2503,14 @@ describe('checkAlerts', () => {
         new Date('2023-11-16T22:20:00.000Z'),
         details,
         clickhouseClient,
-        connection.id,
+        connection,
         alertProvider,
         teamWebhooksById,
       );
       expect((await Alert.findById(details.alert.id))!.state).toBe('OK');
 
       const textsFor = (url: string) =>
-        jest
+        vi
           .mocked(slack.postMessageToWebhook)
           .mock.calls.filter(([calledUrl]) => calledUrl === url)
           .map(([, payload]) => payload.text);
@@ -5927,7 +5927,7 @@ describe('checkAlerts', () => {
         await resolve();
 
         expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(2);
-        const [, resolvePayload] = jest.mocked(slack.postMessageToWebhook).mock
+        const [, resolvePayload] = vi.mocked(slack.postMessageToWebhook).mock
           .calls[1];
         expect(resolvePayload.text).toContain('Errors for web');
         expect(JSON.stringify(resolvePayload.blocks)).toContain(
@@ -5937,9 +5937,9 @@ describe('checkAlerts', () => {
     );
 
     it('TILE alert (raw SQL) - a vanished group resolves with its values in a generic webhook body', async () => {
-      const fetchMock = jest.fn().mockResolvedValue({
+      const fetchMock = vi.fn().mockResolvedValue({
         ok: true,
-        text: jest.fn().mockResolvedValue(''),
+        text: vi.fn().mockResolvedValue(''),
       });
       global.fetch = fetchMock;
 
@@ -5991,7 +5991,7 @@ describe('checkAlerts', () => {
       await resolve();
 
       expect(slack.postMessageToWebhook).toHaveBeenCalledTimes(2);
-      const [, resolvePayload] = jest.mocked(slack.postMessageToWebhook).mock
+      const [, resolvePayload] = vi.mocked(slack.postMessageToWebhook).mock
         .calls[1];
       expect(resolvePayload.text).toContain('Errors for');
       expect(resolvePayload.text).not.toContain('web');

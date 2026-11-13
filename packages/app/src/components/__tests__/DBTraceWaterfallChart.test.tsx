@@ -96,10 +96,10 @@ vi.mock('@/hooks/useMetadata', async () => {
 vi.mock('../DBRowDataPanel', () => ({
   getJSONColumnNames: vi.fn().mockReturnValue([]),
 }));
-jest.mock('@/hooks/useBrowserTraceEvents', () => ({
-  useBrowserTraceEvents: jest.fn(),
+vi.mock('@/hooks/useBrowserTraceEvents', () => ({
+  useBrowserTraceEvents: vi.fn(),
 }));
-const mockUseBrowserTraceEvents = jest.mocked(useBrowserTraceEvents);
+const mockUseBrowserTraceEvents = vi.mocked(useBrowserTraceEvents);
 const passBrowserTraceEventsThrough: typeof useBrowserTraceEvents = ({
   logRows,
 }) => ({ logRows, resourceTimingBySpanId: new Map(), triggerRow: undefined });
@@ -1335,7 +1335,7 @@ describe('DBTraceWaterfallChartContainer', () => {
 
       it('comes first, labeled as the triggering click, and opens the click log', async () => {
         mockTriggerRow();
-        const onClick = jest.fn();
+        const onClick = vi.fn();
         setupQueryMocks({ traceData: mockTraceData, logData: mockLogData });
         renderComponent(mockLogTableSource, mockTraceId, { onClick });
         await waitForLoading();

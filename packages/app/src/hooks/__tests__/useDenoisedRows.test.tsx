@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   BuilderChartConfigWithDateRange,
   SourceKind,
@@ -8,13 +9,13 @@ import { renderHook } from '@testing-library/react';
 import { findBodyResultColumn, useDenoisedRows } from '@/hooks/useDenoisedRows';
 import { useGroupedPatterns } from '@/hooks/usePatterns';
 
-jest.mock('@/hooks/usePatterns', () => ({
+vi.mock('@/hooks/usePatterns', () => ({
   LEVEL_COLUMN_ALIAS: '__hdx_level',
   DRAIN_EXTRA_DELIMITERS: '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'.split(''),
-  useGroupedPatterns: jest.fn(),
+  useGroupedPatterns: vi.fn(),
 }));
 
-const mockUseGroupedPatterns = jest.mocked(useGroupedPatterns);
+const mockUseGroupedPatterns = vi.mocked(useGroupedPatterns);
 
 const source = {
   id: 'logs',

@@ -1,4 +1,5 @@
 import { ComponentProps } from 'react';
+import { vi } from 'vitest';
 import {
   ADHOC_FILTER_MAX_CONDITIONS,
   AdhocDashboardFilter as AdhocDashboardFilterType,
@@ -225,7 +226,7 @@ describe('AdhocDashboardFilter', () => {
       await userEvent.click(addButton());
 
       expect(await screen.findByTestId(`${editorId}-key`)).toBeInTheDocument();
-      expect(jest.mocked(useAdhocFilterOptions)).toHaveBeenLastCalledWith(
+      expect(vi.mocked(useAdhocFilterOptions)).toHaveBeenLastCalledWith(
         narrowed,
         expect.any(String),
         dateRange,

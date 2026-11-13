@@ -251,7 +251,10 @@ describe('WorkOS identity and MCP boundary', () => {
         .post('/mcp')
         .set('Authorization', `Bearer ${user.accessKey}`)
         .expect(200);
-      expect(find).toHaveBeenCalledWith({ accessKey: user.accessKey });
+      expect(find).toHaveBeenCalledWith({
+        accessKey: user.accessKey,
+        isVirtual: { $ne: true },
+      });
       await request(app).get('/ui').expect(200);
     } finally {
       fixture.enabled = previous;

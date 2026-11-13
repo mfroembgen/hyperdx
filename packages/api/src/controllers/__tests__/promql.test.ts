@@ -1,10 +1,12 @@
+import { vi } from 'vitest';
+
 import {
   buildPrometheusRequest,
   PROMETHEUS_MAX_RESPONSE_BYTES,
   runPromqlQuery,
 } from '@/controllers/promql';
 
-const mockFetch = jest.mocked(global.fetch);
+const mockFetch = vi.mocked(global.fetch);
 
 const respond = (status: number, body: unknown) =>
   mockFetch.mockResolvedValueOnce(

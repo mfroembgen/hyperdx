@@ -361,16 +361,15 @@ describe('clickstack_describe_source deadline', () => {
 
   describe('PromQL sources', () => {
     beforeEach(() => {
-      jest
-        .mocked(getSource)
+      vi.mocked(getSource)
         // @ts-expect-error mock source only has the fields describe_source reads
         .mockResolvedValue(promqlSource);
     });
 
     it('aborts the label lookup at the deadline', async () => {
-      jest
-        .mocked(getPromqlLabelCatalog)
-        .mockImplementation(({ signal }) => rejectOnAbort(signal!));
+      vi.mocked(getPromqlLabelCatalog).mockImplementation(({ signal }) =>
+        rejectOnAbort(signal!),
+      );
 
       const result = await runWithClock(DESCRIBE_TIMEOUT_MS);
 
@@ -381,7 +380,7 @@ describe('clickstack_describe_source deadline', () => {
     });
 
     it('returns the source config at the backstop when the lookup hangs', async () => {
-      jest.mocked(getPromqlLabelCatalog).mockImplementation(never);
+      vi.mocked(getPromqlLabelCatalog).mockImplementation(never);
 
       const result = await runWithClock(
         DESCRIBE_TIMEOUT_MS + DESCRIBE_BACKSTOP_MS,

@@ -1,6 +1,6 @@
-import { vi } from 'vitest';
 import { WebhookService } from '@hyperdx/common-utils/dist/types';
 import dns from 'dns';
+import { vi } from 'vitest';
 
 import { createHandlebarsWithHelpers } from '@/tasks/checkAlerts/transports';
 import * as validators from '@/utils/validators';

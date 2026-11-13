@@ -1,23 +1,26 @@
+import { vi } from 'vitest';
 // Unit tests for clickstack_sql batch mode (the `queries` argument). Mocks
 // runConfigTile and getSource so the batch runner can be driven without
 // ClickHouse or Mongo.
 
-const mockRunConfigTile = jest.fn();
-const mockGetSource = jest.fn();
+const mockRunConfigTile = vi.fn();
+const mockGetSource = vi.fn();
 
-jest.mock('@/mcp/tools/query/helpers', () => {
-  const actual = jest.requireActual('@/mcp/tools/query/helpers');
+vi.mock('@/mcp/tools/query/helpers', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/mcp/tools/query/helpers')
+  >('@/mcp/tools/query/helpers');
   return {
     ...actual,
     runConfigTile: (...args: unknown[]) => mockRunConfigTile(...args),
   };
 });
 
-jest.mock('@/models/source', () => ({}));
-jest.mock('@/controllers/sources', () => ({
+vi.mock('@/models/source', () => ({}));
+vi.mock('@/controllers/sources', () => ({
   getSource: (...args: unknown[]) => mockGetSource(...args),
 }));
-jest.mock('@/controllers/connection', () => ({}));
+vi.mock('@/controllers/connection', () => ({}));
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import mongoose from 'mongoose';
@@ -69,12 +72,12 @@ type TileArg = {
 
 function tileArgs(): TileArg['config'][] {
   return mockRunConfigTile.mock.calls.map(
-    ([, tile]: [unknown, TileArg]) => tile.config,
+    ([, tile]): TileArg['config'] => tile.config,
   );
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockRunConfigTile.mockImplementation((_team, tile: TileArg) =>
     Promise.resolve(rowsResult([{ sql: tile.config.sqlTemplate }])),
   );
@@ -288,7 +291,7 @@ describe('clickstack_sql batch mode', () => {
   });
 
   it('times out a query whose source lookup outlives the deadline', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       mockGetSource.mockReturnValue(new Promise(() => {}));
 
@@ -299,7 +302,7 @@ describe('clickstack_sql batch mode', () => {
           { id: 'free', sql: 'SELECT 2' },
         ],
       });
-      await jest.advanceTimersByTimeAsync(SQL_BATCH_DEADLINE_MS);
+      await vi.advanceTimersByTimeAsync(SQL_BATCH_DEADLINE_MS);
       const parsed = JSON.parse(textOf(await pending));
 
       expect(parsed.results[0]).toMatchObject({
@@ -308,7 +311,7 @@ describe('clickstack_sql batch mode', () => {
       });
       expect(parsed.results[1]).toMatchObject({ id: 'free', status: 'ok' });
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
@@ -384,7 +387,7 @@ describe('clickstack_sql batch mode', () => {
   it('times out queries past the shared deadline without starting queued ones', async () => {
     const base = 1_000_000_000_000;
     let now = base;
-    const nowSpy = jest.spyOn(Date, 'now').mockImplementation(() => now);
+    const nowSpy = vi.spyOn(Date, 'now').mockImplementation(() => now);
 
     try {
       mockRunConfigTile.mockImplementation(

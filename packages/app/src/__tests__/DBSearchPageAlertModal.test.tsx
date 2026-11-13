@@ -15,7 +15,7 @@ import { DBSearchPageAlertModal } from '@/DBSearchPageAlertModal';
 const createAlertMutateAsync = vi.fn().mockResolvedValue({ data: {} });
 const updateAlertMutateAsync = vi.fn().mockResolvedValue({ data: {} });
 const deleteAlertMutateAsync = vi.fn().mockResolvedValue(undefined);
-const createSavedSearchMutateAsync = jest
+const createSavedSearchMutateAsync = vi
   .fn()
   .mockResolvedValue({ id: 'new-saved-search-id' });
 const routerPush = vi.fn();

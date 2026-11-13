@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import type { ResponseJSON } from '@hyperdx/common-utils/dist/clickhouse';
 import { SourceKind, TLogSource } from '@hyperdx/common-utils/dist/types';
 import { MantineProvider } from '@mantine/core';
@@ -6,24 +7,24 @@ import { render, screen, waitFor } from '@testing-library/react';
 
 import { RowDataPanel, useRowData } from '@/components/DBRowDataPanel';
 
-const mockQueryChartConfig = jest.fn();
-jest.mock('@/clickhouse', () => ({
+const mockQueryChartConfig = vi.fn();
+vi.mock('@/clickhouse', () => ({
   useClickhouseClient: () => ({ queryChartConfig: mockQueryChartConfig }),
 }));
-jest.mock('@/hooks/useMetadata', () => ({
+vi.mock('@/hooks/useMetadata', () => ({
   useColumns: () => ({ data: undefined, isLoading: false }),
   useMetadataWithSettings: () => ({}),
 }));
-jest.mock('@/hooks/useMVOptimizationExplanation', () => ({
+vi.mock('@/hooks/useMVOptimizationExplanation', () => ({
   useMVOptimizationExplanation: () => ({ data: undefined, isLoading: false }),
 }));
-jest.mock('@/source', () => ({
-  ...jest.requireActual('@/source'),
+vi.mock('@/source', async () => ({
+  ...(await vi.importActual<typeof import('@/source')>('@/source')),
   useSource: () => ({ data: undefined, isLoading: false }),
 }));
 // Records the row the tab renders.
-const mockJsonViewerData = jest.fn();
-jest.mock('@/components/DBRowJsonViewer', () => ({
+const mockJsonViewerData = vi.fn();
+vi.mock('@/components/DBRowJsonViewer', () => ({
   DBRowJsonViewer: ({ data }: { data: unknown }) => {
     mockJsonViewerData(data);
     return null;

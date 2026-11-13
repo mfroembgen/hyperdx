@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { type MockInstance, vi } from 'vitest';
 
 import {
   createOrgApiKey,
@@ -192,11 +193,11 @@ describe('orgApiKey controller', () => {
       return { team, serviceAccount: doc._id, users };
     };
 
-    afterEach(() => jest.restoreAllMocks());
+    afterEach(() => vi.restoreAllMocks());
 
     it('refuses the last person without deleting them', async () => {
       const { team, serviceAccount, users } = await setupTeam(1);
-      const deleteSpy = jest.spyOn(User, 'findOneAndDelete');
+      const deleteSpy = vi.spyOn(User, 'findOneAndDelete');
 
       const result = await deleteTeamMember(
         team._id,
@@ -211,9 +212,9 @@ describe('orgApiKey controller', () => {
       const { team, serviceAccount, users } = await setupTeam(2);
       // Simulate a concurrent removal: two people before the delete, none after.
       // Widened to SpyInstance: the Mongoose overloads type these mocks as never.
-      const count: jest.SpyInstance = jest.spyOn(User, 'countDocuments');
+      const count: MockInstance = vi.spyOn(User, 'countDocuments');
       count.mockResolvedValueOnce(2).mockResolvedValueOnce(0);
-      const insert: jest.SpyInstance = jest.spyOn(User.collection, 'insertOne');
+      const insert: MockInstance = vi.spyOn(User.collection, 'insertOne');
       insert.mockRejectedValueOnce(new Error('transient'));
 
       const result = await deleteTeamMember(
@@ -227,9 +228,9 @@ describe('orgApiKey controller', () => {
 
     it('treats a duplicate _id on restore as already restored', async () => {
       const { team, serviceAccount, users } = await setupTeam(2);
-      const count: jest.SpyInstance = jest.spyOn(User, 'countDocuments');
+      const count: MockInstance = vi.spyOn(User, 'countDocuments');
       count.mockResolvedValueOnce(2).mockResolvedValueOnce(0);
-      const insert: jest.SpyInstance = jest.spyOn(User.collection, 'insertOne');
+      const insert: MockInstance = vi.spyOn(User.collection, 'insertOne');
       insert.mockRejectedValueOnce(
         Object.assign(new Error('E11000'), {
           code: 11000,

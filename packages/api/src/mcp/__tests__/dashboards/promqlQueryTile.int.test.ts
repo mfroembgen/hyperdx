@@ -1,5 +1,6 @@
 import { Metadata } from '@hyperdx/common-utils/dist/core/metadata';
 import { DisplayType, SourceKind } from '@hyperdx/common-utils/dist/types';
+import { vi } from 'vitest';
 
 import {
   DEFAULT_DATABASE,
@@ -13,7 +14,7 @@ import { Source } from '@/models/source';
 
 import { setupDashboardTests } from './setup';
 
-const mockFetch = jest.mocked(global.fetch);
+const mockFetch = vi.mocked(global.fetch);
 // Set by jest.setup.ts before it stubs `fetch`.
 const realFetch: typeof fetch = globalThis.realFetch;
 
@@ -45,7 +46,7 @@ describe('MCP query_tile - PromQL tiles', () => {
   beforeEach(() => ctx.reconnect({ promqlEnabled: true }));
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     mockFetch.mockReset();
   });
 
@@ -170,9 +171,9 @@ describe('MCP query_tile - PromQL tiles', () => {
   });
 
   it('returns the same rows through the table function on ClickHouse < 26.6', async () => {
-    jest
-      .spyOn(Metadata.prototype, 'getServerVersion')
-      .mockResolvedValue([26, 5, 0, 0]);
+    vi.spyOn(Metadata.prototype, 'getServerVersion').mockResolvedValue([
+      26, 5, 0, 0,
+    ]);
     const source = await createClickhouseSource();
     const dashboard = await createDashboard(source._id.toString(), lineTile);
 

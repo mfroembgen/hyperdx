@@ -688,7 +688,7 @@ describe('MCP Query Tools', () => {
       });
 
       it('keeps the same notes when denoise fails', async () => {
-        const spy = jest
+        const spy = vi
           .spyOn(denoise, 'denoiseSearchResults')
           .mockRejectedValueOnce(new Error('denoise down'));
         try {
@@ -1241,7 +1241,7 @@ describe('MCP Query Tools', () => {
           { _id: logSource._id },
           { $set: { tableFilterExpression: "ServiceName != 'svc-b'" } },
         );
-        const spy = jest
+        const spy = vi
           .spyOn(patternDrilldown, 'userWhereAsSql')
           .mockRejectedValueOnce(new Error('cannot render'));
         try {

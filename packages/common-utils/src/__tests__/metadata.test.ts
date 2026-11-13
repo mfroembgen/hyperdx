@@ -164,8 +164,8 @@ describe('MetadataCache', () => {
     });
 
     it('refetches a value stored with a TTL once the TTL has passed', async () => {
-      const now = jest.spyOn(Date, 'now').mockReturnValue(1_000);
-      const queryFn = jest
+      const now = vi.spyOn(Date, 'now').mockReturnValue(1_000);
+      const queryFn = vi
         .fn()
         .mockResolvedValueOnce('first')
         .mockResolvedValueOnce('second');
@@ -191,8 +191,8 @@ describe('MetadataCache', () => {
     });
 
     it('keeps a value stored without a TTL', async () => {
-      const now = jest.spyOn(Date, 'now').mockReturnValue(1_000);
-      const queryFn = jest.fn().mockResolvedValue('value');
+      const now = vi.spyOn(Date, 'now').mockReturnValue(1_000);
+      const queryFn = vi.fn().mockResolvedValue('value');
 
       try {
         await metadataCache.getOrFetch('key', queryFn);
@@ -217,11 +217,11 @@ describe('Metadata', () => {
 
   describe('getMaterializedColumnsLookupTable', () => {
     it('sees a MATERIALIZED column added after the first read once the cached columns expire', async () => {
-      const now = jest.spyOn(Date, 'now').mockReturnValue(0);
-      const client = { query: jest.fn() } as unknown as ClickhouseClient;
+      const now = vi.spyOn(Date, 'now').mockReturnValue(0);
+      const client = { query: vi.fn() } as unknown as ClickhouseClient;
       const md = new Metadata(client, new MetadataCache());
       const describeResult = (columns: Partial<ColumnMeta>[]) => ({
-        json: jest.fn().mockResolvedValue({ data: columns }),
+        json: vi.fn().mockResolvedValue({ data: columns }),
       });
       const resourceAttributes = {
         name: 'ResourceAttributes',
@@ -235,7 +235,7 @@ describe('Metadata', () => {
         default_type: 'MATERIALIZED',
         default_expression: "ResourceAttributes['k8s.namespace.name']",
       };
-      (client.query as jest.Mock)
+      (client.query as Mock)
         .mockResolvedValueOnce(describeResult([resourceAttributes]))
         .mockResolvedValueOnce(
           describeResult([resourceAttributes, materialized]),
@@ -559,7 +559,7 @@ describe('Metadata', () => {
       mergeTree: SettingRow[];
       sharedMergeTree?: SettingRow[];
     }) =>
-      (mockClickhouseClient.query as jest.Mock).mockImplementation(
+      (mockClickhouseClient.query as Mock).mockImplementation(
         async ({ query }: { query: string }) => ({
           json: async () => ({
             data: query.includes('shared_merge_tree_settings')
@@ -574,7 +574,7 @@ describe('Metadata', () => {
     });
 
     it('reads only merge_tree_settings outside Cloud', async () => {
-      jest.spyOn(metadata, 'isClickHouseCloud').mockResolvedValue(false);
+      vi.spyOn(metadata, 'isClickHouseCloud').mockResolvedValue(false);
       mockSettingsTables({
         mergeTree: [
           { name: 'enable_block_number_column', value: '1' },
@@ -601,7 +601,7 @@ describe('Metadata', () => {
     });
 
     it('prefers shared_merge_tree_settings per key on Cloud', async () => {
-      jest.spyOn(metadata, 'isClickHouseCloud').mockResolvedValue(true);
+      vi.spyOn(metadata, 'isClickHouseCloud').mockResolvedValue(true);
       mockSettingsTables({
         mergeTree: [
           { name: 'enable_block_number_column', value: '0' },
@@ -628,8 +628,8 @@ describe('Metadata', () => {
     });
 
     it('returns undefined when the shared read fails on Cloud', async () => {
-      jest.spyOn(metadata, 'isClickHouseCloud').mockResolvedValue(true);
-      (mockClickhouseClient.query as jest.Mock).mockImplementation(
+      vi.spyOn(metadata, 'isClickHouseCloud').mockResolvedValue(true);
+      (mockClickhouseClient.query as Mock).mockImplementation(
         async ({ query }: { query: string }) => {
           if (query.includes('shared_merge_tree_settings')) {
             throw new Error('timeout');
@@ -650,11 +650,11 @@ describe('Metadata', () => {
         mockClickhouseClient,
         new MetadataCache(),
       );
-      jest.spyOn(realMetadata, 'isClickHouseCloud').mockResolvedValue(false);
-      (mockClickhouseClient.query as jest.Mock)
+      vi.spyOn(realMetadata, 'isClickHouseCloud').mockResolvedValue(false);
+      (mockClickhouseClient.query as Mock)
         .mockRejectedValueOnce(new Error('Not enough privileges'))
         .mockResolvedValueOnce({
-          json: jest.fn().mockResolvedValue({
+          json: vi.fn().mockResolvedValue({
             data: [{ name: 'enable_block_offset_column', value: '1' }],
           }),
         });
@@ -3000,7 +3000,7 @@ describe('Metadata', () => {
       const conditionSql = "ServiceName = 'api'";
       const buildScopedMetadata = () => {
         const md = buildMetadata();
-        jest.spyOn(md, 'getMapColumnTextIndexes').mockResolvedValue(
+        vi.spyOn(md, 'getMapColumnTextIndexes').mockResolvedValue(
           new Map([
             [
               'LogAttributes',
@@ -3013,7 +3013,7 @@ describe('Metadata', () => {
             ],
           ]),
         );
-        jest.spyOn(md, 'getColumn').mockResolvedValue({
+        vi.spyOn(md, 'getColumn').mockResolvedValue({
           name: 'LogAttributes',
           type: 'Map(String, String)',
         } as ColumnMeta);
@@ -3022,7 +3022,7 @@ describe('Metadata', () => {
 
       it('scans only matching rows, skipping the text index and the rollup', async () => {
         const md = buildScopedMetadata();
-        (mockClickhouseClient.query as jest.Mock).mockResolvedValue({
+        (mockClickhouseClient.query as Mock).mockResolvedValue({
           json: () => Promise.resolve({ data: [{ keysArr: ['scoped.key'] }] }),
         });
 
@@ -3030,9 +3030,8 @@ describe('Metadata', () => {
 
         expect(keys).toEqual(['scoped.key']);
         expect(mockClickhouseClient.query).toHaveBeenCalledTimes(1);
-        const { query, query_params } = (
-          mockClickhouseClient.query as jest.Mock
-        ).mock.calls[0][0];
+        const { query, query_params } = (mockClickhouseClient.query as Mock)
+          .mock.calls[0][0];
         expect(query).not.toContain('mergeTreeTextIndex');
         expect(Object.values(query_params)).not.toContain(
           'otel_logs_key_rollup_15m',
@@ -3042,7 +3041,7 @@ describe('Metadata', () => {
 
       it('caches its keys apart from the unscoped keys', async () => {
         const md = buildScopedMetadata();
-        (mockClickhouseClient.query as jest.Mock)
+        (mockClickhouseClient.query as Mock)
           .mockResolvedValueOnce({
             json: () => Promise.resolve({ data: [{ key: 'indexed.key' }] }),
           })
@@ -3438,7 +3437,7 @@ describe('Metadata', () => {
 
       const buildMetadata = () => {
         const md = new Metadata(mockClickhouseClient, new MetadataCache());
-        (mockClickhouseClient.query as jest.Mock).mockResolvedValue({
+        (mockClickhouseClient.query as Mock).mockResolvedValue({
           json: () =>
             Promise.resolve({
               data: [
@@ -3449,7 +3448,7 @@ describe('Metadata', () => {
         });
         return {
           md,
-          getMapKeysSpy: jest.spyOn(md, 'getMapKeys').mockResolvedValue([]),
+          getMapKeysSpy: vi.spyOn(md, 'getMapKeys').mockResolvedValue([]),
         };
       };
 

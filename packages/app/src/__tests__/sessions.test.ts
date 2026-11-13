@@ -152,7 +152,7 @@ describe('getRRWebTimestampExpression', () => {
       new ClickhouseClient({ host: '' }),
       new MetadataCache(),
     );
-    const getColumns = jest.spyOn(metadata, 'getColumns');
+    const getColumns = vi.spyOn(metadata, 'getColumns');
     if (columns instanceof Error) {
       getColumns.mockRejectedValue(columns);
     } else {
@@ -199,7 +199,7 @@ describe('getRRWebTimestampExpression', () => {
 
   it('falls back instead of failing when the columns lookup fails', async () => {
     const { metadata } = metadataWithColumns(new Error('DESCRIBE failed'));
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(await getRRWebTimestampExpression(source, metadata)).toBe(
       'TimestampTime',
     );

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { SourceKind, TLogSource } from '@hyperdx/common-utils/dist/types';
 import { renderHook } from '@testing-library/react';
 
@@ -14,14 +15,14 @@ import {
 } from '@/hooks/__fixtures__/browserTraceEvents';
 import { useBrowserTraceEvents } from '@/hooks/useBrowserTraceEvents';
 
-const mockUseQueriedChartConfig = jest.fn();
-const mockUseFieldExpressionGenerator = jest.fn();
+const mockUseQueriedChartConfig = vi.fn();
+const mockUseFieldExpressionGenerator = vi.fn();
 
-jest.mock('@/hooks/useChartConfig', () => ({
+vi.mock('@/hooks/useChartConfig', () => ({
   useQueriedChartConfig: (...args: unknown[]) =>
     mockUseQueriedChartConfig(...args),
 }));
-jest.mock('@/hooks/useFieldExpressionGenerator', () => ({
+vi.mock('@/hooks/useFieldExpressionGenerator', () => ({
   __esModule: true,
   default: (source?: TLogSource) => {
     mockUseFieldExpressionGenerator(source);
@@ -187,7 +188,7 @@ describe('useBrowserTraceEvents', () => {
   });
 
   it('shows no click row when the row id cannot be built', () => {
-    const consoleError = jest
+    const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
     const { result } = setup(

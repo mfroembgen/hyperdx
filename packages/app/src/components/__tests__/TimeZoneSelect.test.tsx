@@ -90,7 +90,7 @@ describe('TimeZoneSelect', () => {
         <TimeZoneSelect
           data-testid="time-zone-select"
           value={null}
-          onChange={jest.fn()}
+          onChange={vi.fn()}
           defaultTimeZone={defaultTimeZone}
         />,
       );
