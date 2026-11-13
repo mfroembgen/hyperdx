@@ -1,9 +1,11 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { type Mock, vi } from 'vitest';
+import * as queryParser from '@hyperdx/common-utils/dist/queryParser';
 import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import SearchWhereInput from '@/components/SearchInput/SearchWhereInput';
@@ -44,7 +46,7 @@ function TestWrapper({
   defaultLanguage?: 'sql' | 'lucene';
   defaultWhere?: string;
   supportsVariables?: boolean;
-  onSubmit?: jest.Mock;
+  onSubmit?: Mock;
   children?: (props: { control: any }) => React.ReactNode;
 }) {
   const form = useForm({
@@ -108,7 +110,7 @@ describe('SearchWhereInput', () => {
 
     it('does not insert a newline in Lucene when allowMultiline is false', async () => {
       const user = userEvent.setup();
-      const onSubmit = jest.fn();
+      const onSubmit = vi.fn();
       renderWithMantine(
         <TestWrapper defaultLanguage="lucene">
           {({ control }) => (
@@ -167,7 +169,7 @@ describe('SearchWhereInput', () => {
     });
 
     it('calls onSubmit when provided', async () => {
-      const mockOnSubmit = jest.fn();
+      const mockOnSubmit = vi.fn();
       const user = userEvent.setup();
 
       renderWithMantine(
@@ -286,13 +288,38 @@ describe('SearchWhereInput', () => {
 
     it('explains the query with the selected values, not the reference', async () => {
       const user = userEvent.setup();
-      const input = renderWithVariables();
+      const originalExplain = queryParser.genEnglishExplanation;
+      // An earlier prefix can finish after the complete variable reference.
+      let resolveOld!: (value: string) => void;
+      const oldExplanation = new Promise<string>(resolve => {
+        resolveOld = resolve;
+      });
+      const explain = vi
+        .spyOn(queryParser, 'genEnglishExplanation')
+        .mockImplementation(args => {
+          if (args.query === 'ServiceName:$sv') return oldExplanation;
+          if (args.query === 'ServiceName:("api")') {
+            return originalExplain(args);
+          }
+          return Promise.resolve(`Message containing ${args.query}`);
+        });
 
-      await user.type(input, 'ServiceName:$svc');
+      try {
+        const input = renderWithVariables();
+        await user.type(input, 'ServiceName:$svc');
 
-      await waitFor(() =>
-        expect(searchingFor()).toBe('(ServiceName contains api)'),
-      );
+        await waitFor(() =>
+          expect(searchingFor()).toBe('(ServiceName contains api)'),
+        );
+        await act(async () => {
+          resolveOld('Message containing ServiceName:$sv');
+        });
+        await waitFor(() =>
+          expect(searchingFor()).toBe('(ServiceName contains api)'),
+        );
+      } finally {
+        explain.mockRestore();
+      }
     });
 
     it('keeps the reference in the explanation while nothing is selected', async () => {

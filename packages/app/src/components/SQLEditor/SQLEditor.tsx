@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+import type { FieldValues } from 'react-hook-form';
 import { useController, UseControllerProps } from 'react-hook-form';
 import { acceptCompletion } from '@codemirror/autocomplete';
 import { TableConnection } from '@hyperdx/common-utils/dist/core/metadata';
@@ -146,9 +147,10 @@ export default function SQLEditor({
   );
 }
 
-export function SQLEditorControlled({
+export function SQLEditorControlled<TFieldValues extends FieldValues>({
   ...props
-}: Omit<SQLEditorProps, 'value' | 'onChange'> & UseControllerProps<any>) {
+}: Omit<SQLEditorProps, 'value' | 'onChange'> &
+  UseControllerProps<TFieldValues>) {
   const { field } = useController(props);
 
   return <SQLEditor onChange={field.onChange} value={field.value} {...props} />;

@@ -4,6 +4,7 @@ import {
 } from '@hyperdx/common-utils/dist/types';
 import dns from 'dns';
 import { ObjectId } from 'mongodb';
+import { vi } from 'vitest';
 
 import { AlertState } from '@/models/alert';
 import {
@@ -77,7 +78,7 @@ describe('handleSendGenericWebhook — per-attempt timeout', () => {
     // this test even if the send path never wired up a signal at all. This
     // mock only rejects via the signal, so the test actually proves the
     // code passes an AbortSignal that gets triggered by the timeout.
-    const fetchMock: any = jest.fn(
+    const fetchMock: any = vi.fn(
       (_url: string, init: any) =>
         new Promise((_resolve, reject) => {
           init?.signal?.addEventListener('abort', () => {
@@ -94,14 +95,18 @@ describe('handleSendGenericWebhook — per-attempt timeout', () => {
 });
 
 describe('handleSendGenericWebhook — DNS resolution', () => {
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => vi.restoreAllMocks());
 
   it('blocks a public hostname that resolves to loopback, without retrying', async () => {
     // The real undici fetch + Agent pair that production uses.
-    jest
-      .mocked(global.fetch)
-      .mockImplementationOnce(jest.requireActual('undici').fetch);
-    const lookupSpy = jest
+    vi.mocked(global.fetch).mockImplementationOnce(
+      (
+        await vi.importActual<typeof import('undici/index.js')>(
+          'undici/index.js',
+        )
+      ).fetch as unknown as typeof fetch,
+    );
+    const lookupSpy = vi
       .spyOn(dns, 'lookup')
       .mockImplementation((...args: any[]) =>
         args[2](null, [{ address: '127.0.0.1', family: 4 }]),
@@ -119,8 +124,7 @@ describe('handleSendGenericWebhook — DNS resolution', () => {
 
   it('unwraps a block nested deeper in the cause chain, without retrying', async () => {
     const blocked = new WebhookUrlValidationError('blocked');
-    jest
-      .mocked(global.fetch)
+    vi.mocked(global.fetch)
       .mockClear()
       .mockRejectedValueOnce(
         new TypeError('fetch failed', {
@@ -318,7 +322,7 @@ describe('a webhook saved without a body', () => {
   });
 
   const sentBody = async (service: WebhookService) => {
-    const fetchMock: any = jest.fn(async () => new Response('ok'));
+    const fetchMock: any = vi.fn(async () => new Response('ok'));
     global.fetch = fetchMock;
     const bodylessChannel: any = {
       type: 'webhook',

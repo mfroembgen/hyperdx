@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { notifications } from '@mantine/notifications';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 
@@ -6,27 +7,37 @@ import { NetworkPropertySubpanel } from '@/components/NetworkPropertyPanel';
 import { copyTextToClipboard } from '@/utils/clipboard';
 import type { Attributes } from '@/utils/spanAttributeReaders';
 
-jest.mock('@/utils/clipboard', () => ({
+vi.mock('@/utils/clipboard', () => ({
   CLIPBOARD_ERROR_MESSAGE: 'clipboard error',
-  copyTextToClipboard: jest.fn(),
+  copyTextToClipboard: vi.fn(),
 }));
 
-jest.mock('@mantine/notifications', () => ({
-  ...jest.requireActual('@mantine/notifications'),
-  notifications: { show: jest.fn() },
-}));
+vi.mock('@mantine/notifications', async () => {
+  const actualModule0 = await vi.importActual<
+    typeof import('@mantine/notifications')
+  >('@mantine/notifications');
+  return {
+    ...actualModule0,
+    notifications: { show: vi.fn() },
+  };
+});
 
 // click-ui encodes the badge state only in hashed CSS module class names.
-jest.mock('@clickhouse/click-ui', () => ({
-  ...jest.requireActual('@clickhouse/click-ui'),
-  Badge: ({ text, state }: { text: React.ReactNode; state?: string }) => (
-    <span data-testid="badge" data-state={state}>
-      {text}
-    </span>
-  ),
-}));
+vi.mock('@clickhouse/click-ui', async () => {
+  const actualModule1 = await vi.importActual<
+    typeof import('@clickhouse/click-ui')
+  >('@clickhouse/click-ui');
+  return {
+    ...actualModule1,
+    Badge: ({ text, state }: { text: React.ReactNode; state?: string }) => (
+      <span data-testid="badge" data-state={state}>
+        {text}
+      </span>
+    ),
+  };
+});
 
-const mockCopy = jest.mocked(copyTextToClipboard);
+const mockCopy = vi.mocked(copyTextToClipboard);
 
 const HTTP_CLIENT_SPAN = {
   'url.scheme': 'https',
@@ -60,7 +71,9 @@ const getRow = (label: string) => screen.getByText(label).closest('tr');
 const copyButton = () => screen.queryByRole('button', { name: 'Copy as cURL' });
 
 describe('NetworkPropertySubpanel', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   describe('HTTP request', () => {
     it('renders the request line, headers and bodies of a client span', () => {

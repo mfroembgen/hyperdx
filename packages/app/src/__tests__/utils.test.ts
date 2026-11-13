@@ -1,3 +1,4 @@
+import { type Mocked, vi } from 'vitest';
 import {
   ChartPaletteTokenSchema,
   ColorCondition,
@@ -807,12 +808,12 @@ describe('formatDistanceToNowStrictShort', () => {
   const msAgo = (ms: number) => new Date(now.getTime() - ms);
 
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(now);
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('abbreviates seconds, minutes, hours and days', () => {
@@ -847,19 +848,19 @@ describe('formatDistanceToNowStrictShort', () => {
 
 describe('useLocalStorage', () => {
   // Create a mock for localStorage
-  let localStorageMock: jest.Mocked<Storage>;
+  let localStorageMock: Mocked<Storage>;
 
   beforeEach(() => {
     // Clear all mocks between tests
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Create localStorage mock
     localStorageMock = {
-      getItem: jest.fn().mockImplementation((_: string) => null),
-      setItem: jest.fn(),
-      removeItem: jest.fn(),
-      clear: jest.fn(),
-      key: jest.fn(),
+      getItem: vi.fn().mockImplementation((_: string) => null),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+      key: vi.fn(),
       length: 0,
     };
 
@@ -872,7 +873,7 @@ describe('useLocalStorage', () => {
 
   afterAll(() => {
     // Restore original implementations
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   test('should initialize with initial value when localStorage is empty', () => {
@@ -1089,9 +1090,9 @@ describe('stripTrailingSlash', () => {
 });
 
 describe('useQueryHistory', () => {
-  const mockGetItem = jest.fn();
-  const mockSetItem = jest.fn();
-  const mockRemoveItem = jest.fn();
+  const mockGetItem = vi.fn();
+  const mockSetItem = vi.fn();
+  const mockRemoveItem = vi.fn();
   const originalLocalStorage = window.localStorage;
 
   beforeEach(() => {
@@ -1109,7 +1110,7 @@ describe('useQueryHistory', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     Object.defineProperty(window, 'localStorage', {
       value: originalLocalStorage,
       configurable: true,
@@ -1613,7 +1614,7 @@ describe('getLogSeverityLevel', () => {
 
 describe('getColorFromCSSToken', () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('returns the categorical hex directly from CATEGORICAL_HEX_BY_TOKEN without reading CSS', () => {
@@ -1621,7 +1622,7 @@ describe('getColorFromCSSToken', () => {
     // intentionally skips getComputedStyle to avoid a per-series
     // layout read. A CSS-var override has no effect on the returned
     // value (and shouldn't be relied upon by JS callers).
-    const getComputedStyleSpy = jest
+    const getComputedStyleSpy = vi
       .spyOn(global, 'getComputedStyle')
       .mockReturnValue({
         getPropertyValue: () => '#should-be-ignored',
@@ -1632,7 +1633,7 @@ describe('getColorFromCSSToken', () => {
   });
 
   it('returns the CSS variable value for semantic tokens when provided', () => {
-    jest.spyOn(global, 'getComputedStyle').mockReturnValue({
+    vi.spyOn(global, 'getComputedStyle').mockReturnValue({
       getPropertyValue: (name: string) =>
         name === '--color-chart-success' ? '#theme-green' : '',
     } as unknown as CSSStyleDeclaration);
@@ -1641,7 +1642,7 @@ describe('getColorFromCSSToken', () => {
   });
 
   it('falls back to SEMANTIC_CHART_PALETTE when getComputedStyle throws for semantic tokens', () => {
-    jest.spyOn(global, 'getComputedStyle').mockImplementation(() => {
+    vi.spyOn(global, 'getComputedStyle').mockImplementation(() => {
       throw new Error('getComputedStyle unavailable');
     });
 

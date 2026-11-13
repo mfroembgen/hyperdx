@@ -1,14 +1,15 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import SourceSchemaPreview from '@/components/SourceSchemaPreview';
 
-jest.mock('@/hooks/useMetadata', () => ({
+vi.mock('@/hooks/useMetadata', () => ({
   useTableMetadata: () => ({ data: undefined, isLoading: false }),
 }));
 
-jest.mock('../ChartSQLPreview', () => ({
+vi.mock('../ChartSQLPreview', () => ({
   SQLPreview: () => <div data-testid="sql-preview">SQL Preview</div>,
 }));
 
@@ -24,7 +25,7 @@ describe('SourceSchemaPreview — controlled mode', () => {
         source={mockLogSource}
         controlled
         open={false}
-        onClose={jest.fn()}
+        onClose={vi.fn()}
       />,
     );
     // The non-controlled mode would render a clickable icon/text trigger;
@@ -39,7 +40,7 @@ describe('SourceSchemaPreview — controlled mode', () => {
         source={mockLogSource}
         controlled
         open={true}
-        onClose={jest.fn()}
+        onClose={vi.fn()}
       />,
     );
     expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -51,14 +52,14 @@ describe('SourceSchemaPreview — controlled mode', () => {
         source={mockLogSource}
         controlled
         open={false}
-        onClose={jest.fn()}
+        onClose={vi.fn()}
       />,
     );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('calls onClose when the modal close button is clicked', async () => {
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     renderWithMantine(
       <SourceSchemaPreview
         source={mockLogSource}
@@ -77,7 +78,7 @@ describe('SourceSchemaPreview — controlled mode', () => {
   });
 
   it('calls onClose on Escape key press', async () => {
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     renderWithMantine(
       <SourceSchemaPreview
         source={mockLogSource}

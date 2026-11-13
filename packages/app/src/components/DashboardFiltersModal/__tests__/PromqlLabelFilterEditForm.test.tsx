@@ -1,4 +1,5 @@
 import { useForm, useWatch } from 'react-hook-form';
+import { vi } from 'vitest';
 import { SourceKind, TSource } from '@hyperdx/common-utils/dist/types';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { screen, waitFor } from '@testing-library/react';
@@ -11,20 +12,20 @@ import {
 } from '@/components/DashboardFiltersModal/filterFormState';
 import { PromqlLabelFilterEditForm } from '@/components/DashboardFiltersModal/PromqlLabelFilterEditForm';
 
-const mockLabels = jest.fn();
+const mockLabels = vi.fn();
 let mockSourcesData: Partial<TSource>[];
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   prometheusApi: {
     labels: (...args: unknown[]) => mockLabels(...args),
   },
 }));
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   useSources: () => ({ data: mockSourcesData, isLoading: false }),
 }));
 // The real selector renders inside a portal and reads connection metadata;
 // a plain input bound to the same field is enough to drive the label lookup.
-jest.mock('@/components/SourceSelect', () => ({
+vi.mock('@/components/SourceSelect', () => ({
   SourceSelectControlled: ({
     control,
     name,
@@ -35,7 +36,7 @@ jest.mock('@/components/SourceSelect', () => ({
 }));
 
 // Mantine's Combobox calls scrollIntoView when its dropdown opens; jsdom lacks it.
-window.HTMLElement.prototype.scrollIntoView = jest.fn();
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 const PROMQL_SOURCE: Partial<TSource> = {
   id: 'promql-source',

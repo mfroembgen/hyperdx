@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import {
   BuilderChartConfigWithDateRange,
   SourceKind,
@@ -34,36 +35,37 @@ function freshFieldsState(): FieldsState {
 // Controls the values returned by useQueryStates each render.
 let mockFieldsState: FieldsState = freshFieldsState();
 
-jest.mock('nuqs', () => ({
-  parseAsFloat: { withDefault: jest.fn(() => 'parseAsFloat') },
-  parseAsString: { withDefault: jest.fn(() => 'parseAsString') },
-  useQueryStates: jest.fn(() => [mockFieldsState, jest.fn()]),
+vi.mock('nuqs', () => ({
+  parseAsFloat: { withDefault: vi.fn(() => 'parseAsFloat') },
+  parseAsString: { withDefault: vi.fn(() => 'parseAsString') },
+  useQueryStates: vi.fn(() => [mockFieldsState, vi.fn()]),
 }));
 
-jest.mock('@hyperdx/common-utils/dist/core/metadata', () => ({
-  tcFromSource: jest.fn(() => ({})),
+vi.mock('@hyperdx/common-utils/dist/core/metadata', () => ({
+  tcFromSource: vi.fn(() => ({})),
 }));
 
-jest.mock('@/source', () => ({
-  getDurationMsExpression: jest.fn(() => 'Duration'),
+vi.mock('@/source', () => ({
+  getDurationMsExpression: vi.fn(() => 'Duration'),
 }));
 
-jest.mock('@/components/HeatmapSettingsDrawer', () =>
-  jest.fn(() => <div data-testid="heatmap-settings-drawer" />),
-);
+vi.mock('@/components/HeatmapSettingsDrawer', () => ({
+  default: vi.fn(() => <div data-testid="heatmap-settings-drawer" />),
+}));
 
-jest.mock('../../DBHeatmapChart', () => ({
+vi.mock('../../DBHeatmapChart', () => ({
+  HEATMAP_DURATION_NUMBER_FORMAT: { output: 'duration', factor: 0.001 },
   __esModule: true,
-  default: jest.fn((props: { enabled?: boolean }) => (
+  default: vi.fn((props: { enabled?: boolean }) => (
     <div
       data-testid="db-heatmap-chart"
       data-enabled={String(!!props.enabled)}
     />
   )),
-  ColorLegend: jest.fn(() => <div data-testid="color-legend">color scale</div>),
+  ColorLegend: vi.fn(() => <div data-testid="color-legend">color scale</div>),
   darkPalette: ['#000'],
   lightPalette: ['#fff'],
-  toHeatmapQuery: jest.fn(() => ({
+  toHeatmapQuery: vi.fn(() => ({
     mode: 'distribution',
     config: {},
     scaleType: 'log',
@@ -73,9 +75,9 @@ jest.mock('../../DBHeatmapChart', () => ({
 // Capture props passed to DBDeltaChart so we can assert URL coords forward.
 type DBDeltaChartProps = React.ComponentProps<typeof DBDeltaChartType>;
 const deltaChartPropsLog: DBDeltaChartProps[] = [];
-jest.mock('../../DBDeltaChart', () => ({
+vi.mock('../../DBDeltaChart', () => ({
   __esModule: true,
-  default: jest.fn((props: DBDeltaChartProps) => {
+  default: vi.fn((props: DBDeltaChartProps) => {
     deltaChartPropsLog.push(props);
     return <div data-testid="db-delta-chart" />;
   }),
@@ -83,9 +85,9 @@ jest.mock('../../DBDeltaChart', () => ({
 
 // Re-import the mocked ColorLegend so we can assert that it's specifically
 // the heatmap color scale being passed as legendPrefix (not any truthy node).
-const { ColorLegend: MockedColorLegend } = jest.requireMock(
-  '../../DBHeatmapChart',
-);
+const { ColorLegend: MockedColorLegend } = await vi.importMock<
+  typeof import('../../DBHeatmapChart')
+>('../../DBHeatmapChart');
 
 // Direct type annotations (no `as unknown as` casts) so adding a
 // required field to either schema fails this fixture at compile
@@ -119,7 +121,7 @@ const baseChartConfig: BuilderChartConfigWithDateRange = {
 
 describe('DBSearchHeatmapChart', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     deltaChartPropsLog.length = 0;
     mockFieldsState = freshFieldsState();
   });

@@ -485,10 +485,10 @@ const FilterGroupBody = ({
 }) => {
   const [search, setSearch] = useState('');
   // "Show More" button when there's lots of options
-  const [shouldShowMore, setShowMore] = useState(false);
+  const [shouldShowMore, setShouldShowMore] = useState(false);
   // Track recently moved items for highlight animation
   const [recentlyMoved, setRecentlyMoved] = useState<Set<string | boolean>>(
-    new Set(),
+    () => new Set(),
   );
   // For live searches, don't refresh percentages when date range changes
   const [dateRange, setDateRange] = useState<[Date, Date]>(
@@ -534,7 +534,7 @@ const FilterGroupBody = ({
   // onDistributionError isn't stable; re-running on it would notify again
   const handleDistributionError = useEffectEvent(onDistributionError);
   useEffect(() => {
-    if (distributionError) {
+    if (showDistributions && distributionError) {
       notifications.show({
         color: 'red',
         title: 'Error loading filter distribution',
@@ -543,7 +543,7 @@ const FilterGroupBody = ({
       });
       handleDistributionError();
     }
-  }, [distributionError]);
+  }, [distributionError, showDistributions]);
 
   const totalAppliedFiltersSize =
     selectedValues.included.size +
@@ -769,7 +769,7 @@ const FilterGroupBody = ({
             }
             onClick={() => {
               // When show more is clicked, immediately show all and also fetch more from server.
-              setShowMore(!shouldShowMore);
+              setShouldShowMore(!shouldShowMore);
               if (!shouldShowMore) {
                 onLoadMore?.(name);
               }

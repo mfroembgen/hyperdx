@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { fireEvent } from '@testing-library/dom';
 import { act, render, renderHook } from '@testing-library/react';
 
@@ -131,7 +132,7 @@ describe('useResizable', () => {
   });
 
   it('should cleanup event listeners on unmount', () => {
-    const removeEventListenerSpy = jest.spyOn(document, 'removeEventListener');
+    const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener');
     const { result, unmount } = renderHook(() => useResizable(20));
 
     act(() => {

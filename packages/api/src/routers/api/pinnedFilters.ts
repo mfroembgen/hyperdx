@@ -1,7 +1,6 @@
 import { PinnedFiltersValueSchema } from '@hyperdx/common-utils/dist/types';
 import express from 'express';
 import { z } from 'zod';
-import { validateRequest } from 'zod-express-middleware';
 
 import {
   getPinnedFilters,
@@ -9,6 +8,7 @@ import {
 } from '@/controllers/pinnedFilter';
 import { getSource } from '@/controllers/sources';
 import { getNonNullUserWithTeam } from '@/middleware/auth';
+import { validateRequest } from '@/middleware/validation';
 import { objectIdSchema } from '@/utils/zod';
 
 const router = express.Router();

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { z } from 'zod';
 
 import {
@@ -48,11 +49,11 @@ describe('utils', () => {
   // Suppress expected console.error noise from invalid text index types,
   // unknown tokenizers, and distributed table parsing edge cases
   beforeAll(() => {
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
   afterAll(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('formatDate', () => {
@@ -3403,7 +3404,7 @@ describe('utils', () => {
     });
 
     it('single-column input does not hit metadata', async () => {
-      const getColumn = jest.fn();
+      const getColumn = vi.fn();
       const metadata = { getColumn };
       await pickBucketTimestampColumn({
         timestampValueExpression: 'EventTime',

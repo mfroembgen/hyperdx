@@ -7,13 +7,13 @@ import router, { logoutWorkos } from '@/routers/api/workosAuth';
 import { authenticateWorkosSession } from '@/utils/workosSession';
 import { generateSessionId } from '@/utils/workosSessionStore';
 
-const mocks = {
-  authorize: jest.fn(),
-  exchange: jest.fn(),
-};
+const mocks = vi.hoisted(() => ({
+  authorize: vi.fn(),
+  exchange: vi.fn(),
+}));
 export const fixture = mocks;
-jest.mock('@/config', () => ({
-  ...jest.requireActual<typeof import('@/config')>('@/config'),
+vi.mock('@/config', async () => ({
+  ...(await vi.importActual<typeof import('@/config')>('@/config')),
   WORKOS: {
     clientId: 'client_app',
     frontendOrigin: 'https://app.example.com',
@@ -21,25 +21,21 @@ jest.mock('@/config', () => ({
   },
   EXPRESS_SESSION_SECRET: 'fixture-shared-secret-at-least-32-characters',
 }));
-jest.mock('@/utils/workosIdentity', () => ({
-  ...jest.requireActual<typeof import('@/utils/workosIdentity')>(
+vi.mock('@/utils/workosIdentity', async () => ({
+  ...(await vi.importActual<typeof import('@/utils/workosIdentity')>(
     '@/utils/workosIdentity',
-  ),
+  )),
   resolveWorkosUser: async () => ({
     _id: 'local-user',
     team: 'local-team',
     email: 'member@example.com',
   }),
 }));
-jest.mock('@/utils/workosClient', () => ({
+vi.mock('@/utils/workosClient', () => ({
   workos: {
     userManagement: {
-      get getAuthorizationUrlWithPKCE() {
-        return mocks.authorize;
-      },
-      get authenticateWithCode() {
-        return mocks.exchange;
-      },
+      getAuthorizationUrlWithPKCE: mocks.authorize,
+      authenticateWithCode: mocks.exchange,
       getLogoutUrl: () => 'https://identity.example.com/logout',
       loadSealedSession: ({ sessionData }: { sessionData: string }) => {
         let seal = sessionData;

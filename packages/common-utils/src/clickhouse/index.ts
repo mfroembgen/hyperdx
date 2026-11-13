@@ -7,7 +7,7 @@ import type {
   ResponseHeaders,
   ResponseJSON,
   Row,
-} from '@clickhouse/client-common';
+} from '@clickhouse/client';
 import type { ClickHouseClient as WebClickHouseClient } from '@clickhouse/client-web';
 import * as SQLParser from 'node-sql-parser';
 
@@ -443,7 +443,8 @@ export const extractColumnReferencesFromKey = (expr: string): string[] => {
       // Parse remaining column references with node-sql-parser
       const parsedColumnList = parser
         .columnList(`select ${exprWithoutMapsOrJson}`)
-        .map(col => col.split('::')[2]);
+        .map(col => col.split('::')[2])
+        .filter(column => column !== '');
 
       return [...new Set([...parsedColumnList, ...jsonPaths, ...mapAccesses])];
     } catch (e) {
@@ -579,7 +580,7 @@ export abstract class BaseClickhouseClient {
   ): void {
     if (!this.customLogger) return;
 
-    let debugSql = '';
+    let debugSql: string;
     try {
       debugSql = parameterizedQueryToSql({ sql: query, params: query_params });
     } catch {
@@ -724,7 +725,7 @@ export abstract class BaseClickhouseClient {
           let err = error;
           // We should never error out here for debug info, so it's aggressively wrapped
           try {
-            let debugSql = '';
+            let debugSql: string;
             try {
               debugSql = parameterizedQueryToSql({
                 sql: props.query,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDebouncedValue } from '@mantine/hooks';
 
 interface UseTableSearchOptions {
@@ -53,7 +53,7 @@ export function useTableSearch({
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [matchIndices, setMatchIndices] = useState<number[]>([]);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
-  const shouldScrollToMatchRef = useRef(false);
+  const [shouldScrollToMatch, setShouldScrollToMatch] = useState(false);
 
   // Search through all rows when debounced query changes
   useEffect(() => {
@@ -87,14 +87,14 @@ export function useTableSearch({
     // If we had matches before and still have matches, try to stay on the same match
     if (previousMatchCount === 0 && foundMatches.length > 0) {
       setCurrentMatchIndex(0);
-      shouldScrollToMatchRef.current = true;
+      setShouldScrollToMatch(true);
     } else if (
       foundMatches.length > 0 &&
       currentMatchIndex >= foundMatches.length
     ) {
       // If current match is now out of bounds, go to last match
       setCurrentMatchIndex(foundMatches.length - 1);
-      shouldScrollToMatchRef.current = true;
+      setShouldScrollToMatch(true);
     }
     // Otherwise keep the current match index as is (loading more data shouldn't change position)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,26 +111,26 @@ export function useTableSearch({
     if (!value) {
       setMatchIndices([]);
       setCurrentMatchIndex(0);
-      shouldScrollToMatchRef.current = false;
+      setShouldScrollToMatch(false);
     }
   }, []);
 
   const handlePreviousMatch = useCallback(() => {
-    shouldScrollToMatchRef.current = true;
+    setShouldScrollToMatch(true);
     setCurrentMatchIndex(prev =>
       prev > 0 ? prev - 1 : matchIndices.length - 1,
     );
   }, [matchIndices.length]);
 
   const handleNextMatch = useCallback(() => {
-    shouldScrollToMatchRef.current = true;
+    setShouldScrollToMatch(true);
     setCurrentMatchIndex(prev =>
       prev < matchIndices.length - 1 ? prev + 1 : 0,
     );
   }, [matchIndices.length]);
 
   const handleMatchClick = useCallback((index: number) => {
-    shouldScrollToMatchRef.current = true;
+    setShouldScrollToMatch(true);
     setCurrentMatchIndex(index);
   }, []);
 
@@ -138,12 +138,12 @@ export function useTableSearch({
     setInputValue('');
     setMatchIndices([]);
     setCurrentMatchIndex(0);
-    shouldScrollToMatchRef.current = false;
+    setShouldScrollToMatch(false);
     setIsSearchVisible(false);
   }, []);
 
   const clearShouldScrollToMatch = useCallback(() => {
-    shouldScrollToMatchRef.current = false;
+    setShouldScrollToMatch(false);
   }, []);
 
   return {
@@ -154,7 +154,7 @@ export function useTableSearch({
     currentMatchIndex,
     isSearchVisible,
     setIsSearchVisible,
-    shouldScrollToMatch: shouldScrollToMatchRef.current,
+    shouldScrollToMatch,
     clearShouldScrollToMatch,
     handlePreviousMatch,
     handleNextMatch,

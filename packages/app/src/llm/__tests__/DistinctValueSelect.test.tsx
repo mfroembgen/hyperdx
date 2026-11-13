@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 
 import { makeTraceSource } from '@/llm/__fixtures__/sources';
@@ -6,7 +7,7 @@ import { DistinctValueSelect } from '@/llm/dashboard/DistinctValueSelect';
 let mockRows: Record<string, unknown>[] | undefined = [];
 let mockLoading = false;
 let mockError = false;
-jest.mock('@/hooks/useChartConfig', () => ({
+vi.mock('@/hooks/useChartConfig', () => ({
   useQueriedChartConfig: () => ({
     data: mockRows == null ? undefined : { data: mockRows },
     isLoading: mockLoading,
@@ -34,7 +35,7 @@ describe('DistinctValueSelect', () => {
 
   it('shows the applied value when it is present in the fetched options', () => {
     mockRows = [{ value: 'alice@x.com' }, { value: 'bob@x.com' }];
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     renderWithMantine(
       <DistinctValueSelect
         {...baseProps}
@@ -52,7 +53,7 @@ describe('DistinctValueSelect', () => {
   // which looks like an unfiltered view returning nothing.
   it('keeps the applied value selected when it is absent from the options', () => {
     mockRows = [{ value: 'bob@x.com' }];
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     renderWithMantine(
       <DistinctValueSelect
         {...baseProps}
@@ -72,7 +73,7 @@ describe('DistinctValueSelect', () => {
   it('keeps the applied value selected while the options are still loading', () => {
     mockRows = undefined;
     mockLoading = true;
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     renderWithMantine(
       <DistinctValueSelect
         {...baseProps}
@@ -94,7 +95,7 @@ describe('DistinctValueSelect', () => {
       <DistinctValueSelect
         {...baseProps}
         value="alice@x.com"
-        onChange={jest.fn()}
+        onChange={vi.fn()}
       />,
     );
 
@@ -107,7 +108,7 @@ describe('DistinctValueSelect', () => {
     mockRows = undefined;
     mockLoading = true;
     renderWithMantine(
-      <DistinctValueSelect {...baseProps} value="" onChange={jest.fn()} />,
+      <DistinctValueSelect {...baseProps} value="" onChange={vi.fn()} />,
     );
 
     expect(screen.getByRole('combobox')).toBeDisabled();
@@ -116,7 +117,7 @@ describe('DistinctValueSelect', () => {
   it('falls back to the placeholder when no value is applied', () => {
     mockRows = [{ value: 'bob@x.com' }];
     renderWithMantine(
-      <DistinctValueSelect {...baseProps} value="" onChange={jest.fn()} />,
+      <DistinctValueSelect {...baseProps} value="" onChange={vi.fn()} />,
     );
 
     expect(screen.getByRole('combobox')).toHaveValue('');

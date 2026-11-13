@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { AlertState } from '@hyperdx/common-utils/dist/types';
 import { screen } from '@testing-library/react';
 
@@ -5,22 +6,27 @@ import { AlertStateBadge } from '@/components/alerts/AlertStateBadge';
 
 // click-ui encodes state and type only in hashed CSS module class names, so
 // the mock exposes the props as attributes to assert on.
-jest.mock('@clickhouse/click-ui', () => ({
-  ...jest.requireActual('@clickhouse/click-ui'),
-  Badge: ({
-    text,
-    state,
-    type,
-  }: {
-    text: React.ReactNode;
-    state?: string;
-    type?: string;
-  }) => (
-    <span data-testid="badge" data-state={state} data-type={type}>
-      {text}
-    </span>
-  ),
-}));
+vi.mock('@clickhouse/click-ui', async () => {
+  const actualModule0 = await vi.importActual<
+    typeof import('@clickhouse/click-ui')
+  >('@clickhouse/click-ui');
+  return {
+    ...actualModule0,
+    Badge: ({
+      text,
+      state,
+      type,
+    }: {
+      text: React.ReactNode;
+      state?: string;
+      type?: string;
+    }) => (
+      <span data-testid="badge" data-state={state} data-type={type}>
+        {text}
+      </span>
+    ),
+  };
+});
 
 describe('AlertStateBadge', () => {
   it.each([

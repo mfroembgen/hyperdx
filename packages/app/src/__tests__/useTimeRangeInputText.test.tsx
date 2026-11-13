@@ -1,9 +1,10 @@
+import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 
 import { useTimeRangeInputText } from '@/timeQuery';
 
 let mockTimeZone: string | undefined = 'Etc/UTC';
-jest.mock('@/useDisplayTimeZone', () => ({
+vi.mock('@/useDisplayTimeZone', () => ({
   useDisplayTimeZone: () => mockTimeZone,
 }));
 
@@ -14,12 +15,12 @@ const range: [Date, Date] = [
 
 describe('useTimeRangeInputText', () => {
   beforeEach(() => {
-    jest.useFakeTimers().setSystemTime(new Date('2026-10-23T00:00:00Z'));
+    vi.useFakeTimers().setSystemTime(new Date('2026-10-23T00:00:00Z'));
     mockTimeZone = 'Etc/UTC';
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('formats the range in the display time zone', () => {

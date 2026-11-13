@@ -7,12 +7,12 @@
  * Every seeded dashboard and saved search carries a tag (default `seeded`) so
  * the whole batch can be removed again with `--purge`.
  *
- *   yarn seed:alerts --count 2000
- *   yarn seed:alerts --purge
+ *   bun run seed:alerts --count 2000
+ *   bun run seed:alerts --purge
  *
  * The Mongo URI defaults to the dev slot of the current git worktree, from
  * scripts/slots.sh. Override with --mongo-uri, MONGO_URI, or HDX_DEV_SLOT.
- * The dev stack must be up (`yarn dev`) and registered once, since
+ * The dev stack must be up (`bun run dev`) and registered once, since
  * the script attaches everything to the existing team and log source.
  */
 import { formatTileAlertDisplayName } from '@hyperdx/common-utils/dist/alerts';
@@ -65,7 +65,7 @@ type Args = {
 };
 
 const USAGE = [
-  'Usage: yarn seed:alerts [options]',
+  'Usage: bun run seed:alerts [options]',
   '',
   '  -n, --count N       number of alerts to create (default 1000)',
   '      --tag TAG       tag applied to seeded dashboards and saved searches',
@@ -120,14 +120,14 @@ function parseArgs(argv: string[]): Args {
 }
 
 /**
- * Mongo URI of this worktree's dev stack. `yarn seed:alerts` runs through
+ * Mongo URI of this worktree's dev stack. `bun run seed:alerts` runs through
  * scripts/with-slots.sh, which sets HDX_DEV_MONGO_PORT.
  */
 function devSlotMongoUri(): string {
   const port = process.env.HDX_DEV_MONGO_PORT;
   if (!port) {
     throw new Error(
-      'HDX_DEV_MONGO_PORT is not set. Run this with `yarn seed:alerts`, or pass --mongo-uri.',
+      'HDX_DEV_MONGO_PORT is not set. Run this with `bun run seed:alerts`, or pass --mongo-uri.',
     );
   }
   return `mongodb://localhost:${port}/hyperdx`;
@@ -325,7 +325,7 @@ async function seed(count: number, tag: string) {
     name: string;
     tags: string[];
   }[] = [];
-  for (let remaining = savedSearchAlertTotal; remaining > 0; ) {
+  for (let remaining = savedSearchAlertTotal; remaining > 0;) {
     const alerts = Math.min(
       remaining,
       randomInt(1, MAX_ALERTS_PER_SAVED_SEARCH),
@@ -376,7 +376,7 @@ async function seed(count: number, tag: string) {
     alertedTiles: { id: string; displayName: string }[];
     tags: string[];
   }[] = [];
-  for (let remaining = tileAlertTotal; remaining > 0; ) {
+  for (let remaining = tileAlertTotal; remaining > 0;) {
     const index = dashboardPlans.length;
     const tileCount = randomInt(1, MAX_TILES_PER_DASHBOARD);
     const tiles = Array.from({ length: tileCount }, (_, tileIndex) =>
@@ -441,7 +441,7 @@ async function seed(count: number, tag: string) {
       `  states: ${[...byState]
         .map(([state, n]) => `${state}=${n}`)
         .join(', ')}`,
-      `Tagged "${tag}" — remove with: yarn seed:alerts --purge --tag ${tag}`,
+      `Tagged "${tag}" — remove with: bun run seed:alerts --purge --tag ${tag}`,
     ].join('\n'),
   );
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { fireEvent, screen, within } from '@testing-library/react';
 
 import { useMaterializedAliasColumnsOption } from '@/hooks/useMaterializedAliasColumnsOption';
@@ -7,31 +8,31 @@ import { buildJSONExtractQuery, DBRowJsonViewer } from './DBRowJsonViewer';
 import { RowSidePanelContext } from './DBRowSidePanel';
 
 // Mock Next.js router
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   __esModule: true,
   default: {
-    push: jest.fn(),
+    push: vi.fn(),
   },
 }));
 
-const mockFormatTime = jest.fn();
+const mockFormatTime = vi.fn();
 
-jest.mock('@/useFormatTime', () => ({
+vi.mock('@/useFormatTime', () => ({
   useFormatTime: () => mockFormatTime,
-  FormatTime: jest.fn(() => null),
+  FormatTime: vi.fn(() => null),
 }));
 
 describe('DBRowJsonViewer', () => {
-  const mockGenerateSearchUrl = jest.fn();
-  const mockOnPropertyAddClick = jest.fn();
-  const mockToggleColumn = jest.fn();
+  const mockGenerateSearchUrl = vi.fn();
+  const mockOnPropertyAddClick = vi.fn();
+  const mockToggleColumn = vi.fn();
 
   const defaultContext = {
     generateSearchUrl: mockGenerateSearchUrl,
     onPropertyAddClick: mockOnPropertyAddClick,
     toggleColumn: mockToggleColumn,
     displayedColumns: [],
-    generateChartUrl: jest.fn(),
+    generateChartUrl: vi.fn(),
   };
 
   // Test data with consistent structure
@@ -58,14 +59,16 @@ describe('DBRowJsonViewer', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockFormatTime.mockImplementation((time, { format } = {}) => {
-      const date = time instanceof Date ? time : new Date(time);
-      if (format === 'withMs') {
-        return `formatted:${date.toISOString()}`;
-      }
-      return String(time);
-    });
+    vi.clearAllMocks();
+    mockFormatTime.mockImplementation(
+      (time: string | number | Date, { format }: { format?: string } = {}) => {
+        const date = time instanceof Date ? time : new Date(time);
+        if (format === 'withMs') {
+          return `formatted:${date.toISOString()}`;
+        }
+        return String(time);
+      },
+    );
   });
 
   // Helper to render component
@@ -271,7 +274,7 @@ describe('DBRowJsonViewer', () => {
   });
 
   describe('copy functionality', () => {
-    const mockClipboard = jest.fn();
+    const mockClipboard = vi.fn();
 
     beforeEach(() => {
       Object.assign(navigator, {

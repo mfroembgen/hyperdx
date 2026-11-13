@@ -1,5 +1,7 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import http from 'http';
 import request from 'supertest';
+import { vi } from 'vitest';
 
 import app from '@/api-app';
 import { ClickhouseClient } from '@/clickhouse';
@@ -16,19 +18,19 @@ import Connection from '@/models/connection';
 import { LogSource } from '@/models/source';
 import User, { type UserDocument } from '@/models/user';
 
-jest.mock('@/config', () => ({
-  ...jest.requireActual('@/config'),
+vi.mock('@/config', async () => ({
+  ...(await vi.importActual<typeof import('@/config')>('@/config')),
   AI_PROVIDER: 'openai',
   AI_API_KEY: 'test-only',
   AI_MODEL_NAME: 'test-only',
   AI_BASE_URL: 'http://127.0.0.1:1',
 }));
 
-jest.mock('ai', () => ({
-  ...jest.requireActual('ai'),
-  generateText: jest.fn().mockResolvedValue({
+vi.mock('ai', async () => ({
+  ...(await vi.importActual<typeof import('ai')>('ai')),
+  generateText: vi.fn().mockResolvedValue({
     output: {
-      displayType: 'table',
+      displayType: DisplayType.Table,
       select: [{ aggregationFunction: 'count', property: 'Body' }],
       timeRange: 'Past 1h',
     },
@@ -37,8 +39,8 @@ jest.mock('ai', () => ({
 
 const server = http.createServer(app);
 const agent = request.agent(server);
-const metadataSpy = jest.spyOn(aiController, 'getAIMetadata');
-const querySpy = jest.spyOn(ClickhouseClient.prototype, 'query');
+const metadataSpy = vi.spyOn(aiController, 'getAIMetadata');
+const querySpy = vi.spyOn(ClickhouseClient.prototype, 'query');
 const tables: string[] = [];
 let user: UserDocument;
 // Stabilize hourly cache keys without giving MongoDB expired test sessions.
@@ -52,9 +54,9 @@ const fixtureTimestamp = bucketTime
   .replace('T', ' ');
 
 beforeAll(async () => {
-  jest.useFakeTimers({
+  vi.useFakeTimers({
     now: initialTime,
-    doNotFake: [
+    toNotFake: [
       'hrtime',
       'nextTick',
       'performance',
@@ -87,7 +89,7 @@ beforeAll(async () => {
 }, 60000);
 
 afterAll(async () => {
-  jest.useRealTimers();
+  vi.useRealTimers();
   await new Promise<void>((resolve, reject) =>
     server.close(err => (err ? reject(err) : resolve())),
   );
@@ -99,7 +101,7 @@ afterAll(async () => {
 });
 
 beforeEach(() => {
-  jest.setSystemTime(initialTime);
+  vi.setSystemTime(initialTime);
   querySpy.mockClear();
   metadataSpy.mockClear();
 });
@@ -231,6 +233,10 @@ test('MCP 50 then AI default preserves each requested limit', async () => {
 test('AI default then MCP 50 preserves each requested limit', async () => {
   const source = await sourceFixture('ai_mcp');
   const first = await ai(source.id);
+  expect(keyQueries()).toHaveLength(1);
+  expect(Object.values(keyQueries()[0]?.query_params ?? {})).toContain(
+    'metadata_limits_ai_mcp_kv',
+  );
   const second = await mcp(source.id);
   expect(first).toMatchObject({ status: 200, count: 100 });
   expect(second).toMatchObject({

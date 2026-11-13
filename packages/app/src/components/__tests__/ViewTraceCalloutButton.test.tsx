@@ -1,4 +1,5 @@
 import { ReactNode, useState } from 'react';
+import { vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import {
   fireEvent,
@@ -81,7 +82,7 @@ describe('ViewTraceCalloutButton', () => {
   });
 
   it('persists dismissal and navigates when the View Trace button is clicked', async () => {
-    const onView = jest.fn();
+    const onView = vi.fn();
     render(<PanelHarness onView={onView} />, { wrapper: MantineWrapper });
 
     fireEvent.click(await screen.findByTestId('side-panel-view-trace'));
@@ -97,7 +98,7 @@ describe('ViewTraceCalloutButton', () => {
   });
 
   it('persists dismissal without navigating when "Got it" is clicked', async () => {
-    const onView = jest.fn();
+    const onView = vi.fn();
     render(<PanelHarness onView={onView} />, { wrapper: MantineWrapper });
 
     fireEvent.click(await screen.findByText('Got it'));

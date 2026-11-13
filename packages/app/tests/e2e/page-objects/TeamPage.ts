@@ -4,7 +4,10 @@
  * Sources, Connections, Integrations/Webhooks, Team Name,
  * ClickHouse Settings, API Keys, and Team Members.
  */
-import { Locator, Page } from '@playwright/test';
+import { TeamApiResponseSchema } from '@hyperdx/common-utils/dist/types';
+import { expect, Locator, Page } from '@playwright/test';
+
+import { getApiUrl } from '../utils/api-helpers';
 
 export class TeamPage {
   readonly page: Page;
@@ -162,6 +165,12 @@ export class TeamPage {
   // --- Team Name ---
 
   async getTeamNameText() {
+    const response = await this.page.request.get(`${getApiUrl()}/team`);
+    await expect(response).toBeOK();
+    const { name } = TeamApiResponseSchema.pick({ name: true }).parse(
+      await response.json(),
+    );
+    await expect(this.teamNameDisplay).toHaveText(name);
     return this.teamNameDisplay.textContent();
   }
 

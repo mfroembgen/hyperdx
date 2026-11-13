@@ -1,18 +1,19 @@
+import { vi } from 'vitest';
 import { trace } from '@opentelemetry/api';
 
 import { getBrowserInitOptions, recordAction } from '@/utils/browserTelemetry';
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 describe('recordAction', () => {
   it('ends a span named after the action with its attributes', () => {
     const tracer = trace.getTracer('test');
     const span = tracer.startSpan('probe');
-    const end = jest.spyOn(span, 'end');
-    const startSpan = jest.spyOn(tracer, 'startSpan').mockReturnValue(span);
-    const getTracer = jest.spyOn(trace, 'getTracer').mockReturnValue(tracer);
+    const end = vi.spyOn(span, 'end');
+    const startSpan = vi.spyOn(tracer, 'startSpan').mockReturnValue(span);
+    const getTracer = vi.spyOn(trace, 'getTracer').mockReturnValue(tracer);
 
     recordAction('search executed', { latency_ms: 12, source_id: 's1' });
 

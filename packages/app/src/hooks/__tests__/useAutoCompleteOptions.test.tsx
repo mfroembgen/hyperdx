@@ -1,5 +1,6 @@
 import React from 'react';
 import { enableMapSet } from 'immer';
+import { type Mock, vi } from 'vitest';
 import { JSDataType } from '@hyperdx/common-utils/dist/clickhouse';
 import { Field } from '@hyperdx/common-utils/dist/core/metadata';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -19,47 +20,52 @@ enableMapSet();
 // every hook in `useMetadata` plus `usePinnedFilters` and `api.useMe`.
 // Mocking each direct dependency is cheaper than wiring up a live
 // QueryClient + source config just to render the tree.
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
-    useMe: jest
+    useMe: vi
       .fn()
       .mockReturnValue({ data: null, isFetched: true, isLoading: false }),
   },
 }));
 
-jest.mock('@/searchFilters', () => ({
+vi.mock('@/searchFilters', () => ({
   __esModule: true,
-  usePinnedFilters: jest.fn().mockReturnValue({
+  usePinnedFilters: vi.fn().mockReturnValue({
     isFieldPinned: () => false,
     isSharedFieldPinned: () => false,
   }),
   escapeFilterStateKeys: (state: unknown) => state,
 }));
 
-jest.mock('../useMetadata', () => {
-  const actual = jest.requireActual('../useMetadata.tsx');
+vi.mock('../useMetadata', async () => {
+  const actualModule0 =
+    await vi.importActual<typeof import('../useMetadata.tsx')>(
+      '../useMetadata.tsx',
+    );
+
+  const actual = actualModule0;
   return {
     __esModule: true,
     ...actual,
-    useMetadataWithSettings: jest.fn().mockReturnValue({
-      getKeyValuesWithMVs: jest.fn(),
-      getAllKeyValues: jest.fn(),
+    useMetadataWithSettings: vi.fn().mockReturnValue({
+      getKeyValuesWithMVs: vi.fn(),
+      getAllKeyValues: vi.fn(),
     }),
-    useAllFields: jest.fn(),
-    useMultipleAllFields: jest.fn(),
-    useGetKeyValues: jest.fn(),
-    useColumns: jest.fn().mockReturnValue({ data: [], isLoading: false }),
-    useDateTimeColumns: jest.fn().mockReturnValue(new Map()),
-    useJsonColumns: jest.fn().mockReturnValue({ data: [] }),
-    useMapColumns: jest.fn().mockReturnValue({ data: [] }),
+    useAllFields: vi.fn(),
+    useMultipleAllFields: vi.fn(),
+    useGetKeyValues: vi.fn(),
+    useColumns: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+    useDateTimeColumns: vi.fn().mockReturnValue(new Map()),
+    useJsonColumns: vi.fn().mockReturnValue({ data: [] }),
+    useMapColumns: vi.fn().mockReturnValue({ data: [] }),
   };
 });
 
-jest.mock('../../source', () => ({
+vi.mock('../../source', () => ({
   __esModule: true,
-  useSource: jest.fn().mockReturnValue({ data: undefined }),
-  useSources: jest.fn().mockReturnValue({ data: [], isLoading: false }),
+  useSource: vi.fn().mockReturnValue({ data: undefined }),
+  useSources: vi.fn().mockReturnValue({ data: [], isLoading: false }),
 }));
 
 function makeWrapper() {
@@ -102,15 +108,15 @@ describe('useAutoCompleteOptions', () => {
   let wrapper: React.FC<{ children: React.ReactNode }>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
-    (useAllFields as jest.Mock).mockReturnValue({
+    (useAllFields as Mock).mockReturnValue({
       data: mockFields,
       isLoading: false,
       error: null,
     });
 
-    (useGetKeyValues as jest.Mock).mockReturnValue({
+    (useGetKeyValues as Mock).mockReturnValue({
       data: null,
       isFetching: false,
     });
@@ -144,7 +150,7 @@ describe('useAutoCompleteOptions', () => {
   });
 
   it('should return key value options with correct lucene formatting', () => {
-    (useGetKeyValues as jest.Mock).mockReturnValue({
+    (useGetKeyValues as Mock).mockReturnValue({
       data: [
         {
           key: 'ResourceAttributes.service.name',
@@ -191,7 +197,7 @@ describe('useAutoCompleteOptions', () => {
   });
 
   it('should handle nested key value options', () => {
-    (useGetKeyValues as jest.Mock).mockReturnValue({
+    (useGetKeyValues as Mock).mockReturnValue({
       data: [
         {
           key: 'ResourceAttributes',
@@ -282,7 +288,7 @@ describe('useAutoCompleteOptions', () => {
       { wrapper },
     );
 
-    expect(jest.mocked(useAllFields).mock.calls.at(-1)?.[0]).toEqual(
+    expect(vi.mocked(useAllFields).mock.calls.at(-1)?.[0]).toEqual(
       mockTableConnection,
     );
   });
@@ -303,7 +309,7 @@ describe('useAutoCompleteOptions', () => {
       { wrapper },
     );
 
-    expect(jest.mocked(useAllFields).mock.calls.at(-1)?.[0]).toEqual(
+    expect(vi.mocked(useAllFields).mock.calls.at(-1)?.[0]).toEqual(
       mockTableConnection,
     );
   });

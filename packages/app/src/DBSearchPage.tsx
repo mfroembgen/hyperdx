@@ -1130,7 +1130,7 @@ function DBSearchPageContent() {
 
   const [isLive, setIsLive] = useQueryState(
     'isLive',
-    parseAsBoolean.withDefault(true),
+    parseAsBoolean.withDefault(true).withOptions({ clearOnDefault: false }),
   );
 
   useEffect(() => {
@@ -1730,7 +1730,9 @@ function DBSearchPageContent() {
 
   const [interval, setInterval] = useQueryState(
     'liveInterval',
-    parseAsInteger.withDefault(LIVE_TAIL_DURATION_MS),
+    parseAsInteger
+      .withDefault(LIVE_TAIL_DURATION_MS)
+      .withOptions({ clearOnDefault: false }),
   );
 
   const [refreshFrequency, setRefreshFrequency] = useQueryState(
@@ -2154,7 +2156,7 @@ function DBSearchPageContent() {
     setNewSourceModalOpened(true);
   }, []);
 
-  const [isDrawerChildModalOpen, setDrawerChildModalOpen] = useState(false);
+  const [isDrawerChildModalOpen, setIsDrawerChildModalOpen] = useState(false);
 
   const rowTableContext = useMemo(
     () => ({
@@ -2164,7 +2166,7 @@ function DBSearchPageContent() {
       generateSearchUrl,
       dbSqlRowTableConfig,
       isChildModalOpen: isDrawerChildModalOpen,
-      setChildModalOpen: setDrawerChildModalOpen,
+      setChildModalOpen: setIsDrawerChildModalOpen,
       source: searchedSource,
     }),
     [
@@ -2400,7 +2402,8 @@ function DBSearchPageContent() {
               {savedSearch.createdBy && (
                 <span>
                   Created by{' '}
-                  {savedSearch.createdBy.name || savedSearch.createdBy.email}.{' '}
+                  {savedSearch.createdBy.name || savedSearch.createdBy.email}
+                  .{' '}
                 </span>
               )}
               {savedSearch.updatedAt && (

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { vi } from 'vitest';
 import {
   MetricsDataType,
   SourceKind,
@@ -13,12 +14,12 @@ import { MetricNameSelect } from '@/components/MetricNameSelect';
 // Comfortably past the component's 300ms search debounce.
 const DEBOUNCE_SETTLE_MS = 800;
 
-const useGetMetricNames = jest.fn();
-const streamDistinctIndexValues = jest.fn();
+const useGetMetricNames = vi.fn();
+const streamDistinctIndexValues = vi.fn();
 
 // Browsing streams from the primary index; only a search reaches
 // `useGetMetricNames`. Both mocked so each test can assert against its path.
-jest.mock('@/hooks/useMetadata', () => ({
+vi.mock('@/hooks/useMetadata', () => ({
   useGetMetricNames: (...args: any[]) => useGetMetricNames(...args),
   useMetadataWithSettings: () => ({
     streamDistinctIndexValues: (...args: any[]) =>
@@ -71,8 +72,8 @@ const renderSelect = (
       <MetricNameSelect
         metricType={MetricsDataType.Gauge}
         metricName={null}
-        setMetricType={jest.fn()}
-        setMetricName={jest.fn()}
+        setMetricType={vi.fn()}
+        setMetricName={vi.fn()}
         metricSource={metricSource}
         data-testid="metric-name-selector"
         {...props}
@@ -352,8 +353,8 @@ describe('MetricNameSelect', () => {
     // without this offer the pasted name is unusable.
     it('offers the typed name, and commits it verbatim', async () => {
       noMatches();
-      const setMetricName = jest.fn();
-      const setMetricType = jest.fn();
+      const setMetricName = vi.fn();
+      const setMetricType = vi.fn();
       renderSelect({ setMetricName, setMetricType });
 
       await userEvent.type(
@@ -397,8 +398,8 @@ describe('MetricNameSelect', () => {
 
     it('commits the kind the user picked, not the current one', async () => {
       noMatches();
-      const setMetricName = jest.fn();
-      const setMetricType = jest.fn();
+      const setMetricName = vi.fn();
+      const setMetricType = vi.fn();
       renderSelect({
         setMetricName,
         setMetricType,

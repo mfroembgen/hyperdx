@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 
@@ -120,7 +121,7 @@ describe('useStreamingQuery', () => {
   });
 
   it('does not run the stream when disabled', async () => {
-    const streamFactory = jest.fn(async function* () {
+    const streamFactory = vi.fn(async function* () {
       yield ['a'];
     });
 

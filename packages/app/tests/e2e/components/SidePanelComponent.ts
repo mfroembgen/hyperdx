@@ -284,6 +284,12 @@ export class SidePanelComponent {
     return this.panelContainer.getByTestId('linked-from-open-span');
   }
 
+  getJsonAttributeKey(attribute: string) {
+    return this.page
+      .getByTestId('json-viewer-line')
+      .getByText(attribute, { exact: true });
+  }
+
   /**
    * Key labels of the JSON viewer's depth-0 rows. Nested rows are excluded so
    * the list is a flat sequence that reverses cleanly when the order flips —

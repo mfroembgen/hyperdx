@@ -28,20 +28,17 @@ export function runMongoshScript(script: string): string {
     );
   }
 
-  const e2eSlot = process.env.HDX_E2E_SLOT || '0';
-
   return execFileSync(
-    'docker',
+    'bash',
     [
-      'compose',
-      '-p',
-      `e2e-${e2eSlot}`,
-      '-f',
-      dockerComposeFile,
+      path.join(__dirname, '../../../../../scripts/services.sh'),
+      process.env.E2E_SERVICES_MODE || 'e2e',
       'exec',
       '-T',
       'db',
       'mongosh',
+      '--port',
+      process.env.E2E_MONGO_CONTAINER_PORT || '27017',
       '--quiet',
     ],
     {

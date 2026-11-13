@@ -1,6 +1,5 @@
 import express from 'express';
 import { z } from 'zod';
-import { validateRequest } from 'zod-express-middleware';
 
 import {
   addFavorite,
@@ -8,6 +7,7 @@ import {
   removeFavorite,
 } from '@/controllers/favorite';
 import { getNonNullUserWithTeam } from '@/middleware/auth';
+import { validateRequest } from '@/middleware/validation';
 import { objectIdSchema } from '@/utils/zod';
 
 const router = express.Router();

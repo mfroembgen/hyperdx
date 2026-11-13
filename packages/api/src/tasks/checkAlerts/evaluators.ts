@@ -8,9 +8,9 @@ import type {
   IAlertHistory,
   IAlertHistoryAnalytics,
 } from '@/models/alertHistory';
-import type { ISource } from '@/models/source';
 import type { AggregatedAlertHistory } from '@/tasks/checkAlerts';
 import type {
+  AlertDataSource,
   AlertDetails,
   AlertProvider,
 } from '@/tasks/checkAlerts/providers';
@@ -28,7 +28,7 @@ import type {
 export interface AlertEvaluationContext {
   alert: IAlert;
   details: AlertDetails;
-  source: ISource | undefined;
+  source: AlertDataSource | undefined;
   /** Unoptimized config: evaluators that change the date range or
    * granularity must re-run materialized-view selection themselves. */
   chartConfig: ChartConfigWithOptDateRange;

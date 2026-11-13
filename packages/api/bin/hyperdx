@@ -12,10 +12,10 @@ shift 2>/dev/null || true
 
 case "$command" in
   api)
-    exec node -r "$TELEMETRY_PRELOAD" "$API_BUILD_DIR/index.js" "$@"
+    exec bun --preload "$TELEMETRY_PRELOAD" "$API_BUILD_DIR/index.js" "$@"
     ;;
   task)
-    exec node -r "$TELEMETRY_PRELOAD" "$API_BUILD_DIR/tasks/index.js" "$@"
+    exec bun --preload "$TELEMETRY_PRELOAD" "$API_BUILD_DIR/tasks/index.js" "$@"
     ;;
   *)
     echo "Usage: hyperdx <command> [args...]"

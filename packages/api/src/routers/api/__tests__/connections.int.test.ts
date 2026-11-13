@@ -1,12 +1,13 @@
 import { ObjectId } from 'mongodb';
 import { Types } from 'mongoose';
+import { vi } from 'vitest';
 
 import * as config from '@/config';
 import { clearBackendProbeCache } from '@/controllers/promql';
 import { getAgent, getLoggedInAgent, getServer } from '@/fixtures';
 import Connection from '@/models/connection';
 
-const mockFetch = jest.mocked(global.fetch);
+const mockFetch = vi.mocked(global.fetch);
 
 // What the router's `format_query` probe sees from a server that does, or does
 // not, have the prometheus_api_v1 handler configured.

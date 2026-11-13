@@ -71,7 +71,7 @@ export function trimToolResponse<T = any>(
 
   // Fallback: per-key budget split and array cuts.
   const stats: FallbackStats = { arrays: [], strings: 0, charsRemoved: 0 };
-  let trimmed: unknown = current;
+  let trimmed: unknown;
   if (Array.isArray(current)) {
     trimmed = trimArray(current, maxSize, '', stats);
   } else if (typeof current === 'object' && current !== null) {

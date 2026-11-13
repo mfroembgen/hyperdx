@@ -1,13 +1,15 @@
+import { vi } from 'vitest';
+
 const mockConfig = { IS_LOCAL_MODE: false };
-jest.mock('@/config', () => ({
+vi.mock('@/config', () => ({
   HDX_LOCAL_DEFAULT_CONNECTIONS: undefined,
   get IS_LOCAL_MODE() {
     return mockConfig.IS_LOCAL_MODE;
   },
 }));
 
-const mockHdxServer = jest.fn();
-jest.mock('@/api', () => ({
+const mockHdxServer = vi.fn();
+vi.mock('@/api', () => ({
   hdxServer: (...args: unknown[]) => mockHdxServer(...args),
 }));
 

@@ -41,7 +41,7 @@ describe('MCP Event Deltas Tool', () => {
     });
 
     logSource = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: team._id,
       from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
       timestampValueExpression: 'Timestamp',

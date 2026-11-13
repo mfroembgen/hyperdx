@@ -8,33 +8,29 @@ import {
 } from '@/utils/workosSession';
 import { replaceStoredWorkosSession } from '@/utils/workosSessionStore';
 
-const fixture = {
-  authenticate: jest.fn(),
-  refresh: jest.fn(),
-  verify: jest.fn(),
-  load: jest.fn(),
-};
-jest.mock('@/config', () => ({
-  ...jest.requireActual<typeof import('@/config')>('@/config'),
+const fixture = vi.hoisted(() => ({
+  authenticate: vi.fn(),
+  refresh: vi.fn(),
+  verify: vi.fn(),
+  load: vi.fn(),
+}));
+vi.mock('@/config', async () => ({
+  ...(await vi.importActual<typeof import('@/config')>('@/config')),
   WORKOS: { clientId: 'client_app' },
   EXPRESS_SESSION_SECRET: 'fixture-shared-secret-at-least-32-characters',
 }));
-jest.mock('@/utils/workosClient', () => ({
+vi.mock('@/utils/workosClient', () => ({
   workos: {
     userManagement: {
-      get loadSealedSession() {
-        return fixture.load;
-      },
-      get verifyAccessToken() {
-        return fixture.verify;
-      },
+      loadSealedSession: fixture.load,
+      verifyAccessToken: fixture.verify,
     },
   },
 }));
 
 // Persistence is mocked here; the Mongo integration suite tests atomicity.
-jest.mock('@/utils/workosSessionStore', () => ({
-  replaceStoredWorkosSession: jest.fn(
+vi.mock('@/utils/workosSessionStore', () => ({
+  replaceStoredWorkosSession: vi.fn(
     async (
       req: express.Request,
       expected: string,
@@ -59,11 +55,6 @@ jest.mock('@/utils/workosSessionStore', () => ({
     },
   ),
 }));
-
-const persistSession = jest
-  .mocked(replaceStoredWorkosSession)
-  .getMockImplementation();
-if (!persistSession) throw new Error('Session persistence mock is required');
 
 describe('WorkOS sealed server session', () => {
   const store = new session.MemoryStore();
@@ -105,16 +96,11 @@ describe('WorkOS sealed server session', () => {
     accessToken: 'fixture-access-token',
   };
   beforeEach(() => {
-    jest.resetAllMocks();
-    jest.mocked(replaceStoredWorkosSession).mockImplementation(persistSession);
+    vi.resetAllMocks();
     store.clear();
     fixture.load.mockReturnValue({
-      get authenticate() {
-        return fixture.authenticate;
-      },
-      get refresh() {
-        return fixture.refresh;
-      },
+      authenticate: fixture.authenticate,
+      refresh: fixture.refresh,
     });
     fixture.authenticate.mockResolvedValue(auth);
     fixture.verify.mockResolvedValue({
@@ -216,9 +202,9 @@ describe('WorkOS sealed server session', () => {
         retryable: false,
         reason: 'invalid_grant',
       });
-      jest
-        .mocked(replaceStoredWorkosSession)
-        .mockResolvedValueOnce('winning-seal');
+      vi.mocked(replaceStoredWorkosSession).mockResolvedValueOnce(
+        'winning-seal',
+      );
       fixture.verify.mockResolvedValueOnce({
         sub: 'user_example',
         sid: 'session_example',
@@ -244,7 +230,7 @@ describe('WorkOS sealed server session', () => {
       retryable: false,
       reason: 'invalid_grant',
     });
-    jest.mocked(replaceStoredWorkosSession).mockResolvedValue('another-seal');
+    vi.mocked(replaceStoredWorkosSession).mockResolvedValue('another-seal');
     await agent.get('/protected').expect(503);
     expect(fixture.refresh).toHaveBeenCalledTimes(3);
     expect(replaceStoredWorkosSession).toHaveBeenCalledTimes(3);

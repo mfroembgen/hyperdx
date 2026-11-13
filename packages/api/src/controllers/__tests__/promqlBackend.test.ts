@@ -1,4 +1,5 @@
 import type { PromqlSourceBackend } from '@hyperdx/common-utils/dist/types';
+import { vi } from 'vitest';
 
 import {
   clearBackendProbeCache,
@@ -7,13 +8,15 @@ import {
 } from '@/controllers/promql';
 import { connectionPrometheusHttpApiSupport } from '@/controllers/timeseriesEngine';
 
-jest.mock('@/controllers/timeseriesEngine', () => ({
-  ...jest.requireActual('@/controllers/timeseriesEngine'),
-  connectionPrometheusHttpApiSupport: jest.fn(),
+vi.mock('@/controllers/timeseriesEngine', async () => ({
+  ...(await vi.importActual<typeof import('@/controllers/timeseriesEngine')>(
+    '@/controllers/timeseriesEngine',
+  )),
+  connectionPrometheusHttpApiSupport: vi.fn(),
 }));
 
-const mockFetch = jest.mocked(global.fetch);
-const mockVersionCheck = jest.mocked(connectionPrometheusHttpApiSupport);
+const mockFetch = vi.mocked(global.fetch);
+const mockVersionCheck = vi.mocked(connectionPrometheusHttpApiSupport);
 
 // What the version check answers for a server on each side of the 26.6 (query)
 // and 26.9 (label lookup) cut-offs.
@@ -123,7 +126,7 @@ describe('resolveClickhouseQueryBackend', () => {
     });
 
     it('probes again once the answer has expired', async () => {
-      const now = jest.spyOn(Date, 'now');
+      const now = vi.spyOn(Date, 'now');
       try {
         mockFetch.mockImplementation(async () => handlerAnswer());
 

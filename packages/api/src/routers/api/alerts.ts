@@ -10,7 +10,6 @@ import express from 'express';
 import { pick } from 'lodash';
 import { ObjectId } from 'mongodb';
 import { z } from 'zod';
-import { processRequest, validateRequest } from 'zod-express-middleware';
 
 import {
   getAlertEvaluations,
@@ -27,6 +26,7 @@ import {
   validateAlertInput,
 } from '@/controllers/alerts';
 import { alertsPageQuerySchema, getAlertsPage } from '@/controllers/alertsPage';
+import { processRequest, validateRequest } from '@/middleware/validation';
 import { AlertSource, getAlertChannels } from '@/models/alert';
 import { IAlertHistory } from '@/models/alertHistory';
 import { resolveAlertDisplayFields } from '@/utils/alerts';

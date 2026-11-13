@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import type { FieldValues } from 'react-hook-form';
 import { useController, UseControllerProps } from 'react-hook-form';
 import { Granularity } from '@hyperdx/common-utils/dist/core/utils';
 import { Select } from '@mantine/core';
@@ -70,7 +71,9 @@ export function GranularityPicker({
   );
 }
 
-function GranularityPickerControlledComponent(props: UseControllerProps<any>) {
+function GranularityPickerControlledComponent<TFieldValues extends FieldValues>(
+  props: UseControllerProps<TFieldValues>,
+) {
   const { field } = useController(props);
 
   return <GranularityPicker value={field.value} onChange={field.onChange} />;
@@ -78,4 +81,4 @@ function GranularityPickerControlledComponent(props: UseControllerProps<any>) {
 
 export const GranularityPickerControlled = memo(
   GranularityPickerControlledComponent,
-);
+) as typeof GranularityPickerControlledComponent;

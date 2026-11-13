@@ -1,5 +1,6 @@
+import { type Mock, vi } from 'vitest';
 import type { BuilderChartConfigWithDateRange } from '@hyperdx/common-utils/dist/types';
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { ActiveFilterPills } from '@/components/ActiveFilterPills';
@@ -7,30 +8,30 @@ import { useGetKeyValues } from '@/hooks/useMetadata';
 import type { FilterStateHook } from '@/searchFilters';
 import { copyTextToClipboard } from '@/utils/clipboard';
 
-jest.mock('@/utils/clipboard', () => ({
+vi.mock('@/utils/clipboard', () => ({
   __esModule: true,
   CLIPBOARD_ERROR_MESSAGE: 'clipboard error',
-  copyTextToClipboard: jest.fn().mockResolvedValue(true),
+  copyTextToClipboard: vi.fn().mockResolvedValue(true),
 }));
 
-jest.mock('@/hooks/useMetadata', () => ({
+vi.mock('@/hooks/useMetadata', () => ({
   __esModule: true,
-  useGetKeyValues: jest.fn(() => ({ data: [], isFetching: false })),
+  useGetKeyValues: vi.fn(() => ({ data: [], isFetching: false })),
 }));
 
 // Deterministic stand-in for the locale/timezone-aware formatter so assertions
 // don't depend on the test runner's timezone or clock preference.
-jest.mock('@/useFormatTime', () => ({
+vi.mock('@/useFormatTime', () => ({
   __esModule: true,
   useFormatTime: () => (value: unknown) => `formatted(${String(value)})`,
 }));
 
-const mockedUseGetKeyValues = useGetKeyValues as jest.Mock;
+const mockedUseGetKeyValues = useGetKeyValues as Mock;
 
 // Mantine's Combobox calls scrollIntoView when its dropdown opens; jsdom lacks
 // it. jsdom also has no layout, so portaled options compute as "hidden" and
 // must be queried with { hidden: true }.
-window.HTMLElement.prototype.scrollIntoView = jest.fn();
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 // useGetKeyValues is mocked, so this only needs to satisfy the prop type.
 const CHART_CONFIG = {
@@ -48,14 +49,14 @@ function makeSearchFilters(
 ): FilterStateHook {
   return {
     filters,
-    setFilters: jest.fn(),
-    setFilterValue: jest.fn(),
-    setOnlyFilters: jest.fn(),
-    replaceFilterValue: jest.fn(),
-    setFilterRange: jest.fn(),
-    clearFilter: jest.fn(),
-    clearAllFilters: jest.fn(),
-    retainFiltersByColumns: jest.fn(() => []),
+    setFilters: vi.fn(),
+    setFilterValue: vi.fn(),
+    setOnlyFilters: vi.fn(),
+    replaceFilterValue: vi.fn(),
+    setFilterRange: vi.fn(),
+    clearFilter: vi.fn(),
+    clearAllFilters: vi.fn(),
+    retainFiltersByColumns: vi.fn(() => []),
   };
 }
 
@@ -70,11 +71,11 @@ function renderPills(searchFilters: FilterStateHook) {
 
 describe('ActiveFilterPills', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     mockedUseGetKeyValues.mockReturnValue({ data: [], isFetching: false });
   });
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('renders nothing when there are no filters', () => {
@@ -254,7 +255,7 @@ describe('ActiveFilterPills', () => {
     expect(screen.getByText('Confirm clear all?')).toBeInTheDocument();
 
     act(() => {
-      jest.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(2000);
     });
 
     expect(screen.getByText('Clear all')).toBeInTheDocument();
@@ -360,7 +361,7 @@ describe('ActiveFilterPills', () => {
   // the opening click through a real pointer sequence, so these tests run on
   // real timers with userEvent, unlike the synchronous suite above.
   it('opens the action menu when an editable pill is clicked', async () => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     const user = userEvent.setup();
     const searchFilters = makeSearchFilters({
       status: {
@@ -381,7 +382,7 @@ describe('ActiveFilterPills', () => {
   });
 
   it('excludes an included value from the menu', async () => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     const user = userEvent.setup();
     const searchFilters = makeSearchFilters({
       status: {
@@ -404,7 +405,7 @@ describe('ActiveFilterPills', () => {
   });
 
   it('includes an excluded value from the menu', async () => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     const user = userEvent.setup();
     const searchFilters = makeSearchFilters({
       status: {
@@ -427,7 +428,7 @@ describe('ActiveFilterPills', () => {
   });
 
   it('copies the value from the menu', async () => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     const user = userEvent.setup();
     const searchFilters = makeSearchFilters({
       status: {
@@ -512,7 +513,7 @@ describe('ActiveFilterPills', () => {
   });
 
   it('shows a value picker populated from useGetKeyValues', async () => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     mockedUseGetKeyValues.mockReturnValue({
       data: [{ key: 'status', value: ['200', '404', '500'] }],
       isFetching: false,
@@ -527,7 +528,9 @@ describe('ActiveFilterPills', () => {
     renderPills(searchFilters);
 
     await user.click(screen.getByTestId('active-filter-pill-status'));
-    await user.click(await screen.findByLabelText('Change filter value'));
+    await user.click(
+      await screen.findByRole('combobox', { name: 'Change filter value' }),
+    );
 
     expect(
       await screen.findByRole('option', { name: '404', hidden: true }),
@@ -538,7 +541,7 @@ describe('ActiveFilterPills', () => {
   });
 
   it('replaces the value from the menu, preserving include polarity', async () => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     mockedUseGetKeyValues.mockReturnValue({
       data: [{ key: 'status', value: ['200', '404', '500'] }],
       isFetching: false,
@@ -553,7 +556,9 @@ describe('ActiveFilterPills', () => {
     renderPills(searchFilters);
 
     await user.click(screen.getByTestId('active-filter-pill-status'));
-    await user.click(await screen.findByLabelText('Change filter value'));
+    await user.click(
+      await screen.findByRole('combobox', { name: 'Change filter value' }),
+    );
     fireEvent.click(
       await screen.findByRole('option', { name: '404', hidden: true }),
     );
@@ -567,7 +572,7 @@ describe('ActiveFilterPills', () => {
   });
 
   it('submits the highlighted option when navigating with the keyboard and pressing Enter', async () => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     mockedUseGetKeyValues.mockReturnValue({
       data: [{ key: 'status', value: ['200', '404', '500'] }],
       isFetching: false,
@@ -582,8 +587,11 @@ describe('ActiveFilterPills', () => {
     renderPills(searchFilters);
 
     await user.click(screen.getByTestId('active-filter-pill-status'));
-    const input = await screen.findByLabelText('Change filter value');
-    input.focus();
+    const input = await screen.findByRole('combobox', {
+      name: 'Change filter value',
+    });
+    await user.click(input);
+    await waitFor(() => expect(input).toHaveFocus());
     // The picker lists ['200', '404', '500']. First ArrowDown highlights the
     // first option ('200'), the second moves to '404'; Enter then submits the
     // highlighted '404' — not the empty typed draft.
@@ -598,7 +606,7 @@ describe('ActiveFilterPills', () => {
   });
 
   it('replaces with a free-typed value not in the suggestion list', async () => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     mockedUseGetKeyValues.mockReturnValue({
       data: [{ key: 'status', value: ['200', '404', '500'] }],
       isFetching: false,
@@ -613,7 +621,11 @@ describe('ActiveFilterPills', () => {
     renderPills(searchFilters);
 
     await user.click(screen.getByTestId('active-filter-pill-status'));
-    const input = await screen.findByLabelText('Change filter value');
+    const input = await screen.findByRole('combobox', {
+      name: 'Change filter value',
+    });
+    await user.click(input);
+    await waitFor(() => expect(input).toHaveFocus());
     await user.clear(input);
     await user.type(input, '418{Enter}');
 
@@ -626,7 +638,7 @@ describe('ActiveFilterPills', () => {
   });
 
   it('replaces the value from the menu, preserving exclude polarity', async () => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     mockedUseGetKeyValues.mockReturnValue({
       data: [{ key: 'status', value: ['500', '502', '503'] }],
       isFetching: false,
@@ -641,7 +653,9 @@ describe('ActiveFilterPills', () => {
     renderPills(searchFilters);
 
     await user.click(screen.getByTestId('active-filter-pill-status'));
-    await user.click(await screen.findByLabelText('Change filter value'));
+    await user.click(
+      await screen.findByRole('combobox', { name: 'Change filter value' }),
+    );
     fireEvent.click(
       await screen.findByRole('option', { name: '502', hidden: true }),
     );

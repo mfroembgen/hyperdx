@@ -3,12 +3,12 @@
  * spec on the GradeRecord and threads the resolved spec into judgeTrajectory.
  * The judge module is mocked so no provider credentials or network are needed.
  */
-
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { type MockedFunction, vi } from 'vitest';
 
-jest.mock('@/grading/judge', () => ({
-  judgeTrajectory: jest.fn(),
+vi.mock('@/grading/judge', () => ({
+  judgeTrajectory: vi.fn(),
 }));
 
 import { gradeBatch } from '@/grading/grade';
@@ -16,9 +16,7 @@ import { judgeTrajectory } from '@/grading/judge';
 import type { JudgeResult } from '@/grading/types';
 import type { RunRecord } from '@/harness/types';
 
-const mockJudge = judgeTrajectory as jest.MockedFunction<
-  typeof judgeTrajectory
->;
+const mockJudge = judgeTrajectory as MockedFunction<typeof judgeTrajectory>;
 
 const ANSWER =
   'Root cause: payment-service ConnectionTimeoutError on db.payment.connect ' +

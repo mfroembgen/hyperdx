@@ -1,9 +1,9 @@
 // TODO: we might want to move this test file to common-utils package
-
 import { ChSql, chSql } from '@hyperdx/common-utils/dist/clickhouse';
 import { ClickhouseClient } from '@hyperdx/common-utils/dist/clickhouse/node';
 import { getMetadata } from '@hyperdx/common-utils/dist/core/metadata';
 import { renderChartConfig } from '@hyperdx/common-utils/dist/core/renderChartConfig';
+import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import {
   DisplayType,
   MetricsDataType,
@@ -11,6 +11,7 @@ import {
 } from '@hyperdx/common-utils/dist/types';
 import _ from 'lodash';
 import ms from 'ms';
+import { vi } from 'vitest';
 
 import * as config from '@/config';
 import { createTeam } from '@/controllers/team';
@@ -105,7 +106,7 @@ describe('renderChartConfig', () => {
       password: config.CLICKHOUSE_PASSWORD,
     });
     logSource = await Source.create({
-      kind: 'log',
+      kind: SourceKind.Log as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -116,7 +117,7 @@ describe('renderChartConfig', () => {
       name: 'Logs',
     });
     metricSource = await Source.create({
-      kind: 'metric',
+      kind: SourceKind.Metric as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -136,7 +137,7 @@ describe('renderChartConfig', () => {
 
   afterEach(async () => {
     await server.clearDBs();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('aggFn', () => {
@@ -1909,7 +1910,7 @@ describe('renderChartConfig', () => {
           querySettings,
         );
 
-        return queryData(query);
+        return await queryData(query);
       };
 
       it('counts observations', async () => {
@@ -1997,7 +1998,7 @@ describe('renderChartConfig', () => {
         querySettings,
       );
 
-      return queryData(query);
+      return await queryData(query);
     };
 
     it('aggregates histogram count and quantile across every timestamp in each non-timeseries group', async () => {

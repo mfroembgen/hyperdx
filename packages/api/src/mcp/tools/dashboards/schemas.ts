@@ -33,6 +33,7 @@ import {
   mcpQuantileLevelSchema,
 } from '@/mcp/tools/query/schemas';
 import { QUERYABLE_METRIC_KINDS } from '@/mcp/tools/sources/metricKinds';
+import { mcpUnionErrorMap } from '@/mcp/utils/errors';
 import {
   externalSqlSavedFilterValueSchema,
   externalVariableSavedFilterValueSchema,
@@ -76,13 +77,13 @@ const rejectTileWhereMessage =
 
 const rejectedTileWhereFields = {
   where: z
-    .never({ invalid_type_error: rejectTileWhereMessage })
+    .never({ error: rejectTileWhereMessage })
     .optional()
     .describe(
       "Not supported on this tile type; any value is rejected. Put the filter on each select item's `where` instead.",
     ),
   whereLanguage: z
-    .never({ invalid_type_error: rejectTileWhereMessage })
+    .never({ error: rejectTileWhereMessage })
     .optional()
     .describe(
       'Not supported on this tile type; any value is rejected. Set `whereLanguage` on each select item instead.',
@@ -1429,21 +1430,24 @@ const mcpPromqlTileSchema = mcpTileLayoutSchema.extend({
     ),
 });
 
-const mcpTileSchema = z.union([
-  mcpLineTileSchema,
-  mcpBarTileSchema,
-  mcpStackedLineTileSchema,
-  mcpTableTileSchema,
-  mcpNumberTileSchema,
-  mcpPieTileSchema,
-  mcpCategoricalBarTileSchema,
-  mcpHeatmapSeriesTileSchema,
-  mcpHeatmapTileSchema,
-  mcpSearchTileSchema,
-  mcpEventPatternsTileSchema,
-  mcpMarkdownTileSchema,
-  mcpSqlTileSchema,
-]);
+const mcpTileSchema = z.union(
+  [
+    mcpLineTileSchema,
+    mcpBarTileSchema,
+    mcpStackedLineTileSchema,
+    mcpTableTileSchema,
+    mcpNumberTileSchema,
+    mcpPieTileSchema,
+    mcpCategoricalBarTileSchema,
+    mcpHeatmapSeriesTileSchema,
+    mcpHeatmapTileSchema,
+    mcpSearchTileSchema,
+    mcpEventPatternsTileSchema,
+    mcpMarkdownTileSchema,
+    mcpSqlTileSchema,
+  ],
+  { error: mcpUnionErrorMap },
+);
 
 // Layout schema without defaults for the patch tool: layout fields stay
 // truly `undefined` when omitted so the merge logic can fall back to the
@@ -1505,37 +1509,42 @@ const mcpPatchTileLayoutSchema = z.object({
 // Build the patch tile union by extending the default-free layout with
 // each tile type's config shape. We only need the `config` field from
 // each tile schema; the layout wrapper is replaced.
-const mcpPatchTileSchema = z.union([
-  mcpPatchTileLayoutSchema.extend({ config: mcpLineTileSchema.shape.config }),
-  mcpPatchTileLayoutSchema.extend({ config: mcpBarTileSchema.shape.config }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpStackedLineTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({ config: mcpTableTileSchema.shape.config }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpNumberTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({ config: mcpPieTileSchema.shape.config }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpCategoricalBarTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpHeatmapSeriesTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpHeatmapTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpSearchTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpEventPatternsTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({
-    config: mcpMarkdownTileSchema.shape.config,
-  }),
-  mcpPatchTileLayoutSchema.extend({ config: mcpSqlTileSchema.shape.config }),
-]);
+const mcpPatchTileSchema = z.union(
+  [
+    mcpPatchTileLayoutSchema.extend({ config: mcpLineTileSchema.shape.config }),
+    mcpPatchTileLayoutSchema.extend({ config: mcpBarTileSchema.shape.config }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpStackedLineTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpTableTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpNumberTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({ config: mcpPieTileSchema.shape.config }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpCategoricalBarTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpHeatmapSeriesTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpHeatmapTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpSearchTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpEventPatternsTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({
+      config: mcpMarkdownTileSchema.shape.config,
+    }),
+    mcpPatchTileLayoutSchema.extend({ config: mcpSqlTileSchema.shape.config }),
+  ],
+  { error: mcpUnionErrorMap },
+);
 
 const mcpPromqlPatchTileSchema = mcpPatchTileLayoutSchema.extend({
   config: mcpPromqlTileSchema.shape.config,

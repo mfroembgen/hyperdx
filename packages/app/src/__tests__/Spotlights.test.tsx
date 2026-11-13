@@ -1,31 +1,32 @@
+import { type Mock, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
 import { useDashboards } from '@/dashboard';
 import { useSavedSearches } from '@/savedSearch';
 import { useSpotlightActions } from '@/Spotlights';
 
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   useRouter() {
     return {
       route: '/',
       pathname: '',
       query: '',
       asPath: '',
-      push: jest.fn(),
+      push: vi.fn(),
       events: {
-        on: jest.fn(),
-        off: jest.fn(),
+        on: vi.fn(),
+        off: vi.fn(),
       },
-      beforePopState: jest.fn(() => null),
-      prefetch: jest.fn(() => null),
+      beforePopState: vi.fn(() => null),
+      prefetch: vi.fn(() => null),
     };
   },
 }));
-jest.mock('../savedSearch');
-jest.mock('../dashboard');
+vi.mock('../savedSearch');
+vi.mock('../dashboard');
 
-const mockUseSavedSearches = useSavedSearches as jest.Mock;
-const mockUseDashboards = useDashboards as jest.Mock;
+const mockUseSavedSearches = useSavedSearches as Mock;
+const mockUseDashboards = useDashboards as Mock;
 
 describe('useSpotlightActions', () => {
   const mockSavedSearches = {
@@ -89,7 +90,7 @@ describe('useSpotlightActions', () => {
 
   // Reset mocks before each test
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseSavedSearches.mockReturnValue(mockSavedSearches);
     mockUseDashboards.mockReturnValue(mockSavedDashboard);
   });

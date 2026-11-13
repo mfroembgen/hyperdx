@@ -1,4 +1,5 @@
 import React from 'react';
+import { type Mock, vi } from 'vitest';
 import { TSource } from '@hyperdx/common-utils/dist/types';
 import { MantineProvider } from '@mantine/core';
 import { act, render } from '@testing-library/react';
@@ -9,7 +10,7 @@ import { act, render } from '@testing-library/react';
 // can't express "click tab, then navigate" because writes never land.
 const mockQueryStore: Record<string, unknown> = {};
 const mockSubscribers = new Set<() => void>();
-const mockSetters: Record<string, jest.Mock> = {};
+const mockSetters: Record<string, Mock> = {};
 
 function resetQueryState() {
   Object.keys(mockQueryStore).forEach(k => delete mockQueryStore[k]);
@@ -19,7 +20,7 @@ function resetQueryState() {
 
 function setterFor(key: string) {
   if (!mockSetters[key]) {
-    mockSetters[key] = jest.fn((value: unknown) => {
+    mockSetters[key] = vi.fn((value: unknown) => {
       const next =
         typeof value === 'function' ? value(mockQueryStore[key]) : value;
       if (next == null) {
@@ -33,9 +34,12 @@ function setterFor(key: string) {
   return mockSetters[key];
 }
 
-jest.mock('nuqs', () => {
-  const actual = jest.requireActual('nuqs');
-  const react = jest.requireActual<typeof React>('react');
+vi.mock('nuqs', async () => {
+  const actualModule0 = await vi.importActual<typeof import('nuqs')>('nuqs');
+  const actualModule1 = await vi.importActual<typeof React>('react');
+
+  const actual = actualModule0;
+  const react = actualModule1;
   return {
     ...actual,
 
@@ -65,7 +69,7 @@ const mockRow = {
   __hdx_severity_text: 'info',
 };
 
-jest.mock('../DBRowDataPanel', () => ({
+vi.mock('../DBRowDataPanel', () => ({
   __esModule: true,
 
   useRowData: () => ({
@@ -85,7 +89,7 @@ jest.mock('../DBRowDataPanel', () => ({
   RowDataPanel: () => null,
 }));
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   __esModule: true,
   getEventBody: () => '__hdx_body',
 
@@ -97,7 +101,7 @@ jest.mock('@/source', () => ({
 const mockTabBarProps: {
   current: { activeItem?: unknown; onClick?: (v: unknown) => void };
 } = { current: {} };
-jest.mock('@/TabBar', () => ({
+vi.mock('@/TabBar', () => ({
   __esModule: true,
   default: (props: {
     activeItem?: unknown;
@@ -119,7 +123,7 @@ type NavigateToRow = (
 const mockContextProps: { current: { onNavigateToRow?: NavigateToRow } } = {
   current: {},
 };
-jest.mock('../ContextSidePanel', () => ({
+vi.mock('../ContextSidePanel', () => ({
   __esModule: true,
   default: (props: { onNavigateToRow?: NavigateToRow }) => {
     mockContextProps.current = props;
@@ -127,53 +131,53 @@ jest.mock('../ContextSidePanel', () => ({
   },
 }));
 
-jest.mock('../DBSessionPanel', () => ({
+vi.mock('../DBSessionPanel', () => ({
   __esModule: true,
 
   useSessionId: () => ({ rumSessionId: undefined, rumServiceName: undefined }),
   DBSessionPanel: () => null,
 }));
-jest.mock('@/utils/highlightedAttributes', () => ({
+vi.mock('@/utils/highlightedAttributes', () => ({
   __esModule: true,
   getHighlightedAttributesFromData: () => [],
 }));
-jest.mock('../DBTracePanel', () => ({ __esModule: true, default: () => null }));
-jest.mock('../DBInfraPanel', () => ({ __esModule: true, default: () => null }));
-jest.mock('../DBRowOverviewPanel', () => ({
+vi.mock('../DBTracePanel', () => ({ __esModule: true, default: () => null }));
+vi.mock('../DBInfraPanel', () => ({ __esModule: true, default: () => null }));
+vi.mock('../DBRowOverviewPanel', () => ({
   __esModule: true,
   RowOverviewPanel: () => null,
 }));
-jest.mock('../DBRowSidePanelErrorState', () => ({
+vi.mock('../DBRowSidePanelErrorState', () => ({
   __esModule: true,
   DBRowSidePanelErrorState: () => null,
 }));
-jest.mock('../DBRowSidePanelHeader', () => ({
+vi.mock('../DBRowSidePanelHeader', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../SidePanelBreadcrumbs', () => ({
+vi.mock('../SidePanelBreadcrumbs', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../LogLevel', () => ({ __esModule: true, default: () => null }));
-jest.mock('../ServiceMap/ServiceMapSidePanel', () => ({
+vi.mock('../LogLevel', () => ({ __esModule: true, default: () => null }));
+vi.mock('../ServiceMap/ServiceMapSidePanel', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../TimelineChart/utils', () => ({
+vi.mock('../TimelineChart/utils', () => ({
   __esModule: true,
   renderMs: () => '',
 }));
-jest.mock('../DrawerUtils', () => ({
+vi.mock('../DrawerUtils', () => ({
   __esModule: true,
   DrawerFullWidthToggle: () => null,
   INITIAL_DRAWER_WIDTH_PERCENT: 50,
 }));
-jest.mock('@/LogSidePanelElements', () => ({
+vi.mock('@/LogSidePanelElements', () => ({
   __esModule: true,
   KeyboardShortcutsModal: () => null,
 }));
-jest.mock('@/useFormatTime', () => ({
+vi.mock('@/useFormatTime', () => ({
   __esModule: true,
   FormatTime: () => null,
 }));
@@ -202,7 +206,7 @@ function Harness({ rowId }: { rowId: string }) {
       source={LOG_SOURCE}
       rowId={rowId}
       aliasWith={[]}
-      onClose={jest.fn()}
+      onClose={vi.fn()}
       sidePanelStack={sidePanelStack}
     />
   );

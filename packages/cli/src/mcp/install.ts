@@ -45,6 +45,7 @@ export async function verifyKey(
   } catch (e) {
     throw new Error(
       `Could not reach ${appUrl}: ${e instanceof Error ? e.message : e}`,
+      { cause: e },
     );
   }
   if (res.status === 401 || res.status === 403) {

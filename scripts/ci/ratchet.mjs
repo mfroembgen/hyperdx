@@ -2,7 +2,7 @@
 /**
  * Ratchet: counts of tracked escape hatches may only go down.
  * Above baseline -> fail (you added one; remove it).
- * Below baseline -> warn only (run `yarn ratchet:update` to lock the
+ * Below baseline -> warn only (run `bun run ratchet:update` to lock the
  *   improvement in). Non-fatal so an improvement can never turn `main` red —
  *   e.g. when two count-lowering PRs merge close together and `main`'s
  *   committed baseline briefly sits above the real count.
@@ -147,7 +147,7 @@ export function compare(current, baseline) {
       const max = baseline[pkg]?.[name] ?? 0;
       if (now > max && ADVISORY.has(name)) {
         messages.push(
-          `! ${pkg}/${name}: ${now} > baseline ${max} — advisory; move the copy into common-utils if you can, then run \`yarn ratchet:update\``,
+          `! ${pkg}/${name}: ${now} > baseline ${max} — advisory; move the copy into common-utils if you can, then run \`bun run ratchet:update\``,
         );
       } else if (now > max) {
         failed = true;
@@ -159,7 +159,7 @@ export function compare(current, baseline) {
         // and every open PR until someone re-baselines). Just nudge.
         improved = true;
         messages.push(
-          `! ${pkg}/${name}: ${now} < baseline ${max} — run \`yarn ratchet:update\` to lock the improvement in`,
+          `! ${pkg}/${name}: ${now} < baseline ${max} — run \`bun run ratchet:update\` to lock the improvement in`,
         );
       }
     }

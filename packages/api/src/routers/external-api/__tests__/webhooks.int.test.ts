@@ -1,6 +1,7 @@
 import { WebhookService } from '@hyperdx/common-utils/dist/types';
 import { ObjectId } from 'mongodb';
-import request, { SuperAgentTest } from 'supertest';
+import request, { Agent } from 'supertest';
+import { vi } from 'vitest';
 
 import { getLoggedInAgent, getServer } from '@/fixtures';
 import Alert, { AlertSource, AlertState } from '@/models/alert';
@@ -42,7 +43,7 @@ const MOCK_GENERIC_WEBHOOK = {
 
 describe('External API v2 Webhooks', () => {
   const server = getServer();
-  let agent: SuperAgentTest;
+  let agent: Agent;
   let team: ITeam;
   let user: IUser;
 
@@ -847,7 +848,7 @@ describe('External API v2 Webhooks', () => {
         team: team._id,
       });
 
-      const spy = jest.spyOn(Webhook, 'findOne').mockImplementationOnce((() =>
+      const spy = vi.spyOn(Webhook, 'findOne').mockImplementationOnce((() =>
         (async () => {
           await Webhook.updateOne(
             { _id: created._id },
@@ -890,7 +891,7 @@ describe('External API v2 Webhooks', () => {
         team: team._id,
       });
 
-      const spy = jest.spyOn(Webhook, 'findOne').mockImplementationOnce((() =>
+      const spy = vi.spyOn(Webhook, 'findOne').mockImplementationOnce((() =>
         (async () => {
           await Webhook.deleteOne({ _id: created._id });
           return staleDoc;

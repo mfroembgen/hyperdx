@@ -1,7 +1,7 @@
 name: E2E Setup
 description: |
   Shared setup for E2E test workflows: sets the HDX_E2E_* port env vars and
-  common Playwright env vars, then runs Node.js setup, dependency install,
+  common Playwright env vars, then runs Bun setup, dependency install,
   build, Playwright browser install, and starts the E2E Docker Compose stack
   (MongoDB + ClickHouse) with health checks. The caller is responsible for
   `actions/checkout`, running Playwright, uploading artifacts, and tearing
@@ -14,33 +14,30 @@ runs:
       shell: bash
       run: |
         MONGO_PORT=21100
-        echo "HDX_E2E_SLOT=0" >> $GITHUB_ENV
-        echo "HDX_E2E_OPAMP_PORT=20320" >> $GITHUB_ENV
-        echo "HDX_E2E_CH_PORT=20500" >> $GITHUB_ENV
-        echo "HDX_E2E_CH_NATIVE_PORT=20600" >> $GITHUB_ENV
-        echo "HDX_E2E_API_PORT=21000" >> $GITHUB_ENV
-        echo "HDX_E2E_MONGO_PORT=$MONGO_PORT" >> $GITHUB_ENV
-        echo "HDX_E2E_APP_LOCAL_PORT=21200" >> $GITHUB_ENV
-        echo "HDX_E2E_APP_PORT=21300" >> $GITHUB_ENV
-        echo "MONGO_URI=mongodb://localhost:$MONGO_PORT/hyperdx-e2e" >> $GITHUB_ENV
-        echo "E2E_FULLSTACK=true" >> $GITHUB_ENV
-        echo "E2E_UNIQUE_USER=true" >> $GITHUB_ENV
-        echo "E2E_API_HEALTH_CHECK_MAX_RETRIES=60" >> $GITHUB_ENV
+        {
+          echo "HDX_E2E_SLOT=0"
+          echo "HDX_E2E_OPAMP_PORT=20320"
+          echo "HDX_E2E_CH_PORT=20500"
+          echo "HDX_E2E_CH_NATIVE_PORT=20600"
+          echo "HDX_E2E_API_PORT=21000"
+          echo "HDX_E2E_MONGO_PORT=$MONGO_PORT"
+          echo "HDX_E2E_APP_LOCAL_PORT=21200"
+          echo "HDX_E2E_APP_PORT=21300"
+          echo "MONGO_URI=mongodb://localhost:$MONGO_PORT/hyperdx-e2e"
+          echo "E2E_FULLSTACK=true"
+          echo "E2E_UNIQUE_USER=true"
+          echo "E2E_API_HEALTH_CHECK_MAX_RETRIES=60"
+        } >> "$GITHUB_ENV"
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version-file: .nvmrc
-        cache-dependency-path: yarn.lock
-        cache: yarn
-
+    - name: Setup Bun
+      uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
     - name: Install dependencies
       shell: bash
-      run: yarn install --immutable
+      run: bun ci
 
     - name: Build dependencies
       shell: bash
-      run: npx nx run-many -t ci:build
+      run: bun --bun x nx run-many -t ci:build
 
     # Cache the Chromium binary (~120MB) keyed on the resolved Playwright
     # version, so it isn't re-downloaded every shard/run. Browser versions are
@@ -51,11 +48,11 @@ runs:
       id: playwright-version
       shell: bash
       run:
-        echo "version=$(cd packages/app && node -p
+        echo "version=$(cd packages/app && bun -p
         "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
 
     - name: Cache Playwright browsers
-      uses: actions/cache@v4
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/ms-playwright
         key:
@@ -66,7 +63,7 @@ runs:
     # libs, and the apt step it adds can stall for 10+ min on a slow mirror.
     - name: Install Playwright browsers
       shell: bash
-      run: cd packages/app && npx playwright install chromium
+      run: cd packages/app && bun --bun x playwright install chromium
 
     - name: Start E2E Docker Compose
       shell: bash
@@ -100,12 +97,14 @@ runs:
         done
         echo "Waiting for ClickHouse..."
         for i in $(seq 1 60); do
-          if curl -sf http://localhost:${HDX_E2E_CH_PORT}/ping >/dev/null 2>&1; then
+          if curl -sf "http://localhost:${HDX_E2E_CH_PORT}/ping" >/dev/null 2>&1; then
             echo "ClickHouse is ready"
             break
           fi
           if [ "$i" -eq 60 ]; then
             echo "ClickHouse failed to become ready after 60 seconds"
+            docker compose -p e2e-0 -f packages/app/tests/e2e/docker-compose.yml ps -a || true
+            docker compose -p e2e-0 -f packages/app/tests/e2e/docker-compose.yml logs --no-color --tail 200 ch-server || true
             exit 1
           fi
           echo "Waiting for ClickHouse... ($i/60)"

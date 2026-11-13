@@ -1,14 +1,15 @@
 import { context, ROOT_CONTEXT, trace, TraceFlags } from '@opentelemetry/api';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import os from 'os';
+import { vi } from 'vitest';
 
 import { sendUsageStats } from '@/tasks/usageStats';
 
 const USAGE_STATS_URL = 'https://in-otel.hyperdx.io/v1/logs';
 const USAGE_STATS_API_KEY = '3f26ffad-14cf-4fb7-9dc9-e64fa0b84ee0';
 
-// jest.setup.ts replaces the global fetch with a jest.fn.
-const mockFetch = jest.mocked(fetch);
+// jest.setup.ts replaces the global fetch with a vi.fn.
+const mockFetch = vi.mocked(fetch);
 
 const sentRequest = async () => {
   expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -33,7 +34,7 @@ describe('sendUsageStats', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   afterAll(() => {
@@ -41,10 +42,10 @@ describe('sendUsageStats', () => {
   });
 
   it('posts one record to the usage stats endpoint with only its own key', async () => {
-    const timeoutSpy = jest.spyOn(AbortSignal, 'timeout');
+    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
     // A traced caller, so the record would pick up its span without an
     // explicit context.
-    jest.spyOn(context, 'active').mockReturnValue(
+    vi.spyOn(context, 'active').mockReturnValue(
       trace.setSpanContext(ROOT_CONTEXT, {
         traceId: '0af7651916cd43dd8448eb211c80319c',
         spanId: 'b7ad6b7169203331',

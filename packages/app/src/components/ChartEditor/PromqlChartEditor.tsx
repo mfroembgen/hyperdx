@@ -60,6 +60,7 @@ export default function PromqlChartEditor({
     (index: number) => {
       insert(index + 1, {
         ...structuredClone(getValues(`promqlExpressions.${index}`)),
+        expression: getValues(`promqlExpressions.${index}.expression`) ?? '',
         alias: '',
       });
     },

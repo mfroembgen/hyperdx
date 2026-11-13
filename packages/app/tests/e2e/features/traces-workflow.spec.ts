@@ -134,9 +134,8 @@ test.describe('Advanced Search Workflow - Traces', { tag: '@traces' }, () => {
       const traceAttributes = ['TraceId', 'SpanId', 'SpanName'];
 
       for (const attribute of traceAttributes) {
-        const attributeElement = searchPage.page
-          .locator(`div[class*="HyperJson_key__"]`)
-          .filter({ hasText: new RegExp(`^${attribute}$`) });
+        const attributeElement =
+          searchPage.sidePanel.getJsonAttributeKey(attribute);
         await expect(attributeElement).toBeVisible();
       }
 

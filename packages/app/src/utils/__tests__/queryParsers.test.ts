@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import {
   dashboardFilterValuesParser,
   parseAsJsonEncoded,
@@ -150,7 +152,7 @@ describe('parseAsJsonEncoded', () => {
     });
 
     it('still returns null for non-JSON input before validation runs', () => {
-      const validate = jest.fn();
+      const validate = vi.fn();
       const parser = parseAsJsonEncoded<unknown>(validate);
       expect(parser.parse('not-json')).toBeNull();
       expect(validate).not.toHaveBeenCalled();

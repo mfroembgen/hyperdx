@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -13,12 +14,12 @@ import {
 
 // Mantine's Combobox calls scrollIntoView when its dropdown opens; jsdom lacks
 // it. jsdom also has no layout, so options must be queried with { hidden: true }.
-window.HTMLElement.prototype.scrollIntoView = jest.fn();
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 const renderEditor = (
   props: Partial<FilterConditionEditorProps<FilterOperator>> = {},
 ) => {
-  const onSubmit = jest.fn();
+  const onSubmit = vi.fn();
   renderWithMantine(
     <FilterConditionEditor
       operators={SQL_FILTER_OPERATORS}
@@ -207,18 +208,18 @@ describe('FilterConditionEditor', () => {
   });
 
   describe('reporting the key to look up values for', () => {
-    beforeEach(() => jest.useFakeTimers());
-    afterEach(() => jest.useRealTimers());
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
 
     const setup = (
       props: Partial<FilterConditionEditorProps<FilterOperator>> = {},
     ) => {
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
-      const onKeyChange = jest.fn();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const onKeyChange = vi.fn();
       renderEditor({ keyOptions: ['ServiceName'], onKeyChange, ...props });
       const pause = () =>
         act(() => {
-          jest.advanceTimersByTime(300);
+          vi.advanceTimersByTime(300);
         });
       return { user, onKeyChange, pause };
     };

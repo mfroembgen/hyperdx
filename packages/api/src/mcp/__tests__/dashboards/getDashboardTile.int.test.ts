@@ -1,3 +1,5 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
+
 import { callTool, getFirstText } from '@/mcp/__tests__/mcpTestUtils';
 import Dashboard from '@/models/dashboard';
 
@@ -17,7 +19,7 @@ describe('MCP Dashboard Tools - clickstack_get_dashboard_tile', () => {
           {
             name: 'Line Chart',
             config: {
-              displayType: 'line',
+              displayType: DisplayType.Line,
               sourceId,
               select: [{ aggFn: 'count' }],
             },
@@ -25,7 +27,7 @@ describe('MCP Dashboard Tools - clickstack_get_dashboard_tile', () => {
           {
             name: 'Number Tile',
             config: {
-              displayType: 'number',
+              displayType: DisplayType.Number,
               sourceId,
               select: [{ aggFn: 'count' }],
             },

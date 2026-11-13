@@ -1,4 +1,5 @@
 import { useQueryState } from 'nuqs';
+import { vi } from 'vitest';
 import { render } from '@testing-library/react';
 
 import { eventRowWhereParser } from '@/components/eventRowWhere';
@@ -17,7 +18,7 @@ type StoredSpan = {
 
 // Mirrors nuqs: each useQueryState keeps its own state and hears updates
 // through a subscription registered in useInsertionEffect, which runs before
-// useLayoutEffect. Prefixed with `mock` so the hoisted jest.mock factory can
+// useLayoutEffect. Prefixed with `mock` so the hoisted vi.mock factory can
 // close over it.
 const mockSpanStore: {
   value: unknown;
@@ -29,9 +30,12 @@ const mockSpanStore: {
   listeners: new Set(),
 };
 
-jest.mock('nuqs', () => {
-  const React = jest.requireActual('react');
-  const actual = jest.requireActual('nuqs');
+vi.mock('nuqs', async () => {
+  const actualModule0 = await vi.importActual<typeof import('react')>('react');
+  const actualModule1 = await vi.importActual<typeof import('nuqs')>('nuqs');
+
+  const React = actualModule0;
+  const actual = actualModule1;
   return {
     ...actual,
     useQueryState: (key: string) => {

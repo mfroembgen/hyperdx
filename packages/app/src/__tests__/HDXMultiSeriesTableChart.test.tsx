@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import type { ChartPaletteToken } from '@hyperdx/common-utils/dist/types';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -8,10 +9,10 @@ import { getColorFromCSSToken } from '@/utils';
 
 // Next.js Link needs a router context; the router isn't exercised
 // because we never trigger client-side navigation in these tests.
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   useRouter: () => ({
-    push: jest.fn(),
-    prefetch: jest.fn(),
+    push: vi.fn(),
+    prefetch: vi.fn(),
     pathname: '/',
     query: {},
   }),
@@ -21,7 +22,7 @@ jest.mock('next/router', () => ({
 // virtualizer renders no rows. Stub it to render every row as if
 // visible. The hint / button / link assertions don't depend on
 // virtualization correctness.
-jest.mock('@tanstack/react-virtual', () => ({
+vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: ({ count }: { count: number }) => ({
     getVirtualItems: () =>
       Array.from({ length: count }, (_, index) => ({
@@ -55,7 +56,7 @@ const baseData = [{ ServiceName: 'web', Count: 10 }];
 describe('HDXMultiSeriesTableChart <Table>', () => {
   describe('getRowAction success path', () => {
     it('renders the row click cell as a real <a href> with the resolved URL', () => {
-      const getRowAction = jest.fn().mockReturnValue({
+      const getRowAction = vi.fn().mockReturnValue({
         url: '/search?source=src_1&where=',
         description: 'Search HyperDX Logs',
       });
@@ -85,7 +86,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
       // applied via the `actionableRow` CSS module class on the <tr>;
       // non-actionable rows fall through to the global
       // `bg-muted-hover` utility (a lighter muted hover).
-      const getRowAction = jest.fn().mockReturnValue({
+      const getRowAction = vi.fn().mockReturnValue({
         url: '/search?source=src_1&where=',
         description: 'Search HyperDX Logs',
       });
@@ -109,7 +110,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
     });
 
     it('renders a trailing arrow hint in the last cell of a success row', () => {
-      const getRowAction = jest.fn().mockReturnValue({
+      const getRowAction = vi.fn().mockReturnValue({
         url: '/search?source=src_1&where=',
         description: 'Search HyperDX Logs',
       });
@@ -132,7 +133,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
 
     it('shows the description in an anchored tooltip when the arrow is hovered', async () => {
       const user = userEvent.setup();
-      const getRowAction = jest.fn().mockReturnValue({
+      const getRowAction = vi.fn().mockReturnValue({
         url: '/search?source=src_1&where=',
         description: 'Search HyperDX Logs',
       });
@@ -164,7 +165,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
 
     it('renders the dashboard variant description in the tooltip', async () => {
       const user = userEvent.setup();
-      const getRowAction = jest.fn().mockReturnValue({
+      const getRowAction = vi.fn().mockReturnValue({
         url: '/dashboards/dash_1?where=',
         description: 'Open dashboard "API Latency"',
       });
@@ -197,7 +198,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
 
   describe('external link path', () => {
     it('renders the cell as a plain <a target="_blank"> for external actions', () => {
-      const getRowAction = jest.fn().mockReturnValue({
+      const getRowAction = vi.fn().mockReturnValue({
         url: 'https://grafana.example.com/d/abc?svc=web',
         description: 'https://grafana.example.com/d/abc?svc=web',
         external: true,
@@ -227,7 +228,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
     });
 
     it('renders the trailing arrow hint as an external anchor opening in a new tab', () => {
-      const getRowAction = jest.fn().mockReturnValue({
+      const getRowAction = vi.fn().mockReturnValue({
         url: 'https://grafana.example.com/d/abc?svc=web',
         description: 'https://grafana.example.com/d/abc?svc=web',
         external: true,
@@ -256,8 +257,8 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
   describe('getRowAction failure path', () => {
     it('renders the cell as a <button> when the row resolution failed and wires onClickError', async () => {
       const user = userEvent.setup();
-      const onClickError = jest.fn();
-      const getRowAction = jest.fn().mockReturnValue({
+      const onClickError = vi.fn();
+      const getRowAction = vi.fn().mockReturnValue({
         url: null,
         description: 'Search HyperDX Logs',
         onClickError,
@@ -291,10 +292,10 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
       // Mirror of the success-path actionableRow test: rows whose
       // action returns `url: null` keep the default muted hover
       // utility and never gain the stronger `actionableRow` class.
-      const getRowAction = jest.fn().mockReturnValue({
+      const getRowAction = vi.fn().mockReturnValue({
         url: null,
         description: 'Search HyperDX Logs',
-        onClickError: jest.fn(),
+        onClickError: vi.fn(),
       });
 
       const { container } = renderWithMantine(
@@ -316,10 +317,10 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
     });
 
     it('does not render a trailing arrow hint when rowAction.url is null', () => {
-      const getRowAction = jest.fn().mockReturnValue({
+      const getRowAction = vi.fn().mockReturnValue({
         url: null,
         description: 'Search HyperDX Logs',
-        onClickError: jest.fn(),
+        onClickError: vi.fn(),
       });
 
       renderWithMantine(
@@ -341,7 +342,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
 
   describe('legacy getRowSearchLink fallback', () => {
     it('renders the cell as a Link without a trailing arrow hint when only getRowSearchLink is provided', () => {
-      const getRowSearchLink = jest
+      const getRowSearchLink = vi
         .fn()
         .mockReturnValue('/search?source=legacy&where=');
 
@@ -420,7 +421,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
             },
           ]}
           sorting={[]}
-          onSortingChange={jest.fn()}
+          onSortingChange={vi.fn()}
         />,
       );
 
@@ -452,7 +453,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
             },
           ]}
           sorting={[]}
-          onSortingChange={jest.fn()}
+          onSortingChange={vi.fn()}
         />,
       );
 
@@ -484,7 +485,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
             },
           ]}
           sorting={[]}
-          onSortingChange={jest.fn()}
+          onSortingChange={vi.fn()}
         />,
       );
 
@@ -510,7 +511,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
               },
             ]}
             sorting={[]}
-            onSortingChange={jest.fn()}
+            onSortingChange={vi.fn()}
           />,
         ),
       ).not.toThrow();
@@ -579,7 +580,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
       },
     ];
     const filterData = [{ ServiceName: 'web', Count: 10, Attrs: { a: '1' } }];
-    const renderTable = (onCellFilter = jest.fn()) =>
+    const renderTable = (onCellFilter = vi.fn()) =>
       renderWithMantine(
         <Table
           data={filterData}
@@ -591,7 +592,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
       );
 
     it('excludes a value by its column filter key', async () => {
-      const onCellFilter = jest.fn();
+      const onCellFilter = vi.fn();
       renderTable(onCellFilter);
 
       await userEvent.hover(screen.getByText('web'));
@@ -611,7 +612,7 @@ describe('HDXMultiSeriesTableChart <Table>', () => {
         <Table
           data={filterData}
           columns={filterColumns}
-          onCellFilter={jest.fn()}
+          onCellFilter={vi.fn()}
           getRowAction={() => ({
             url: '/search?q=web',
             description: 'Search HyperDX Logs',

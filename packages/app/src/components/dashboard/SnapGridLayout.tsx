@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import RGL, { WidthProvider } from 'react-grid-layout';
+import RGL, { WidthProvider } from 'react-grid-layout/legacy';
 
 import {
   DEFAULT_CONTAINER_PADDING,
@@ -132,8 +132,10 @@ export default function SnapGridLayout({
         <GridSnapOverlay
           cols={cols}
           rowHeight={rowHeight}
-          margin={margin}
-          containerPadding={containerPadding}
+          margin={margin ? [...margin] : undefined}
+          containerPadding={
+            containerPadding ? [...containerPadding] : undefined
+          }
           focus={focus}
         />
       )}
@@ -141,8 +143,8 @@ export default function SnapGridLayout({
         {...rest}
         cols={cols}
         rowHeight={rowHeight}
-        margin={margin}
-        containerPadding={containerPadding}
+        margin={margin ? [...margin] : undefined}
+        containerPadding={containerPadding ? [...containerPadding] : undefined}
         onDragStart={handleDragStart}
         onDrag={handleDrag}
         onDragStop={handleDragStop}

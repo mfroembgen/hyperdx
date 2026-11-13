@@ -1,21 +1,22 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { TSource } from '@hyperdx/common-utils/dist/types';
 import { MantineProvider } from '@mantine/core';
 import { render } from '@testing-library/react';
 
-jest.mock('nuqs', () => {
-  const actual = jest.requireActual('nuqs');
+vi.mock('nuqs', async () => {
+  const actual = await vi.importActual<typeof import('nuqs')>('nuqs');
   return {
     ...actual,
     useQueryState: (_key: string, parser?: { defaultValue?: unknown }) => [
       parser && 'defaultValue' in parser ? parser.defaultValue : null,
-      jest.fn(),
+      vi.fn(),
     ],
   };
 });
 
 const mockRow: { current: Record<string, unknown> } = { current: {} };
-jest.mock('../DBRowDataPanel', () => ({
+vi.mock('../DBRowDataPanel', () => ({
   __esModule: true,
   useRowData: () => ({
     data: { data: [mockRow.current] },
@@ -39,7 +40,7 @@ jest.mock('../DBRowDataPanel', () => ({
 const mockHeaderProps: { current: { hideEmptyBody?: boolean } } = {
   current: {},
 };
-jest.mock('../DBRowSidePanelHeader', () => ({
+vi.mock('../DBRowSidePanelHeader', () => ({
   __esModule: true,
   default: (props: { hideEmptyBody?: boolean }) => {
     mockHeaderProps.current = props;
@@ -47,58 +48,58 @@ jest.mock('../DBRowSidePanelHeader', () => ({
   },
 }));
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   __esModule: true,
   getEventBody: () => '__hdx_body',
   useSource: () => ({ data: undefined }),
 }));
-jest.mock('../DBSessionPanel', () => ({
+vi.mock('../DBSessionPanel', () => ({
   __esModule: true,
   useSessionId: () => ({ rumSessionId: undefined, rumServiceName: undefined }),
   DBSessionPanel: () => null,
 }));
-jest.mock('@/utils/highlightedAttributes', () => ({
+vi.mock('@/utils/highlightedAttributes', () => ({
   __esModule: true,
   getHighlightedAttributesFromData: () => [],
 }));
-jest.mock('../DBTracePanel', () => ({ __esModule: true, default: () => null }));
-jest.mock('../ContextSidePanel', () => ({
+vi.mock('../DBTracePanel', () => ({ __esModule: true, default: () => null }));
+vi.mock('../ContextSidePanel', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../DBInfraPanel', () => ({ __esModule: true, default: () => null }));
-jest.mock('../DBRowOverviewPanel', () => ({
+vi.mock('../DBInfraPanel', () => ({ __esModule: true, default: () => null }));
+vi.mock('../DBRowOverviewPanel', () => ({
   __esModule: true,
   RowOverviewPanel: () => null,
 }));
-jest.mock('../DBRowSidePanelErrorState', () => ({
+vi.mock('../DBRowSidePanelErrorState', () => ({
   __esModule: true,
   DBRowSidePanelErrorState: () => null,
 }));
-jest.mock('../SidePanelBreadcrumbs', () => ({
+vi.mock('../SidePanelBreadcrumbs', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../LogLevel', () => ({ __esModule: true, default: () => null }));
-jest.mock('../ServiceMap/ServiceMapSidePanel', () => ({
+vi.mock('../LogLevel', () => ({ __esModule: true, default: () => null }));
+vi.mock('../ServiceMap/ServiceMapSidePanel', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../TimelineChart/utils', () => ({
+vi.mock('../TimelineChart/utils', () => ({
   __esModule: true,
   renderMs: () => '',
 }));
-jest.mock('../DrawerUtils', () => ({
+vi.mock('../DrawerUtils', () => ({
   __esModule: true,
   DrawerFullWidthToggle: () => null,
   INITIAL_DRAWER_WIDTH_PERCENT: 50,
 }));
-jest.mock('@/LogSidePanelElements', () => ({
+vi.mock('@/LogSidePanelElements', () => ({
   __esModule: true,
   KeyboardShortcutsModal: () => null,
 }));
-jest.mock('@/TabBar', () => ({ __esModule: true, default: () => null }));
-jest.mock('@/useFormatTime', () => ({
+vi.mock('@/TabBar', () => ({ __esModule: true, default: () => null }));
+vi.mock('@/useFormatTime', () => ({
   __esModule: true,
   FormatTime: () => null,
 }));
@@ -118,7 +119,7 @@ function Harness({ source }: { source: TSource }) {
       source={source}
       rowId="row-1"
       aliasWith={[]}
-      onClose={jest.fn()}
+      onClose={vi.fn()}
       sidePanelStack={sidePanelStack}
     />
   );

@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import {
   dateParser,
   formatTimeRangeText,
@@ -13,13 +15,13 @@ describe('dateParser', () => {
 
   beforeEach(() => {
     // Mock current date to ensure consistent test results
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     mockDate = new Date('2025-01-15T22:00:00');
-    jest.setSystemTime(mockDate);
+    vi.setSystemTime(mockDate);
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('returns null for undefined input', () => {
@@ -111,12 +113,12 @@ describe('dateParser', () => {
 
 describe('parseTimeRangeInput', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2025-01-15T22:00'));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-01-15T22:00'));
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('returns [null, null] for empty string', () => {
@@ -165,12 +167,12 @@ describe('parseTimeRangeInput', () => {
 
 describe('rangeNeedsExplicitYear', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2025-06-15T12:00:00'));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-06-15T12:00:00'));
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('is false for a past range in the current year', () => {
@@ -201,7 +203,7 @@ describe('rangeNeedsExplicitYear', () => {
   });
 
   it('compares years in the given time zone', () => {
-    jest.setSystemTime(new Date('2025-06-15T12:00:00Z'));
+    vi.setSystemTime(new Date('2025-06-15T12:00:00Z'));
     const range: [Date, Date] = [
       new Date('2024-12-31T23:00:00Z'),
       new Date('2025-01-01T01:00:00Z'),
@@ -214,12 +216,12 @@ describe('rangeNeedsExplicitYear', () => {
 
 describe('formatTimeRangeText', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2026-06-15T12:00:00'));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-15T12:00:00'));
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('omits the year for a past range in the current year', () => {
@@ -269,12 +271,12 @@ describe('formatTimeRangeText', () => {
 
 describe('timeRangeInputToSeconds', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2025-01-15T22:00:00'));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-01-15T22:00:00'));
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('returns the relative range length in seconds', () => {
@@ -294,12 +296,12 @@ describe('timeRangeInputToSeconds', () => {
 
 describe('time zones', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2026-10-22T15:00:00Z'));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-22T15:00:00Z'));
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('reads a range ending now in the given zone without clamping it', () => {
@@ -321,7 +323,7 @@ describe('time zones', () => {
   it.each(['Etc/UTC', 'Asia/Tokyo', 'America/Los_Angeles'])(
     'round-trips a range across a DST change in %s',
     timeZone => {
-      jest.setSystemTime(new Date('2026-11-10T12:00:00Z'));
+      vi.setSystemTime(new Date('2026-11-10T12:00:00Z'));
       const range: [Date, Date] = [
         new Date('2026-10-31T15:00:00Z'),
         new Date('2026-11-02T16:00:00Z'),
@@ -339,7 +341,7 @@ describe('time zones', () => {
 
   it('resolves relative words against the date in the given zone', () => {
     // Oct 22 12:00 in Tokyo, Oct 21 20:00 in Los Angeles.
-    jest.setSystemTime(new Date('2026-10-22T03:00:00Z'));
+    vi.setSystemTime(new Date('2026-10-22T03:00:00Z'));
     expect(parseTimeRangeInput('yesterday 5pm', 'Asia/Tokyo')[0]).toEqual(
       new Date('2026-10-21T08:00:00Z'),
     );
@@ -356,7 +358,7 @@ describe('time zones', () => {
 
   // New York repeats 01:00-02:00 on Nov 1 2026: first at UTC-4, then at UTC-5.
   it('keeps both occurrences of the repeated hour apart', () => {
-    jest.setSystemTime(new Date('2026-11-01T12:00:00Z'));
+    vi.setSystemTime(new Date('2026-11-01T12:00:00Z'));
     const zone = 'America/New_York';
     expect(parseTimeRangeInput('2026-11-01T01:30:00-04:00', zone)[0]).toEqual(
       new Date('2026-11-01T05:30:00Z'),
@@ -367,7 +369,7 @@ describe('time zones', () => {
   });
 
   it('ends a relative range at now during the repeated hour', () => {
-    jest.setSystemTime(new Date('2026-11-01T06:30:00Z'));
+    vi.setSystemTime(new Date('2026-11-01T06:30:00Z'));
     expect(parseTimeRangeInput('Past 1h', 'America/New_York')).toEqual([
       new Date('2026-11-01T05:30:00Z'),
       new Date('2026-11-01T06:30:00Z'),

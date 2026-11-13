@@ -128,8 +128,7 @@ function extractIntendedTileConfigs(
     const input = call.input as Record<string, unknown> | null;
     if (!input) continue;
     const tiles = input.tiles as
-      | Array<{ name?: string; config?: Record<string, unknown> }>
-      | undefined;
+      Array<{ name?: string; config?: Record<string, unknown> }> | undefined;
     if (!Array.isArray(tiles)) continue;
     for (const tile of tiles) {
       const name = tile.name ?? (tile.config as Record<string, unknown>)?.name;

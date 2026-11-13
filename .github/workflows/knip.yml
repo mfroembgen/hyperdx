@@ -9,6 +9,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   knip:
+    if: github.repository == 'hyperdxio/hyperdx'
     timeout-minutes: 10
     runs-on: ubuntu-24.04
     permissions:
@@ -16,24 +17,20 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout PR branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Setup node
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache-dependency-path: 'yarn.lock'
-          cache: 'yarn'
-
+      - name: Setup Bun
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
       - name: Install dependencies
-        run: yarn install --immutable
+        run: bun ci
 
       - name: Run Knip
         run:
-          yarn knip --reporter json > /tmp/knip-results.json 2>/dev/null || true
+          bun run knip --reporter json > /tmp/knip-results.json 2>/dev/null ||
+          true
 
       - name: Report results
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           IS_FORK_PR:
             ${{ github.event_name == 'pull_request' &&
@@ -136,7 +133,7 @@ jobs:
 
             body += `---\n`;
             body += `[Knip](https://knip.dev) finds unused files, dependencies, and exports in your codebase.\n`;
-            body += `Run \`yarn knip\` locally to see full details.\n`;
+            body += `Run \`bun run knip\` locally to see full details.\n`;
 
             // Always log to console (visible in Actions output for pushes and forks)
             console.log(body);
@@ -170,4 +167,4 @@ jobs:
             }
 
             // Fail the job since there are issues
-            core.setFailed(`Knip found ${results.total} issue${results.total === 1 ? '' : 's'}. Run \`yarn knip\` locally to fix them.`);
+            core.setFailed(`Knip found ${results.total} issue${results.total === 1 ? '' : 's'}. Run \`bun run knip\` locally to fix them.`);

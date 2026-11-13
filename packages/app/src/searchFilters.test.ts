@@ -1,4 +1,5 @@
 import { enableMapSet } from 'immer';
+import { vi } from 'vitest';
 import { Filter } from '@hyperdx/common-utils/dist/types';
 import { act, renderHook } from '@testing-library/react';
 
@@ -15,7 +16,7 @@ const EMPTY_SEARCH_QUERY: Filter[] = [];
 
 describe('useSearchPageFilterState replaceFilterValue', () => {
   it('swaps an included value for a new one, preserving included polarity', () => {
-    const onFilterChange = jest.fn();
+    const onFilterChange = vi.fn();
     const { result } = renderHook(() =>
       useSearchPageFilterState({
         searchQuery: EMPTY_SEARCH_QUERY,
@@ -36,7 +37,7 @@ describe('useSearchPageFilterState replaceFilterValue', () => {
   });
 
   it('swaps an excluded value for a new one, preserving excluded polarity', () => {
-    const onFilterChange = jest.fn();
+    const onFilterChange = vi.fn();
     const { result } = renderHook(() =>
       useSearchPageFilterState({
         searchQuery: EMPTY_SEARCH_QUERY,
@@ -57,7 +58,7 @@ describe('useSearchPageFilterState replaceFilterValue', () => {
   });
 
   it('emits onFilterChange exactly once per replace', () => {
-    const onFilterChange = jest.fn();
+    const onFilterChange = vi.fn();
     const { result } = renderHook(() =>
       useSearchPageFilterState({
         searchQuery: EMPTY_SEARCH_QUERY,
@@ -111,7 +112,7 @@ describe('canonical key escaping at the persistence boundary', () => {
     const PLAIN_COLUMNS = new Set(['ServiceName']);
 
     it('keeps the FilterState key clean but emits a quoted key to the URL', () => {
-      const onFilterChange = jest.fn();
+      const onFilterChange = vi.fn();
       const { result } = renderHook(() =>
         useSearchPageFilterState({
           searchQuery: EMPTY_SEARCH_QUERY,
@@ -133,7 +134,7 @@ describe('canonical key escaping at the persistence boundary', () => {
     });
 
     it('escapes a Map sub-key (quoted root) for the persisted query only', () => {
-      const onFilterChange = jest.fn();
+      const onFilterChange = vi.fn();
       const { result } = renderHook(() =>
         useSearchPageFilterState({
           searchQuery: EMPTY_SEARCH_QUERY,
@@ -153,7 +154,7 @@ describe('canonical key escaping at the persistence boundary', () => {
     });
 
     it('leaves a plain column unquoted in both forms', () => {
-      const onFilterChange = jest.fn();
+      const onFilterChange = vi.fn();
       const { result } = renderHook(() =>
         useSearchPageFilterState({
           searchQuery: EMPTY_SEARCH_QUERY,
@@ -173,7 +174,7 @@ describe('canonical key escaping at the persistence boundary', () => {
     });
 
     it('unescapes a quoted key loaded from the URL back into clean FilterState', () => {
-      const onFilterChange = jest.fn();
+      const onFilterChange = vi.fn();
       const searchQuery: Filter[] = [
         { type: 'sql', condition: "`service-name` IN ('a')" },
       ];

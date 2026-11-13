@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { ColumnMeta } from '@hyperdx/common-utils/dist/clickhouse';
 import {
   Metadata,
@@ -26,9 +27,9 @@ function createMockColumnMeta({
 describe('inferMaterializedViewConfig', () => {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
   const mockMetadata: Metadata = {
-    getColumns: jest.fn(),
-    getTableMetadata: jest.fn(),
-    queryMaterializedViewsByTarget: jest.fn(),
+    getColumns: vi.fn(),
+    getTableMetadata: vi.fn(),
+    queryMaterializedViewsByTarget: vi.fn(),
   } as unknown as Metadata;
 
   const mvTargetTable = {
@@ -154,7 +155,7 @@ describe('inferMaterializedViewConfig', () => {
   };
 
   beforeEach(() => {
-    mockMetadata.getTableMetadata = jest
+    mockMetadata.getTableMetadata = vi
       .fn()
       .mockImplementation(({ tableName }) => {
         if (tableName === 'test_mv') {
@@ -170,7 +171,7 @@ describe('inferMaterializedViewConfig', () => {
         }
         return Promise.reject(new Error(`Table ${tableName} not found`));
       });
-    mockMetadata.getColumns = jest.fn().mockImplementation(({ tableName }) => {
+    mockMetadata.getColumns = vi.fn().mockImplementation(({ tableName }) => {
       if (tableName === 'test_source_table') {
         return Promise.resolve(mvSourceTable.columns);
       } else if (tableName === 'test_mv_target_table') {
@@ -181,7 +182,7 @@ describe('inferMaterializedViewConfig', () => {
       return Promise.reject(new Error(`Table ${tableName} not found`));
     });
 
-    mockMetadata.queryMaterializedViewsByTarget = jest
+    mockMetadata.queryMaterializedViewsByTarget = vi
       .fn()
       .mockImplementation(({ tableName }) => {
         return Promise.resolve([
@@ -197,7 +198,7 @@ describe('inferMaterializedViewConfig', () => {
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   it('should infer materialized view configuration when given the name of a materialized view target table', async () => {
@@ -346,7 +347,7 @@ describe('inferMaterializedViewConfig', () => {
   });
 
   it('should return a partial result when multiple materialized views target the same table', async () => {
-    mockMetadata.queryMaterializedViewsByTarget = jest.fn().mockResolvedValue([
+    mockMetadata.queryMaterializedViewsByTarget = vi.fn().mockResolvedValue([
       { tableName: 'test_mv', databaseName: 'test_db' },
       { tableName: 'test_mv_2', databaseName: 'test_db' },
     ]);

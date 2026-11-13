@@ -1,7 +1,8 @@
+import { vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import { render, screen } from '@testing-library/react';
 
-jest.mock('@/config', () => ({ INSTANCE_LABEL: 'UK' }));
+vi.mock('@/config', () => ({ INSTANCE_LABEL: 'UK' }));
 
 import { InstanceLabel } from '@/components/AppNav/InstanceLabel';
 

@@ -1,3 +1,4 @@
+import type { FieldValues } from 'react-hook-form';
 import { useController, UseControllerProps } from 'react-hook-form';
 import { Select } from '@mantine/core';
 import { IconDatabase } from '@tabler/icons-react';
@@ -52,8 +53,11 @@ function DatabaseSelect({
   );
 }
 
-export function DatabaseSelectControlled(
-  props: { size?: string; connectionId: string } & UseControllerProps<any>,
+export function DatabaseSelectControlled<TFieldValues extends FieldValues>(
+  props: {
+    size?: string;
+    connectionId: string;
+  } & UseControllerProps<TFieldValues>,
 ) {
   const { field } = useController(props);
 

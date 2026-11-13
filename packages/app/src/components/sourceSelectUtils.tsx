@@ -157,7 +157,12 @@ export const sourceSelectFilter: OptionsFilter = ({
     if (remaining <= 0) break;
     if ('group' in option) {
       const matched = tokens.length
-        ? option.items.filter(item => matches(item.label, option.group))
+        ? option.items.filter(item =>
+            matches(
+              item.label,
+              typeof option.group === 'string' ? option.group : undefined,
+            ),
+          )
         : option.items;
       const items = matched.slice(0, remaining);
       if (items.length > 0) {

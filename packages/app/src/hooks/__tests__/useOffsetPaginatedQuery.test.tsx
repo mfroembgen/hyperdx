@@ -1,4 +1,5 @@
 import React, { act } from 'react';
+import { type Mock, type MockedFunction, vi } from 'vitest';
 import { ClickHouseQueryError } from '@hyperdx/common-utils/dist/clickhouse';
 import {
   ChartConfigWithDateRange,
@@ -14,7 +15,8 @@ import { renderHook, waitFor } from '@testing-library/react';
 import useOffsetPaginatedQuery from '@/hooks/useOffsetPaginatedQuery';
 
 // Mock the API module
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
+  default: { useMe: () => ({ data: { team: { queryTimeout: 30 } } }) },
   useMe: () => ({
     data: {
       team: {
@@ -25,31 +27,31 @@ jest.mock('@/api', () => ({
 }));
 
 // Mock the clickhouse client
-jest.mock('@hyperdx/app/src/clickhouse', () => ({
-  getClickhouseClient: jest.fn(),
+vi.mock('@/clickhouse', () => ({
+  getClickhouseClient: vi.fn(),
 }));
 
 // Mock the metadata module
-jest.mock('@hyperdx/app/src/metadata', () => ({
-  getMetadata: jest.fn(),
+vi.mock('@/metadata', () => ({
+  getMetadata: vi.fn(),
 }));
 
 // Mock useMetadataWithSettings
-jest.mock('@/hooks/useMetadata', () => ({
-  useMetadataWithSettings: jest.fn(),
+vi.mock('@/hooks/useMetadata', () => ({
+  useMetadataWithSettings: vi.fn(),
 }));
 
 // Mock useSource
-jest.mock('@/source', () => ({
-  useSource: jest.fn().mockReturnValue({
+vi.mock('@/source', () => ({
+  useSource: vi.fn().mockReturnValue({
     data: undefined,
     isLoading: false,
   }),
 }));
 
 // Mock the useMVOptimizationExplanation hook
-jest.mock('@/hooks/useMVOptimizationExplanation', () => ({
-  useMVOptimizationExplanation: jest.fn().mockReturnValue({
+vi.mock('@/hooks/useMVOptimizationExplanation', () => ({
+  useMVOptimizationExplanation: vi.fn().mockReturnValue({
     data: undefined,
     isLoading: false,
     isPlaceholderData: false,
@@ -57,19 +59,19 @@ jest.mock('@/hooks/useMVOptimizationExplanation', () => ({
 }));
 
 // Mock the renderChartConfig function
-jest.mock('@hyperdx/common-utils/dist/core/renderChartConfig', () => ({
-  renderChartConfig: jest.fn(),
+vi.mock('@hyperdx/common-utils/dist/core/renderChartConfig', () => ({
+  renderChartConfig: vi.fn(),
 }));
 
-jest.mock('@/utils/promqlChartQuery', () => ({
-  queryPromqlChartConfig: jest.fn(),
+vi.mock('@/utils/promqlChartQuery', () => ({
+  queryPromqlChartConfig: vi.fn(),
 }));
 
-// Import mocked modules after jest.mock calls
-import { getClickhouseClient } from '@hyperdx/app/src/clickhouse';
+// Import mocked modules after vi.mock calls
 import { renderChartConfig } from '@hyperdx/common-utils/dist/core/renderChartConfig';
 import { isBuilderChartConfig } from '@hyperdx/common-utils/dist/guards';
 
+import { getClickhouseClient } from '@/clickhouse';
 import { useMetadataWithSettings } from '@/hooks/useMetadata';
 import {
   MVOptimizationExplanationResult,
@@ -102,18 +104,18 @@ const createMockChartConfig = (
 
 describe('useOffsetPaginatedQuery', () => {
   // Increase timeout for complex async operations
-  jest.setTimeout(15000);
+  vi.setConfig({ testTimeout: 15000 });
 
   let queryClient: QueryClient;
   let wrapper: React.ComponentType<{ children: any }>;
   let mockClickhouseClient: any;
   let mockStream: any;
   let mockReader: any;
-  let mockMetadata: { getSetting: jest.Mock };
+  let mockMetadata: { getSetting: Mock };
 
   beforeEach(() => {
     // Reset mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Create a new QueryClient for each test
     queryClient = new QueryClient({
@@ -131,28 +133,28 @@ describe('useOffsetPaginatedQuery', () => {
 
     // Mock the clickhouse client
     mockReader = {
-      read: jest.fn(),
+      read: vi.fn(),
     };
 
     mockStream = {
-      getReader: jest.fn(() => mockReader),
+      getReader: vi.fn(() => mockReader),
     };
 
     mockClickhouseClient = {
-      query: jest.fn(() => Promise.resolve({ stream: () => mockStream })),
+      query: vi.fn(() => Promise.resolve({ stream: () => mockStream })),
     };
 
     // Reset and set up the mock to return a fresh client each time
     (
-      getClickhouseClient as jest.MockedFunction<typeof getClickhouseClient>
+      getClickhouseClient as MockedFunction<typeof getClickhouseClient>
     ).mockReset();
     (
-      getClickhouseClient as jest.MockedFunction<typeof getClickhouseClient>
+      getClickhouseClient as MockedFunction<typeof getClickhouseClient>
     ).mockReturnValue(mockClickhouseClient);
 
     // Mock renderChartConfig
     (
-      renderChartConfig as jest.MockedFunction<typeof renderChartConfig>
+      renderChartConfig as MockedFunction<typeof renderChartConfig>
     ).mockResolvedValue({
       sql: 'SELECT * FROM traces',
       params: {},
@@ -160,9 +162,9 @@ describe('useOffsetPaginatedQuery', () => {
 
     // Mock metadata with getSetting returning null by default
     mockMetadata = {
-      getSetting: jest.fn().mockResolvedValue(null),
+      getSetting: vi.fn().mockResolvedValue(null),
     };
-    jest.mocked(useMetadataWithSettings).mockReturnValue(mockMetadata as any);
+    vi.mocked(useMetadataWithSettings).mockReturnValue(mockMetadata as any);
   });
 
   describe('Time Window Generation', () => {
@@ -977,7 +979,7 @@ describe('useOffsetPaginatedQuery', () => {
       expect(result1.current.data?.data[0].message).toBe('config1 log');
 
       // Reset mocks for second config
-      jest.clearAllMocks();
+      vi.clearAllMocks();
       mockReader.read
         .mockResolvedValueOnce({
           done: false,
@@ -1033,7 +1035,7 @@ describe('useOffsetPaginatedQuery', () => {
 
       // Raw SQL config should be passed through to renderChartConfig unchanged
       expect(renderChartConfig).toHaveBeenCalledTimes(1);
-      expect(jest.mocked(renderChartConfig).mock.calls[0][0]).toMatchObject({
+      expect(vi.mocked(renderChartConfig).mock.calls[0][0]).toMatchObject({
         configType: 'sql',
         sqlTemplate: 'SELECT status, count() FROM logs GROUP BY status',
       });
@@ -1205,7 +1207,7 @@ describe('useOffsetPaginatedQuery', () => {
     };
 
     it('queries Prometheus instead of rendering SQL', async () => {
-      jest.mocked(queryPromqlChartConfig).mockResolvedValue({
+      vi.mocked(queryPromqlChartConfig).mockResolvedValue({
         data: [{ service: 'web', Value: 1 }],
         meta: [
           { name: 'service', type: 'String' },
@@ -1265,7 +1267,7 @@ describe('useOffsetPaginatedQuery', () => {
 
       // Mock MV optimization to return an optimized config
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      jest.mocked(useMVOptimizationExplanation).mockReturnValue({
+      vi.mocked(useMVOptimizationExplanation).mockReturnValue({
         data: {
           optimizedConfig,
           explanations: [],
@@ -1295,7 +1297,7 @@ describe('useOffsetPaginatedQuery', () => {
       // Verify the query was executed with the optimized config
       expect(renderChartConfig).toHaveBeenCalledTimes(1);
       expect(
-        jest
+        vi
           .mocked(renderChartConfig)
           .mock.calls.every(
             call =>
@@ -1337,7 +1339,7 @@ describe('useOffsetPaginatedQuery', () => {
 
       // Mock MV optimization to be in loading state
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      jest.mocked(useMVOptimizationExplanation).mockReturnValue({
+      vi.mocked(useMVOptimizationExplanation).mockReturnValue({
         data: undefined,
         isLoading: true, // MV optimization is still loading
       } as unknown as UseQueryResult<MVOptimizationExplanationResult>);
@@ -1357,7 +1359,7 @@ describe('useOffsetPaginatedQuery', () => {
 
       // Now mock the MV optimization to finish loading
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      jest.mocked(useMVOptimizationExplanation).mockReturnValue({
+      vi.mocked(useMVOptimizationExplanation).mockReturnValue({
         data: {
           optimizedConfig: optimizedConfig,
           explanations: [],
@@ -1390,7 +1392,7 @@ describe('useOffsetPaginatedQuery', () => {
       // Verify the query was executed with the optimized config after MV optimization finished
       expect(renderChartConfig).toHaveBeenCalledTimes(1);
       expect(
-        jest
+        vi
           .mocked(renderChartConfig)
           .mock.calls.every(
             call =>

@@ -1,4 +1,5 @@
 import { ComponentProps } from 'react';
+import { vi } from 'vitest';
 import {
   ADHOC_FILTER_MAX_CONDITIONS,
   AdhocDashboardFilter as AdhocDashboardFilterType,
@@ -6,18 +7,18 @@ import {
   DashboardFilter,
 } from '@hyperdx/common-utils/dist/types';
 import { notifications } from '@mantine/notifications';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { AdhocDashboardFilter } from '@/components/AdhocDashboardFilter/AdhocDashboardFilter';
 import { useAdhocFilterOptions } from '@/components/AdhocDashboardFilter/useAdhocFilterOptions';
 
-jest.mock('@mantine/notifications', () => ({
-  notifications: { show: jest.fn() },
+vi.mock('@mantine/notifications', () => ({
+  notifications: { show: vi.fn() },
 }));
 
-jest.mock('@/components/AdhocDashboardFilter/useAdhocFilterOptions', () => ({
-  useAdhocFilterOptions: jest.fn(),
+vi.mock('@/components/AdhocDashboardFilter/useAdhocFilterOptions', () => ({
+  useAdhocFilterOptions: vi.fn(),
 }));
 
 const filter: AdhocDashboardFilterType = {
@@ -47,7 +48,7 @@ const renderFilter = (
   definition: AdhocDashboardFilterType = filter,
   props: Partial<ComponentProps<typeof AdhocDashboardFilter>> = {},
 ) => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   renderWithMantine(
     <AdhocDashboardFilter
       filter={definition}
@@ -63,7 +64,7 @@ const renderFilter = (
 
 describe('AdhocDashboardFilter', () => {
   beforeEach(() => {
-    jest.mocked(useAdhocFilterOptions).mockReturnValue({
+    vi.mocked(useAdhocFilterOptions).mockReturnValue({
       keys: {
         data: ['ServiceName', 'SeverityText'],
         isLoading: false,
@@ -135,6 +136,8 @@ describe('AdhocDashboardFilter', () => {
     await userEvent.click(screen.getAllByTestId('adhoc-condition-pill')[0]);
     const valueInput = await screen.findByTestId(`${editorId}-value`);
     expect(valueInput).toHaveValue('api');
+    await waitFor(() => expect(valueInput).toBeVisible());
+    await userEvent.click(valueInput);
     await userEvent.clear(valueInput);
     await userEvent.type(valueInput, 'web');
     await userEvent.click(screen.getByTestId(`${editorId}-apply`));
@@ -150,7 +153,10 @@ describe('AdhocDashboardFilter', () => {
 
     await userEvent.click(screen.getAllByTestId('adhoc-condition-pill')[0]);
     const valueInput = await screen.findByTestId(`${editorId}-value`);
+    await waitFor(() => expect(valueInput).toBeVisible());
+    await userEvent.click(valueInput);
     await userEvent.clear(valueInput);
+    await waitFor(() => expect(valueInput).toBeVisible());
     await userEvent.click(valueInput);
     await userEvent.paste('x'.repeat(10001));
     await userEvent.click(screen.getByTestId(`${editorId}-apply`));
@@ -220,7 +226,7 @@ describe('AdhocDashboardFilter', () => {
       await userEvent.click(addButton());
 
       expect(await screen.findByTestId(`${editorId}-key`)).toBeInTheDocument();
-      expect(jest.mocked(useAdhocFilterOptions)).toHaveBeenLastCalledWith(
+      expect(vi.mocked(useAdhocFilterOptions)).toHaveBeenLastCalledWith(
         narrowed,
         expect.any(String),
         dateRange,

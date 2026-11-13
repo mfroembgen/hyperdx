@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { vi } from 'vitest';
 
 import logger from '@/utils/logger';
 import {
@@ -157,7 +158,7 @@ describe('tokenEncryption', () => {
     });
 
     it('warns when a provider name is re-registered', () => {
-      const warn = jest.spyOn(logger, 'warn').mockImplementation(() => {});
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       registerTokenEncryptionProvider(
         createAesGcmProvider('test-dup', () => KEY),
@@ -187,7 +188,7 @@ describe('tokenEncryption', () => {
     });
 
     it('still reads plain-text rows once encryption is on, and warns', async () => {
-      const warn = jest.spyOn(logger, 'warn').mockImplementation(() => {});
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       await expect(
         decryptToken('v1:none:written-while-disabled'),
@@ -273,7 +274,7 @@ describe('tokenEncryption', () => {
     });
 
     it('warns instead of verifying when encryption is disabled', async () => {
-      const warn = jest.spyOn(logger, 'warn').mockImplementation(() => {});
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
       setActiveTokenEncryptionProvider('none');
 
       await expect(verifyTokenEncryption()).resolves.toBeUndefined();

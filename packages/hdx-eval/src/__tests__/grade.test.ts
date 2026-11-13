@@ -5,9 +5,9 @@
  * pattern: build a synthetic RunRecord, write it to a temp batch dir, run
  * gradeBatch with --no-judge, and read back the grade JSON.
  */
-
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { vi } from 'vitest';
 
 import { gradeBatch } from '@/grading/grade';
 import type { GradeRecord } from '@/grading/types';
@@ -223,8 +223,8 @@ describe('gradeBatch tool-error penalty', () => {
       writeFileSync(join(dir, '0.json'), JSON.stringify(run, null, 2));
     }
 
-    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-    let lines: string[] = [];
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    let lines: string[];
     try {
       await gradeBatch(batchDir, { skipJudge: true });
       lines = logSpy.mock.calls.map(c => String(c[0]));

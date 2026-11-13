@@ -8,7 +8,6 @@ import {
   type UseFormSetValue,
   useWatch,
 } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { getHeatmapMode } from '@hyperdx/common-utils/dist/core/heatmap';
 import { tcFromSource } from '@hyperdx/common-utils/dist/core/metadata';
 import { isReducibleRangeQuery } from '@hyperdx/common-utils/dist/core/promql';
@@ -99,6 +98,7 @@ import {
   useSources,
 } from '@/source';
 import { normalizeNoOpAlertScheduleFields } from '@/utils/alerts';
+import { passthroughFormResolver } from '@/utils/formResolver';
 
 import { AlertPanelPrimaryAction } from './AlertPanelPrimaryAction';
 import { ChartActionBar, DashboardFiltersToggleProps } from './ChartActionBar';
@@ -266,7 +266,7 @@ export default function EditTimeChartForm({
   } = useForm<ChartEditorFormState>({
     defaultValues: formValue,
     values: formValue,
-    resolver: zodResolver(zSavedChartConfig),
+    resolver: passthroughFormResolver<ChartEditorFormState>(zSavedChartConfig),
   });
 
   const {

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   DEFAULT_GENERIC_WEBHOOK_BODY,
   DEFAULT_INCIDENT_IO_WEBHOOK_BODY,
@@ -18,10 +19,10 @@ import {
   WebhookForm,
 } from '@/components/TeamSettings/WebhookForm';
 
-const mockSaveWebhook = jest.fn();
-const mockUpdateWebhook = jest.fn();
+const mockSaveWebhook = vi.fn();
+const mockUpdateWebhook = vi.fn();
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useSaveWebhook: () => ({ mutateAsync: mockSaveWebhook, isPending: false }),
@@ -29,12 +30,12 @@ jest.mock('@/api', () => ({
       mutateAsync: mockUpdateWebhook,
       isPending: false,
     }),
-    useTestWebhook: () => ({ mutateAsync: jest.fn(), isPending: false }),
+    useTestWebhook: () => ({ mutateAsync: vi.fn(), isPending: false }),
   },
 }));
 
 // CodeMirror needs layout APIs jsdom doesn't provide.
-jest.mock('@uiw/react-codemirror', () => ({
+vi.mock('@uiw/react-codemirror', () => ({
   __esModule: true,
   default: ({
     value,
@@ -50,7 +51,7 @@ jest.mock('@uiw/react-codemirror', () => ({
     />
   ),
   EditorView: class {},
-  placeholder: jest.fn(),
+  placeholder: vi.fn(),
 }));
 
 function renderForm(
@@ -62,11 +63,7 @@ function renderForm(
   return render(
     <QueryClientProvider client={queryClient}>
       <MantineProvider>
-        <WebhookForm
-          webhook={webhook}
-          onClose={jest.fn()}
-          onSuccess={jest.fn()}
-        />
+        <WebhookForm webhook={webhook} onClose={vi.fn()} onSuccess={vi.fn()} />
       </MantineProvider>
     </QueryClientProvider>,
   );

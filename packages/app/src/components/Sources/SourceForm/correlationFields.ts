@@ -1,10 +1,7 @@
 import { SourceKind, TSource } from '@hyperdx/common-utils/dist/types';
 
 export type CorrelationField =
-  | 'logSourceId'
-  | 'traceSourceId'
-  | 'sessionSourceId'
-  | 'metricSourceId';
+  'logSourceId' | 'traceSourceId' | 'sessionSourceId' | 'metricSourceId';
 
 export function getCorrelationFieldValue(
   source: TSource,

@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 
 import { Sparkline, type SparklinePoint } from '@/components/Sparkline';
 
@@ -7,12 +8,16 @@ import { Sparkline, type SparklinePoint } from '@/components/Sparkline';
 // reports a size and the chart never paints. Swap it for a fixed-size
 // pass-through so the SVG renders and the variant can be asserted, and record
 // the requested height so its forwarding can be asserted. The `mock` prefix
-// lets the hoisted jest.mock factory reference it.
+// lets the hoisted vi.mock factory reference it.
 const mockResponsiveContainerHeights: Array<number | string | undefined> = [];
 
-jest.mock('recharts', () => {
-  const actual = jest.requireActual<typeof import('recharts')>('recharts');
-  const { cloneElement } = jest.requireActual<typeof import('react')>('react');
+vi.mock('recharts', async () => {
+  const actualModule0 =
+    await vi.importActual<typeof import('recharts')>('recharts');
+  const actualModule1 = await vi.importActual<typeof import('react')>('react');
+
+  const actual = actualModule0;
+  const { cloneElement } = actualModule1;
   return {
     ...actual,
     ResponsiveContainer: ({

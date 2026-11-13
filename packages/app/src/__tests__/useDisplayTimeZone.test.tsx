@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
 import {
@@ -9,14 +10,14 @@ import {
 import { useDisplayTimeZone } from '@/useDisplayTimeZone';
 
 let mockTz: string | null = null;
-const mockSetTz = jest.fn();
-jest.mock('nuqs', () => ({
+const mockSetTz = vi.fn();
+vi.mock('nuqs', () => ({
   parseAsString: {},
   useQueryState: () => [mockTz, mockSetTz],
 }));
 
 let mockUserTimeZone = 'Etc/UTC';
-jest.mock('@/useUserPreferences', () => ({
+vi.mock('@/useUserPreferences', () => ({
   useUserPreferences: () => ({
     userPreferences: { timeZone: mockUserTimeZone },
   }),

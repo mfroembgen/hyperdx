@@ -1,3 +1,4 @@
+import { AlertErrorType } from '@hyperdx/common-utils/dist/types';
 import { ObjectId } from 'mongodb';
 import { Types } from 'mongoose';
 
@@ -394,7 +395,7 @@ describe('alertHistory controller', () => {
         errors: [
           {
             timestamp: errorTimestamp,
-            type: 'QUERY_TIMEOUT',
+            type: AlertErrorType.QUERY_TIMEOUT,
             message: 'Alert query did not complete within the 300s timeout',
           },
         ],
@@ -435,7 +436,7 @@ describe('alertHistory controller', () => {
       const okWindow = new Date(Date.now() - 120000);
       const makeError = () => ({
         timestamp: new Date(),
-        type: 'WEBHOOK_ERROR',
+        type: AlertErrorType.WEBHOOK_ERROR,
         message: 'Failed to send webhook notification.',
       });
 
@@ -683,7 +684,7 @@ describe('alertHistory controller', () => {
         errors: [
           {
             timestamp: new Date(),
-            type: 'WEBHOOK_ERROR',
+            type: AlertErrorType.WEBHOOK_ERROR,
             message: 'Failed to send webhook notification.',
           },
         ],
@@ -744,7 +745,7 @@ describe('alertHistory controller', () => {
         errors: [
           {
             timestamp: new Date(),
-            type: 'QUERY_TIMEOUT',
+            type: AlertErrorType.QUERY_TIMEOUT,
             message: 'timed out',
           },
         ],
@@ -794,7 +795,7 @@ describe('alertHistory controller', () => {
         errors: [
           {
             timestamp: new Date(),
-            type: 'QUERY_TIMEOUT',
+            type: AlertErrorType.QUERY_TIMEOUT,
             message: 'timed out',
           },
         ],

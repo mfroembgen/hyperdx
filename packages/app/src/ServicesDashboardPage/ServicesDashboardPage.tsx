@@ -14,6 +14,7 @@ import {
   useQueryState,
   useQueryStates,
 } from 'nuqs';
+import type { FieldValues } from 'react-hook-form';
 import { UseControllerProps, useForm, useWatch } from 'react-hook-form';
 import { tcFromSource } from '@hyperdx/common-utils/dist/core/metadata';
 import {
@@ -64,7 +65,7 @@ import DatabaseTab from './DatabaseTab';
 import ErrorsTab from './ErrorsTab';
 import HttpTab from './HttpTab';
 
-function ServiceSelectControlled({
+function ServiceSelectControlled<TFieldValues extends FieldValues>({
   sourceId,
   onCreate,
   dateRange,
@@ -74,7 +75,7 @@ function ServiceSelectControlled({
   size?: string;
   dateRange: [Date, Date];
   onCreate?: () => void;
-} & UseControllerProps<any>) {
+} & UseControllerProps<TFieldValues>) {
   const { data: source } = useSource({
     id: sourceId,
     kinds: [SourceKind.Trace],
@@ -278,7 +279,7 @@ function ServicesDashboardPage() {
   });
 
   // For future use if Live button is added
-  const [isLive, _setIsLive] = useState(false);
+  const [isLive] = useState(false);
 
   const { manualRefreshCooloff, refresh } = useDashboardRefresh({
     searchedTimeRange,

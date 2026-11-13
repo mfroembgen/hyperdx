@@ -1,3 +1,5 @@
+import { type Mocked, vi } from 'vitest';
+
 import { renderBuilderConfigAsSqlTemplate as renderBuilderConfigAsSqlTemplateResult } from '@/core/builderToRawSql';
 import { Metadata } from '@/core/metadata';
 import { validateRawSqlForAlert } from '@/core/utils';
@@ -21,15 +23,15 @@ async function renderBuilderConfigAsSqlTemplate(
 }
 
 describe('renderBuilderConfigAsSqlTemplate', () => {
-  let mockMetadata: jest.Mocked<Metadata>;
+  let mockMetadata: Mocked<Metadata>;
 
   // Suppress expected console.warn noise from missing columns / optimization fallbacks
   beforeAll(() => {
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
   afterAll(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   beforeEach(() => {
@@ -40,20 +42,18 @@ describe('renderBuilderConfigAsSqlTemplate', () => {
       { name: 'ServiceName', type: 'String' },
     ];
     mockMetadata = {
-      getColumns: jest.fn().mockResolvedValue(columns),
-      getMaterializedColumnsLookupTable: jest.fn().mockResolvedValue(new Map()),
-      getColumn: jest
+      getColumns: vi.fn().mockResolvedValue(columns),
+      getMaterializedColumnsLookupTable: vi.fn().mockResolvedValue(new Map()),
+      getColumn: vi
         .fn()
         .mockImplementation(async ({ column }) =>
           columns.find(col => col.name === column),
         ),
-      getTableMetadata: jest
-        .fn()
-        .mockResolvedValue({ primary_key: 'timestamp' }),
-      getSkipIndices: jest.fn().mockResolvedValue([]),
-      getSetting: jest.fn().mockResolvedValue(undefined),
-      isClickHouseCloud: jest.fn().mockResolvedValue(false),
-    } as unknown as jest.Mocked<Metadata>;
+      getTableMetadata: vi.fn().mockResolvedValue({ primary_key: 'timestamp' }),
+      getSkipIndices: vi.fn().mockResolvedValue([]),
+      getSetting: vi.fn().mockResolvedValue(undefined),
+      isClickHouseCloud: vi.fn().mockResolvedValue(false),
+    } as unknown as Mocked<Metadata>;
   });
 
   const baseLineConfig: ChartConfigWithOptDateRange = {
