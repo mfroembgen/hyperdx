@@ -3,6 +3,8 @@ import type {
   TeamMember,
 } from '@hyperdx/common-utils/dist/types';
 import { isPersistableUserId as isPersistableUserIdHex } from '@hyperdx/common-utils/dist/types';
+import opentelemetry from '@opentelemetry/api';
+import crypto from 'crypto';
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -10,6 +12,7 @@ import * as config from '@/config';
 import type { ObjectId } from '@/models';
 import Alert from '@/models/alert';
 import User, { type IUser } from '@/models/user';
+import { isDuplicateKeyError } from '@/utils/errors';
 import { getCounter, setBusinessContext } from '@/utils/instrumentation';
 import logger from '@/utils/logger';
 
@@ -17,8 +20,33 @@ const memberRemovals = getCounter('hyperdx.team.member_removals', {
   description: 'Team members removed from local membership',
 });
 
-export function findUserByAccessKey(accessKey: string) {
-  return User.findOne({ accessKey });
+export const NOT_VIRTUAL = { isVirtual: { $ne: true } };
+
+export const ORG_API_KEY_PREFIX = 'hdx_org_';
+
+// Virtual users with no createdBy (such as EE's role and CHC actor accounts)
+// are not org keys, so they never authenticate as one or show up in key management.
+export const ACTIVE_ORG_API_KEY = {
+  isVirtual: true,
+  createdBy: { $ne: null },
+  revokedAt: null,
+} as const;
+
+export function hashOrgApiKey(key: string) {
+  return crypto.createHash('sha256').update(key).digest('hex');
+}
+
+export function findUserByAccessKey(accessKey: string, now = new Date()) {
+  // Org keys are stored hashed; only the prefixed plaintext reaches a service
+  // account, so presenting the stored hash itself never authenticates.
+  if (accessKey.startsWith(ORG_API_KEY_PREFIX)) {
+    return User.findOne({
+      accessKey: hashOrgApiKey(accessKey),
+      ...ACTIVE_ORG_API_KEY,
+      $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
+    });
+  }
+  return User.findOne({ accessKey, ...NOT_VIRTUAL });
 }
 
 /**
@@ -36,6 +64,25 @@ export function findUserById(id: string) {
   return User.findById(id);
 }
 
+export function createVirtualUser({
+  name,
+  accessKey,
+  teamId,
+  ...fields
+}: {
+  name: string;
+  accessKey?: string;
+  teamId: string | ObjectId;
+} & Pick<IUser, 'email' | 'expiresAt' | 'createdBy'>) {
+  return User.create({
+    name,
+    team: teamId,
+    isVirtual: true,
+    accessKey,
+    ...fields,
+  });
+}
+
 export function findUserByEmail(email: string) {
   // Case-insensitive email search - lowercase the email since User model stores emails in lowercase
   return User.findOne({ email: email.toLowerCase() });
@@ -45,7 +92,12 @@ export function findUsersByTeam(team: string | ObjectId) {
   return User.aggregate<
     Pick<TeamMember, 'email' | 'name' | 'hasPasswordAuth'> & Pick<IUser, '_id'>
   >([
-    { $match: { team: new mongoose.Types.ObjectId(team) } },
+    {
+      $match: {
+        team: new mongoose.Types.ObjectId(team),
+        ...NOT_VIRTUAL,
+      },
+    },
     { $sort: { createdAt: 1 } },
     {
       $project: {
@@ -115,7 +167,11 @@ export function recordOnboardingTaskCompletion(
     return;
   }
   void User.updateOne(
-    { _id: userId, 'onboardingData.completedTasks': { $ne: taskId } },
+    {
+      _id: userId,
+      ...NOT_VIRTUAL,
+      'onboardingData.completedTasks': { $ne: taskId },
+    },
     { $addToSet: { 'onboardingData.completedTasks': taskId } },
   ).catch(err => {
     logger.warn(
@@ -125,40 +181,134 @@ export function recordOnboardingTaskCompletion(
   });
 }
 
+/**
+ * Never removes the last person, so someone can always sign in to revoke the
+ * team's org API keys. Mongo here has no transactions, so delete first and put
+ * the member back if a concurrent removal emptied the team.
+ */
 export async function deleteTeamMember(
   teamId: string | ObjectId,
   userIdToDelete: string,
   userIdRequestingDelete: string | ObjectId,
-) {
+): Promise<'deleted' | 'not_found' | 'last_member'> {
   setBusinessContext({
     teamId: teamId.toString(),
     userId: userIdRequestingDelete.toString(),
     'hyperdx.team.removed_user_id': userIdToDelete,
   });
-  const member = { team: teamId, _id: userIdToDelete };
-  const [, deletedUser] = await Promise.all([
-    Alert.updateMany(
-      { createdBy: new mongoose.Types.ObjectId(userIdToDelete), team: teamId },
-      {
-        $set: {
-          createdBy: new mongoose.Types.ObjectId(userIdRequestingDelete),
+  const countPeople = () =>
+    User.countDocuments({ team: teamId, ...NOT_VIRTUAL });
+  const target = { team: teamId, _id: userIdToDelete, ...NOT_VIRTUAL };
+  if ((await User.exists(target)) == null) {
+    return 'not_found';
+  }
+  // Checked first so the usual case never deletes; the restore below only
+  // covers two removals racing past this check.
+  if ((await countPeople()) <= 1) {
+    return 'last_member';
+  }
+  const deletedUser = await (config.WORKOS
+    ? User.findOneAndUpdate(
+        target,
+        {
+          $unset: { team: 1 },
+          // Keep email/binding reserved against automatic re-registration.
+          // Rotating also preserves the non-sparse unique access-key index.
+          $set: { accessKey: uuidv4() },
         },
-      },
-    ),
-    config.WORKOS
-      ? User.findOneAndUpdate(
-          member,
-          {
-            $unset: { team: 1 },
-            // Keep email/binding reserved against automatic re-registration.
-            // Rotating also preserves the non-sparse unique access-key index.
-            $set: { accessKey: uuidv4() },
-          },
-          { returnDocument: 'before' },
-        )
-      : User.findOneAndDelete(member),
-  ]);
+        { returnDocument: 'before' },
+      )
+    : User.findOneAndDelete(target)
+  )
+    .select('+hash +salt')
+    .lean();
+  if (deletedUser == null) {
+    return 'not_found';
+  }
+  let isTeamEmpty = true;
+  try {
+    isTeamEmpty = (await countPeople()) === 0;
+  } finally {
+    // Also runs if the count throws, so a failed check can't lose the member.
+    if (isTeamEmpty) {
+      await restoreTeamMember(deletedUser);
+    }
+  }
+  if (isTeamEmpty) {
+    return 'last_member';
+  }
+  await Alert.updateMany(
+    { createdBy: deletedUser._id, team: teamId },
+    {
+      $set: { createdBy: new mongoose.Types.ObjectId(userIdRequestingDelete) },
+    },
+  );
+  memberRemovals.add(1);
+  return 'deleted';
+}
 
-  if (deletedUser) memberRemovals.add(1);
-  return deletedUser;
+const memberRestoreFailures = getCounter(
+  'hyperdx.team.member_restore_failures',
+  {
+    description:
+      'Removed team members that could not be put back after the team emptied.',
+  },
+);
+
+const RESTORE_ATTEMPTS = 3;
+const RESTORE_RETRY_DELAY_MS = 100;
+
+// With WorkOS the member document is kept and only loses its team, so the
+// restore puts the team and access key back instead of reinserting it.
+async function putBackTeamMember(user: IUser) {
+  if (config.WORKOS) {
+    await User.collection.updateOne(
+      { _id: user._id },
+      { $set: { team: user.team, accessKey: user.accessKey } },
+    );
+    return;
+  }
+  await User.collection.insertOne(user);
+}
+
+async function restoreTeamMember(user: IUser) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await putBackTeamMember(user);
+      return;
+    } catch (err) {
+      const isDuplicate = isDuplicateKeyError(err);
+      const keyPattern =
+        typeof err === 'object' && err != null && 'keyPattern' in err
+          ? err.keyPattern
+          : undefined;
+      // A duplicate _id means an earlier attempt already landed.
+      if (
+        isDuplicate &&
+        typeof keyPattern === 'object' &&
+        keyPattern != null &&
+        '_id' in keyPattern
+      ) {
+        return;
+      }
+      // Any other duplicate (the email was taken meanwhile) can't succeed.
+      if (!isDuplicate && attempt < RESTORE_ATTEMPTS) {
+        await new Promise(r => setTimeout(r, RESTORE_RETRY_DELAY_MS * attempt));
+        continue;
+      }
+      memberRestoreFailures.add(1);
+      opentelemetry.trace
+        .getActiveSpan()
+        ?.recordException(err instanceof Error ? err : new Error(String(err)));
+      logger.error(
+        {
+          error: err,
+          userId: user._id.toString(),
+          teamId: user.team.toString(),
+        },
+        'Failed to restore a removed team member',
+      );
+      throw err;
+    }
+  }
 }

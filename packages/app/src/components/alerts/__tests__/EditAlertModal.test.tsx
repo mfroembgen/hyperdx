@@ -42,9 +42,9 @@ vi.mock('@/source', () => ({
   useSource: () => ({ data: undefined }),
 }));
 
-vi.mock('@/theme/ThemeProvider', () => ({
+vi.mock('@/brand', () => ({
   __esModule: true,
-  useBrandDisplayName: () => 'HyperDX',
+  useBrandDisplayName: () => 'ClickStack',
 }));
 
 // Heavy / visual child components are stubbed so the form still renders and

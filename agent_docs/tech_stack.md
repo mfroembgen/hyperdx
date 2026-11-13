@@ -1,4 +1,4 @@
-# HyperDX Technology Stack
+# ClickStack Technology Stack
 
 ## Frontend (`packages/app`)
 
@@ -23,7 +23,7 @@ Mantine primitives → Custom SCSS modules as last resort
 - **Authentication**: WorkOS AuthKit for browser and MCP authentication when
   configured; Passport.js local authentication otherwise
 - **Validation**: Zod schemas
-- **Telemetry**: Self-instrumented with `@hyperdx/node-opentelemetry`
+- **Telemetry**: Self-instrumented with `@clickhouse/clickstack-node` (API and Next.js server) and `@clickhouse/clickstack-browser` (frontend)
 
 ## Common Utilities (`packages/common-utils`)
 

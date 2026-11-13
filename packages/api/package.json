@@ -1,6 +1,6 @@
 {
   "name": "@hyperdx/api",
-  "version": "2.43.1",
+  "version": "2.44.0",
   "license": "MIT",
   "private": true,
   "engines": {
@@ -33,14 +33,18 @@
     "@ai-sdk/openai": "4.0.104",
     "@ai-sdk/otel": "1.0.156",
     "@braintree/sanitize-url": "7.1.2",
+    "@clickhouse/clickstack-node": "1.0.2",
+    "@clickhouse/client": "1.24.1",
     "@esm2cjs/p-queue": "7.3.0",
     "@hyperdx/common-utils": "workspace:*",
-    "@hyperdx/node-opentelemetry": "0.11.0",
     "@hyperdx/passport-local-mongoose": "9.0.1",
     "@modelcontextprotocol/sdk": "1.32.2",
     "@opentelemetry/api": "1.10.0",
-    "@opentelemetry/host-metrics": "0.40.0",
-    "@opentelemetry/sdk-metrics": "3.0.0",
+    "@opentelemetry/api-logs": "0.223.0",
+    "@opentelemetry/core": "2.12.0",
+    "@opentelemetry/otlp-transformer": "0.223.0",
+    "@opentelemetry/resources": "2.12.0",
+    "@opentelemetry/sdk-logs": "0.223.0",
     "@slack/webhook": "8.0.2",
     "@types/node": "26.6.6",
     "@workos-inc/node": "12.0.0",
@@ -76,9 +80,9 @@
     "serialize-error": "13.0.2",
     "sqlstring": "2.3.3",
     "tslib": "2.8.1",
+    "undici": "7.30.1",
     "uuid": "14.0.3",
-    "zod": "4.6.7",
-    "@clickhouse/client": "1.24.1"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@stoplight/spectral-cli": "6.17.0",
@@ -107,10 +111,10 @@
     "@opentelemetry/sdk-trace": "3.0.0"
   },
   "scripts": {
-    "start": "bun --preload ./build/tracing.js ./build/index.js",
-    "dev": "bun --watch --env-file=.env.development --preload ./src/tracing.ts ./src/index.ts",
+    "start": "bun --preload ./build/telemetry.js ./build/index.js",
+    "dev": "bun --watch --env-file=.env.development --preload ./src/telemetry.ts ./src/index.ts",
     "dev:mcp": "bunx --bun @modelcontextprotocol/inspector",
-    "dev-task": "bun --watch --env-file=.env.development --preload ./src/tracing.ts ./src/tasks/index.ts",
+    "dev-task": "bun --watch --env-file=.env.development --preload ./src/telemetry.ts ./src/tasks/index.ts",
     "build": "rimraf ./build && tsrs -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && cp -r ./src/opamp/proto ./build/opamp/",
     "build:vercel": "rimraf ./build && tsrs -p tsconfig.vercel.json && tsc-alias -p tsconfig.vercel.json && cp -r ./src/opamp/proto ./build/opamp/",
     "lint": "bun --bun run eslint . --ext .ts --max-warnings 302",

@@ -11,9 +11,9 @@ vi.mock('@/utils/instrumentation', async () => {
   };
 });
 
+import { joinPrometheusUpstreamUrl } from '@/controllers/promql';
 import {
   isClientDisconnect,
-  joinPrometheusUpstreamUrl,
   parseDuration,
   parseTimestamp,
   recordProxyOutcome,

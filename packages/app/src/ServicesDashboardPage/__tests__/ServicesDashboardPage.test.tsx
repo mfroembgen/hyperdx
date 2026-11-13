@@ -163,10 +163,11 @@ vi.mock('@/layout', () => ({
   withAppNavForSurface: () => (page: unknown) => page,
 }));
 
-vi.mock('@/theme/ThemeProvider', () => ({
+vi.mock('@/brand', () => ({
   __esModule: true,
-  useBrandDisplayName: () => 'HyperDX',
-  usePageTitle: (page?: string) => (page ? `${page} - HyperDX` : 'HyperDX'),
+  useBrandDisplayName: () => 'ClickStack',
+  usePageTitle: (page?: string) =>
+    page ? `${page} - ClickStack` : 'ClickStack',
 }));
 
 import ServicesDashboardPage from '@/ServicesDashboardPage';

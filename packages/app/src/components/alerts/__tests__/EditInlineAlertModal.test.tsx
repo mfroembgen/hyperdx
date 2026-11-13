@@ -32,9 +32,9 @@ vi.mock('@/api', () => ({
 }));
 
 vi.mock('@/useConfirm', () => ({ useConfirm: () => vi.fn() }));
-vi.mock('@/theme/ThemeProvider', () => ({
+vi.mock('@/brand', () => ({
   __esModule: true,
-  useBrandDisplayName: () => 'HyperDX',
+  useBrandDisplayName: () => 'ClickStack',
 }));
 
 // The chart editor has its own suite; here it is stubbed to a "save what I was

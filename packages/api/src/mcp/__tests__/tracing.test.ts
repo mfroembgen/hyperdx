@@ -59,9 +59,10 @@ vi.mock('@opentelemetry/api', () => ({
   },
 }));
 
-vi.mock('@hyperdx/node-opentelemetry', () => ({
-  __esModule: true,
-  setTraceAttributes: vi.fn(),
+// The real package would read helpers off the mocked @opentelemetry/api at
+// load time. Only setBusinessContext uses it, and these tests never call it.
+vi.mock('@opentelemetry/core', () => ({
+  getRPCMetadata: vi.fn(),
 }));
 
 vi.mock('@/config', () => ({

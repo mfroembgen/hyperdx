@@ -8,10 +8,12 @@ jobs:
     # 8-core runner so the 4 Playwright workers (see playwright.config.ts) have
     # CPU headroom alongside the app + ClickHouse + MongoDB — 4 workers
     # over-subscribed the 4-vCPU ubuntu-24.04 runner and caused timeouts.
+    # Hosted fork runners have 4 vCPUs, so they run 2 workers with a longer
+    # timeout.
     runs-on:
       ${{ github.repository == 'hyperdxio/hyperdx' && '8-core-playwright' ||
       'ubuntu-24.04' }}
-    timeout-minutes: 15
+    timeout-minutes: ${{ github.repository == 'hyperdxio/hyperdx' && 15 || 25 }}
     permissions:
       contents: read
     env:
@@ -30,6 +32,11 @@ jobs:
         uses: ./.github/actions/e2e-setup
 
       - name: Run Playwright tests (full-stack mode)
+        env:
+          # Unset falls back to the default in playwright.config.ts.
+          E2E_WORKERS:
+            ${{ github.event.pull_request.head.repo.fork && '2' ||
+            vars.E2E_WORKERS }}
         run: |
           cd packages/app
           bun --no-env-file scripts/run-e2e.js --shard=${{ matrix.shard }}/4

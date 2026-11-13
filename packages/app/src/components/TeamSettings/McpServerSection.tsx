@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { Box, Card, Divider, Text } from '@mantine/core';
+import { Separator } from '@clickhouse/click-ui';
+import { Box, Card, Text } from '@mantine/core';
 
 import api from '@/api';
 import { type DeploymentShape } from '@/components/ClickStackOnboarding/installSnippets';
@@ -34,7 +35,7 @@ export default function McpServerSection() {
   return (
     <Box id="mcp_server" data-testid="mcp-server-section">
       <Text size="md">Connect your AI Agents</Text>
-      <Divider my="md" />
+      <Separator size="lg" />
       <Card>
         {oauthEnabled ? (
           <McpOAuthSetup endpoint={`${window.location.origin}/api/mcp`} />

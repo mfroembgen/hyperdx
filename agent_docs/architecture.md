@@ -1,9 +1,9 @@
-# HyperDX Architecture
+# ClickStack Architecture
 
 ## Core Services
 
-- **HyperDX UI (`packages/app`)**: Vinext/Vite frontend serving the user interface
-- **HyperDX API (`packages/api`)**: Bun/Express backend handling queries and business logic
+- **ClickStack UI (`packages/app`)**: Vinext/Vite frontend serving the user interface
+- **ClickStack API (`packages/api`)**: Bun/Express backend handling queries and business logic
 - **OpenTelemetry Collector**: Receives and processes telemetry data
 - **ClickHouse**: Primary data store for all telemetry (logs, metrics, traces)
 - **MongoDB**: Metadata storage (users, dashboards, alerts, saved searches)

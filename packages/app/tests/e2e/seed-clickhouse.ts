@@ -101,6 +101,10 @@ export const INTERESTING_FILTER_KEYS_ROWS = [
     jsonInteger: 42,
     jsonMixed: 42,
     jsonBoolean: true,
+    // Top-level JSON key that is NOT a bare identifier (`@` prefix). Selecting
+    // it (`ResourceAttributesJSON.`@request_id``) and opening the row must keep
+    // the key backtick-quoted in the detail WHERE clause (HDX-5867).
+    jsonAtKeyValue: 'request-A',
     clusterName: 'cluster1',
     serviceNameHyphen: 'svc-one',
     mapHyphenValue: 'mapval1',
@@ -114,6 +118,7 @@ export const INTERESTING_FILTER_KEYS_ROWS = [
     jsonInteger: 43,
     jsonMixed: '43',
     jsonBoolean: false,
+    jsonAtKeyValue: 'request-B',
     clusterName: 'cluster2',
     serviceNameHyphen: 'svc-two',
     mapHyphenValue: 'mapval2',
@@ -127,6 +132,7 @@ export const INTERESTING_FILTER_KEYS_ROWS = [
     jsonInteger: 44,
     jsonMixed: '44',
     jsonBoolean: false,
+    jsonAtKeyValue: 'request-C',
     clusterName: 'cluster3',
     serviceNameHyphen: 'svc-three',
     mapHyphenValue: 'mapval3',
@@ -134,6 +140,10 @@ export const INTERESTING_FILTER_KEYS_ROWS = [
     body: 'log body 3',
   },
 ] as const;
+
+// The at-prefixed JSON key seeded into `ResourceAttributesJSON`. Exported so the
+// row-details spec selects and asserts against the same key/values.
+export const INTERESTING_FILTER_KEYS_JSON_AT_KEY = '@request_id';
 
 // A single log whose Body is a JSON string with a flat, dotted key. It lives in
 // the default E2E Logs table (so it shares the E2E Logs source); the unique
@@ -807,6 +817,7 @@ function generateInterestingFilterKeyLogData(seedRef: number): string {
       integer: row.jsonInteger,
       mixed: row.jsonMixed,
       boolean: row.jsonBoolean,
+      [INTERESTING_FILTER_KEYS_JSON_AT_KEY]: row.jsonAtKeyValue,
     });
     // JSON column with a hyphenated name AND hyphenated nested keys.
     const jsonHyphen = `{"key-1": {"key-2": "${row.jsonHyphenValue}"}}`;

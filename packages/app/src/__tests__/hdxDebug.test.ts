@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+
 // hdxDebug reads config constants at module-load, so each config permutation is
 // exercised by resetting modules and re-requiring with a fresh @/config mock.
 
@@ -17,12 +18,14 @@ const baseConfig = {
   IS_PROMQL_ENABLED: false,
 };
 
-async function loadHdxDebug(configOverrides: Partial<typeof baseConfig> = {}) {
+async function loadHdxDebug(
+  configOverrides: Partial<typeof baseConfig> = {},
+  sessionId: string | null = null,
+) {
   vi.resetModules();
   vi.doMock('@/config', () => ({ ...baseConfig, ...configOverrides }));
-  vi.doMock('@hyperdx/browser', () => ({
-    __esModule: true,
-    default: { getSessionId: () => undefined },
+  vi.doMock('@clickhouse/clickstack-browser', () => ({
+    getSessionId: () => sessionId,
   }));
   vi.doMock('@/utils/clipboard', () => ({
     copyTextToClipboard: vi.fn().mockResolvedValue(true),
@@ -175,6 +178,20 @@ describe('report identity + features', () => {
 
   it('reports "none" when no feature is enabled', async () => {
     expect(reportFor(await loadHdxDebug())).toContain('features: none');
+  });
+});
+
+describe('report session line', () => {
+  it('reports N/A until the RUM SDK has a session', async () => {
+    const report = reportFor(await loadHdxDebug());
+    expect(report).toContain('session:  N/A');
+    expect(window.hdx?.sessionId()).toBeUndefined();
+  });
+
+  it('reports the RUM session id once there is one', async () => {
+    const report = reportFor(await loadHdxDebug({}, 'abc123'));
+    expect(report).toContain('session:  abc123');
+    expect(window.hdx?.sessionId()).toBe('abc123');
   });
 });
 

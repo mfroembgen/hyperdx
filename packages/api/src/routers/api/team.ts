@@ -31,6 +31,7 @@ import {
 import { getNonNullUserWithTeam } from '@/middleware/auth';
 import { processRequest, validateRequest } from '@/middleware/validation';
 import TeamInvite from '@/models/teamInvite';
+import orgApiKeysRouter from '@/routers/api/orgApiKeys';
 import { sendJson } from '@/utils/serialization';
 import { objectIdSchema } from '@/utils/zod';
 
@@ -298,7 +299,16 @@ router.delete(
         throw new Error(`Requesting user has no id`);
       }
 
-      await deleteTeamMember(teamId, userIdToDelete, userIdRequestingDelete);
+      const result = await deleteTeamMember(
+        teamId,
+        userIdToDelete,
+        userIdRequestingDelete,
+      );
+      if (result === 'last_member') {
+        return res
+          .status(400)
+          .json({ message: 'Cannot remove the last team member' });
+      }
 
       res.json({ message: 'User deleted' });
     } catch (e) {
@@ -329,5 +339,7 @@ router.get(
     }
   },
 );
+
+router.use('/api-keys', orgApiKeysRouter);
 
 export default router;

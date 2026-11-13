@@ -109,13 +109,17 @@ FROM oven/bun:${BUN_VERSION}-alpine AS prod
 LABEL org.opencontainers.image.vendor="HyperDX" \
       org.opencontainers.image.title="HyperDX Production" \
       org.opencontainers.image.description="HyperDX production image with API and App services" \
-      org.opencontainers.image.source="https://github.com/hyperdxio/hyperdx" \
+      org.opencontainers.image.source="https://github.com/ClickHouse/ClickStack" \
       org.opencontainers.image.licenses="MIT"
 
 ARG CODE_VERSION
 
 ENV CODE_VERSION=$CODE_VERSION
 ENV OTEL_RESOURCE_ATTRIBUTES="service.version=$CODE_VERSION"
+# Service name for HyperDX's own telemetry, sent only when HYPERDX_API_KEY or
+# OTEL_EXPORTER_OTLP_HEADERS is set. The API and alert task use it as is, the
+# Next.js server adds "-next". Override it with -e OTEL_SERVICE_NAME=<name>.
+ENV OTEL_SERVICE_NAME=hdx-oss-app
 ENV NODE_ENV=production
 
 USER bun
@@ -144,6 +148,10 @@ ARG USER_GID=10001
 
 ENV CODE_VERSION=$CODE_VERSION
 ENV OTEL_RESOURCE_ATTRIBUTES="service.version=$CODE_VERSION"
+# Service name for HyperDX's own telemetry, sent only when HYPERDX_API_KEY or
+# OTEL_EXPORTER_OTLP_HEADERS is set. The API and alert task use it as is, the
+# Next.js server adds "-next". Override it with -e OTEL_SERVICE_NAME=<name>.
+ENV OTEL_SERVICE_NAME=hdx-oss-app
 # Copy from otel collector bases
 COPY --from=ocb-builder --chmod=755 /build/output/otelcol-hyperdx /otelcontribcol
 COPY --from=otel_collector_opampsupervisor_base --chmod=755 /usr/local/bin/opampsupervisor /usr/local/bin/opampsupervisor
@@ -209,7 +217,7 @@ FROM all-in-one-base AS all-in-one-noauth
 LABEL org.opencontainers.image.vendor="HyperDX" \
       org.opencontainers.image.title="HyperDX All-in-One (No Auth)" \
       org.opencontainers.image.description="HyperDX all-in-one image with ClickHouse, MongoDB, and OTel Collector (no authentication)" \
-      org.opencontainers.image.source="https://github.com/hyperdxio/hyperdx" \
+      org.opencontainers.image.source="https://github.com/ClickHouse/ClickStack" \
       org.opencontainers.image.licenses="MIT"
 
 COPY docker/hyperdx/entry.local.noauth.sh /etc/local/entry.sh
@@ -225,7 +233,7 @@ FROM all-in-one-base AS all-in-one-auth
 LABEL org.opencontainers.image.vendor="HyperDX" \
       org.opencontainers.image.title="HyperDX All-in-One (With Auth)" \
       org.opencontainers.image.description="HyperDX all-in-one image with ClickHouse, MongoDB, and OTel Collector (with authentication)" \
-      org.opencontainers.image.source="https://github.com/hyperdxio/hyperdx" \
+      org.opencontainers.image.source="https://github.com/ClickHouse/ClickStack" \
       org.opencontainers.image.licenses="MIT"
 
 COPY docker/hyperdx/entry.local.auth.sh /etc/local/entry.sh

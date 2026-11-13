@@ -29,6 +29,15 @@ export function createRegisterTool(
       context,
       handler,
     );
-    server.registerTool<ZodObject, ZodObject>(name, config, traced);
+    // Directory listings read the display name from annotations.title, not
+    // the top-level title, so mirror it there.
+    server.registerTool<ZodObject, ZodObject>(
+      name,
+      {
+        ...config,
+        annotations: { title: config.title, ...config.annotations },
+      },
+      traced,
+    );
   };
 }

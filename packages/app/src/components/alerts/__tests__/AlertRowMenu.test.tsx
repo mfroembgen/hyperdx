@@ -47,8 +47,8 @@ vi.mock('@/components/alerts/EditInlineAlertModal', () => ({
 
 const confirm = vi.fn().mockResolvedValue(true);
 vi.mock('@/useConfirm', () => ({ useConfirm: () => confirm }));
-vi.mock('@/theme/ThemeProvider', () => ({
-  useBrandDisplayName: () => 'HyperDX',
+vi.mock('@/brand', () => ({
+  useBrandDisplayName: () => 'ClickStack',
 }));
 
 // ObjectId hex: buildImportBlock refuses to emit Terraform for anything else,

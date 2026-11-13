@@ -57,6 +57,9 @@ import { serializeError } from 'serialize-error';
 import { ALERT_HISTORY_QUERY_CONCURRENCY } from '@/controllers/alertHistory';
 import { AlertState, IAlert, IAlertError } from '@/models/alert';
 import AlertHistory, {
+  attributesToGroupValues,
+  GroupValue,
+  groupValuesToAttributes,
   IAlertHistory,
   IAlertHistoryAnalytics,
 } from '@/models/alertHistory';
@@ -73,6 +76,12 @@ import {
   WebhookRedirectError,
 } from '@/tasks/checkAlerts/errors';
 import type { AlertDataSource } from '@/tasks/checkAlerts/providers';
+import {
+  AlertEvaluationContext,
+  AlertEvaluator,
+  findAlertEvaluator,
+  THRESHOLD_EVALUATOR_NAME,
+} from '@/tasks/checkAlerts/evaluators';
 import {
   AlertDetails,
   AlertProvider,
@@ -420,12 +429,31 @@ export const getScheduledWindowStart = (
 };
 
 /**
+ * The clock an alert is evaluated against: the wall clock, unless the alert's
+ * evaluator shifts it back (see AlertEvaluator.evaluationNow). Never later
+ * than the wall clock: previous-state lookups bound history by the wall clock,
+ * which only covers every window when the evaluation clock is not ahead of it.
+ */
+const getAlertEvaluationNow = (
+  alert: IAlert,
+  now: Date,
+  evaluator = findAlertEvaluator(alert),
+): Date => {
+  const shifted = evaluator?.evaluationNow?.(alert, now);
+  return shifted != null && shifted < now ? shifted : now;
+};
+
+/**
  * Compute the scheduled window start ("now rounded down to the window") for an
  * alert at the given time. This mirrors the computation inside processAlert so
  * that history fetched up-front (see getConsecutiveWindowHistories) lines up
  * exactly with the window processAlert evaluates.
  */
-const getAlertWindowStart = (alert: IAlert, now: Date): Date => {
+export const getAlertWindowStart = (
+  alert: IAlert,
+  wallClockNow: Date,
+): Date => {
+  const now = getAlertEvaluationNow(alert, wallClockNow);
   const windowSizeInMins = ms(alert.interval) / 60000;
   const scheduleStartAt = normalizeScheduleStartAt({
     alertId: alert.id,
@@ -539,10 +567,7 @@ const fireChannelEvent = async ({
     clickhouseClient,
     metadata,
     state,
-    title: buildAlertMessageTemplateTitle({
-      view: templateView,
-      state,
-    }),
+    title: buildAlertMessageTemplateTitle({ view: templateView }),
     template: alert.message,
     view: templateView,
     teamId,
@@ -965,7 +990,7 @@ export const alertQueryAttribution = (
 });
 
 export const processAlert = async (
-  now: Date,
+  wallClockNow: Date,
   details: AlertDetails,
   clickhouseClient: ClickhouseClient,
   connectionId: string,
@@ -973,6 +998,9 @@ export const processAlert = async (
   teamWebhooksById: Map<string, IWebhook>,
 ) => {
   const { alert, previousMap, recentHistoryMap } = details;
+  // Resolved inside the try so a failing evaluator lookup is recorded on the
+  // alert; hoisted so the finally can label the evaluation.
+  let evaluator: AlertEvaluator | undefined;
   const source = 'source' in details ? details.source : undefined;
   // Errors collected during this execution. Webhook errors accumulate here; query
   // and validation errors are recorded via recordAlertErrors before returning.
@@ -1030,6 +1058,8 @@ export const processAlert = async (
       .slice(0, ALERT_NOTIFICATION_TARGETS_LIMIT);
   };
   try {
+    evaluator = findAlertEvaluator(alert);
+    const now = getAlertEvaluationNow(alert, wallClockNow, evaluator);
     const windowSizeInMins = ms(alert.interval) / 60000;
     const scheduleStartAt = normalizeScheduleStartAt({
       alertId: alert.id,
@@ -1195,7 +1225,266 @@ export const processAlert = async (
       ? { readonly: '2' }
       : {};
 
-    // Query for alert data. If the query fails, record the error and exit
+    // Track state per group (or one history if no groupBy)
+    const histories = new Map<string, IAlertHistory>();
+    const latestAlertContext = new Map<
+      string,
+      { value: number; attributes: Record<string, string>; startTime: Date }
+    >();
+    const groupAttributes = new Map<string, Record<string, string>>();
+
+    // Helper to get or create history for a group
+    const getOrCreateHistory = (groupKey: string): IAlertHistory => {
+      if (!histories.has(groupKey)) {
+        histories.set(groupKey, {
+          alert: new mongoose.Types.ObjectId(alert.id),
+          createdAt: nowInMinsRoundDown,
+          state: AlertState.OK,
+          counts: 0,
+          lastValues: [],
+          group: groupKey || undefined,
+        });
+      }
+      return histories.get(groupKey)!;
+    };
+
+    // The sample rows a saved-search body quotes depend on the window, not on
+    // the group or the state, so every group notifying for one window shares a
+    // fetch instead of repeating it. Backfilled buckets each notify for their
+    // own window, hence the key. A failed fetch is shared too — the body falls
+    // back to no sample lines rather than re-running the query per group.
+    const sampleLinesByWindow = new Map<number, Promise<string>>();
+    const sampleLinesFor =
+      details.taskType === AlertTaskType.SAVED_SEARCH
+        ? (startTime: Date) => () => {
+            const key = startTime.getTime();
+            const pending =
+              sampleLinesByWindow.get(key) ??
+              fetchSampleLines({
+                aliasWith: aliasWithClauses,
+                clickhouseClient,
+                endTime: fns.addMinutes(startTime, windowSizeInMins),
+                metadata,
+                savedSearch: details.savedSearch,
+                source: details.source,
+                startTime,
+              });
+            sampleLinesByWindow.set(key, pending);
+            return pending;
+          }
+        : undefined;
+
+    // Helper to send a notification, catching and logging any errors.
+    // Resolves true when a dispatch was attempted (even if delivery later
+    // fails — failures surface via executionErrors, mirroring the threshold
+    // path which marks history.fired before dispatching), and false when the
+    // send was suppressed entirely (silenced).
+    const trySendNotification = async ({
+      group,
+      totalCount,
+      state,
+      startTime = nowInMinsRoundDown,
+      attributes = {},
+    }: {
+      state: AlertState;
+      totalCount: number;
+      group: string;
+      startTime?: Date;
+      attributes?: Record<string, string>;
+    }): Promise<boolean> => {
+      // KNOWN LIMITATION: Alert data (including silenced state) is fetched when
+      // the task is queued via AlertProvider, not when it processes. If a user
+      // silences an alert after it's queued but before it processes, this
+      // execution may still send a notification. Subsequent alert checks will
+      // respect the silenced state. This trade-off maintains architectural
+      // separation from direct database access.
+      if ((alert.silenced?.until?.getTime() ?? 0) > Date.now()) {
+        alertEvaluationsCounter.add(1, { outcome: 'skipped_silenced' });
+        logger.info(
+          {
+            alertId: alert.id,
+            silenced: alert.silenced,
+          },
+          'Skipped firing alert due to silence',
+        );
+        return false;
+      }
+
+      alertEvaluationsCounter.add(1, {
+        outcome: state === AlertState.ALERT ? 'fired' : 'resolved',
+      });
+      logger.info(
+        { alertId: alert.id, group, totalCount },
+        state === AlertState.ALERT
+          ? `Triggering ${alert.channel.type} alarm!`
+          : `Alert resolved for group "${group}", triggering ${alert.channel.type} notification`,
+      );
+
+      try {
+        // Casts to any here because this is where I stopped unraveling the
+        // alert logic requiring large, nested objects. We should look at
+        // cleaning this up next. fireChannelEvent guards against null values
+        // for these properties.
+        const { failures, timings, dispatchDurationMs } =
+          await fireChannelEvent({
+            alert,
+            alertProvider,
+            attributes,
+            clickhouseClient,
+            dashboard: (details as any).dashboard,
+            startTime,
+            endTime: fns.addMinutes(startTime, windowSizeInMins),
+            group,
+            isGroupedAlert: hasGroupBy,
+            metadata,
+            savedSearch: (details as any).savedSearch,
+            source,
+            state,
+            totalCount,
+            windowSizeInMins,
+            teamWebhooksById,
+            sampleLines: sampleLinesFor?.(startTime),
+          });
+        // Only the dispatch phase: the column reports how long the targets
+        // took to respond, not the time spent building the message. A round
+        // that queued no job (every target unresolvable) resolves instantly,
+        // so it must not report 0ms as though a target answered at once.
+        if (timings.length > 0) {
+          evaluationAnalytics.webhookDurationMs =
+            (evaluationAnalytics.webhookDurationMs ?? 0) + dispatchDurationMs;
+        }
+        recordNotificationTimings(timings);
+        // Each entry is a target that didn't end up delivered: unresolvable,
+        // capped, or (for the inline dispatcher) an actual send rejection —
+        // see renderAlertTemplate.
+        for (const failure of failures) {
+          logger.error(
+            {
+              alertId: alert.id,
+              group,
+              target: failure.target,
+              error: serializeError(failure.error),
+            },
+            'Notification target could not be dispatched',
+          );
+          executionErrors.push(makeNotificationAlertError(failure));
+        }
+      } catch (e) {
+        // Render-level failures (title/link building, template compile) —
+        // nothing was dispatched.
+        logger.error(
+          { alertId: alert.id, group, error: serializeError(e) },
+          'Failed to fire channel event',
+        );
+        executionErrors.push(makeWebhookAlertError(e));
+      }
+      return true;
+    };
+
+    const numWindowsToLookBack = alert.numConsecutiveWindows ?? 1;
+
+    const shouldFireBasedOnConsecutiveWindows = (
+      groupKey?: string,
+    ): boolean => {
+      if (numWindowsToLookBack <= 1) {
+        return true;
+      }
+
+      // recentHistoryMap entries are pre-filtered to the lookback window and
+      // sorted newest-first, so take the most recent M-1 for this group.
+      const key = computeHistoryMapKey(alert.id, groupKey || '');
+      const groupHistories = recentHistoryMap?.get(key) ?? [];
+      const relevant = groupHistories.slice(0, numWindowsToLookBack - 1);
+
+      return (
+        relevant.length === numWindowsToLookBack - 1 &&
+        relevant.every(
+          h => h.state === AlertState.ALERT || h.state === AlertState.PENDING,
+        )
+      );
+    };
+
+    const sendNotificationIfResolved = async (
+      previousHistory: AggregatedAlertHistory | undefined,
+      currentHistory: IAlertHistory,
+      groupKey: string,
+    ) => {
+      if (
+        (previousHistory?.state === AlertState.ALERT ||
+          previousHistory?.state === AlertState.PENDING) &&
+        previousHistory?.fired !== false &&
+        currentHistory.state === AlertState.OK
+      ) {
+        const lastValue =
+          currentHistory.lastValues[currentHistory.lastValues.length - 1];
+        await trySendNotification({
+          state: AlertState.OK,
+          group: groupKey,
+          totalCount: lastValue?.count || 0,
+          startTime: lastValue?.startTime || nowInMinsRoundDown,
+          // A group with no rows left has no current values; use the ones
+          // recorded when it last reported. The aggregation yields null for
+          // rows that never stored any, which would skip the `{}` default.
+          attributes:
+            groupAttributes.get(groupKey) ??
+            groupValuesToAttributes(previousHistory?.groupValues),
+        });
+      }
+    };
+
+    let persisted = false;
+    const persistHistories = async (
+      records: IAlertHistory[],
+      extraErrors: IAlertError[] = [],
+    ) => {
+      persisted = true;
+      flushNotificationTimings();
+      // An evaluation that measured nothing persists no analytics object.
+      if (Object.keys(evaluationAnalytics).length > 0) {
+        for (const record of records) {
+          record.analytics = evaluationAnalytics;
+        }
+      }
+      await alertProvider.updateAlertState(
+        alert.id,
+        records,
+        [...executionErrors, ...extraErrors],
+        dateRange,
+      );
+    };
+
+    if (evaluator) {
+      const ctx: AlertEvaluationContext = {
+        alert,
+        details,
+        source,
+        chartConfig,
+        clickhouseClient,
+        metadata,
+        dateRange,
+        windowSizeInMins,
+        nowInMinsRoundDown,
+        hasGroupBy,
+        previousMap,
+        alertProvider,
+        evaluationAnalytics,
+        executionErrors,
+        getOrCreateHistory,
+        trySendNotification,
+        sendNotificationIfResolved,
+        persistHistories,
+      };
+      await evaluator.evaluate(ctx);
+      if (!persisted) {
+        // Every completed evaluation overwrites the alert's execution errors,
+        // as the threshold path does through persistHistories. Without this,
+        // failed notifications would be dropped and stale errors would stay.
+        await alertProvider.recordAlertErrors(alert.id, executionErrors);
+      }
+      return;
+    }
+
+    // Query for threshold alert data. If the query fails, record the error and exit
     // without touching alert state or creating an AlertHistory.
     let checksData;
     const queryStartedAt = performance.now();
@@ -1270,204 +1559,6 @@ export const processAlert = async (
       `Received alert metric [${alert.source} source]`,
     );
 
-    // Track state per group (or one history if no groupBy)
-    const histories = new Map<string, IAlertHistory>();
-    const latestAlertContext = new Map<
-      string,
-      { value: number; attributes: Record<string, string>; startTime: Date }
-    >();
-    // ponytail: a group that vanished from the data resolves without its values.
-    const groupAttributes = new Map<string, Record<string, string>>();
-
-    // Helper to get or create history for a group
-    const getOrCreateHistory = (groupKey: string): IAlertHistory => {
-      if (!histories.has(groupKey)) {
-        histories.set(groupKey, {
-          alert: new mongoose.Types.ObjectId(alert.id),
-          createdAt: nowInMinsRoundDown,
-          state: AlertState.OK,
-          counts: 0,
-          lastValues: [],
-          group: groupKey || undefined,
-        });
-      }
-      return histories.get(groupKey)!;
-    };
-
-    // The sample rows a saved-search body quotes depend on the window, not on
-    // the group or the state, so every group notifying for one window shares a
-    // fetch instead of repeating it. Backfilled buckets each notify for their
-    // own window, hence the key. A failed fetch is shared too — the body falls
-    // back to no sample lines rather than re-running the query per group.
-    const sampleLinesByWindow = new Map<number, Promise<string>>();
-    const sampleLinesFor =
-      details.taskType === AlertTaskType.SAVED_SEARCH
-        ? (startTime: Date) => () => {
-            const key = startTime.getTime();
-            const pending =
-              sampleLinesByWindow.get(key) ??
-              fetchSampleLines({
-                aliasWith: aliasWithClauses,
-                clickhouseClient,
-                endTime: fns.addMinutes(startTime, windowSizeInMins),
-                metadata,
-                savedSearch: details.savedSearch,
-                source: details.source,
-                startTime,
-              });
-            sampleLinesByWindow.set(key, pending);
-            return pending;
-          }
-        : undefined;
-
-    // Helper to send a notification, catching and logging any errors.
-    const trySendNotification = async ({
-      group,
-      totalCount,
-      state,
-      startTime = nowInMinsRoundDown,
-      attributes = {},
-    }: {
-      state: AlertState;
-      totalCount: number;
-      group: string;
-      startTime?: Date;
-      attributes?: Record<string, string>;
-    }) => {
-      // KNOWN LIMITATION: Alert data (including silenced state) is fetched when
-      // the task is queued via AlertProvider, not when it processes. If a user
-      // silences an alert after it's queued but before it processes, this
-      // execution may still send a notification. Subsequent alert checks will
-      // respect the silenced state. This trade-off maintains architectural
-      // separation from direct database access.
-      if ((alert.silenced?.until?.getTime() ?? 0) > Date.now()) {
-        alertEvaluationsCounter.add(1, { outcome: 'skipped_silenced' });
-        logger.info(
-          {
-            alertId: alert.id,
-            silenced: alert.silenced,
-          },
-          'Skipped firing alert due to silence',
-        );
-        return;
-      }
-
-      alertEvaluationsCounter.add(1, {
-        outcome: state === AlertState.ALERT ? 'fired' : 'resolved',
-      });
-      logger.info(
-        { alertId: alert.id, group, totalCount },
-        state === AlertState.ALERT
-          ? `Triggering ${alert.channel.type} alarm!`
-          : `Alert resolved for group "${group}", triggering ${alert.channel.type} notification`,
-      );
-
-      try {
-        // Casts to any here because this is where I stopped unraveling the
-        // alert logic requiring large, nested objects. We should look at
-        // cleaning this up next. fireChannelEvent guards against null values
-        // for these properties.
-        const { failures, timings, dispatchDurationMs } =
-          await fireChannelEvent({
-            alert,
-            alertProvider,
-            attributes,
-            clickhouseClient,
-            dashboard: (details as any).dashboard,
-            startTime,
-            endTime: fns.addMinutes(startTime, windowSizeInMins),
-            group,
-            isGroupedAlert: hasGroupBy,
-            metadata,
-            savedSearch: (details as any).savedSearch,
-            source,
-            state,
-            totalCount,
-            windowSizeInMins,
-            teamWebhooksById,
-            sampleLines: sampleLinesFor?.(startTime),
-          });
-        // Only the dispatch phase: the column reports how long the targets
-        // took to respond, not the time spent building the message. A round
-        // that queued no job (every target unresolvable) resolves instantly,
-        // so it must not report 0ms as though a target answered at once.
-        if (timings.length > 0) {
-          evaluationAnalytics.webhookDurationMs =
-            (evaluationAnalytics.webhookDurationMs ?? 0) + dispatchDurationMs;
-        }
-        recordNotificationTimings(timings);
-        // Each entry is a target that didn't end up delivered: unresolvable,
-        // capped, or (for the inline dispatcher) an actual send rejection —
-        // see renderAlertTemplate.
-        for (const failure of failures) {
-          logger.error(
-            {
-              alertId: alert.id,
-              group,
-              target: failure.target,
-              error: serializeError(failure.error),
-            },
-            'Notification target could not be dispatched',
-          );
-          executionErrors.push(makeNotificationAlertError(failure));
-        }
-      } catch (e) {
-        // Render-level failures (title/link building, template compile) —
-        // nothing was dispatched.
-        logger.error(
-          { alertId: alert.id, group, error: serializeError(e) },
-          'Failed to fire channel event',
-        );
-        executionErrors.push(makeWebhookAlertError(e));
-      }
-    };
-
-    const numWindowsToLookBack = alert.numConsecutiveWindows ?? 1;
-
-    const shouldFireBasedOnConsecutiveWindows = (
-      groupKey?: string,
-    ): boolean => {
-      if (numWindowsToLookBack <= 1) {
-        return true;
-      }
-
-      // recentHistoryMap entries are pre-filtered to the lookback window and
-      // sorted newest-first, so take the most recent M-1 for this group.
-      const key = computeHistoryMapKey(alert.id, groupKey || '');
-      const groupHistories = recentHistoryMap?.get(key) ?? [];
-      const relevant = groupHistories.slice(0, numWindowsToLookBack - 1);
-
-      return (
-        relevant.length === numWindowsToLookBack - 1 &&
-        relevant.every(
-          h => h.state === AlertState.ALERT || h.state === AlertState.PENDING,
-        )
-      );
-    };
-
-    const sendNotificationIfResolved = async (
-      previousHistory: AggregatedAlertHistory | undefined,
-      currentHistory: IAlertHistory,
-      groupKey: string,
-    ) => {
-      if (
-        (previousHistory?.state === AlertState.ALERT ||
-          previousHistory?.state === AlertState.PENDING) &&
-        previousHistory?.fired !== false &&
-        currentHistory.state === AlertState.OK
-      ) {
-        const lastValue =
-          currentHistory.lastValues[currentHistory.lastValues.length - 1];
-        await trySendNotification({
-          state: AlertState.OK,
-          group: groupKey,
-          totalCount: lastValue?.count || 0,
-          startTime: lastValue?.startTime || nowInMinsRoundDown,
-          attributes: groupAttributes.get(groupKey),
-        });
-      }
-    };
-
     const meta = getResponseMetadata(chartConfig, checksData);
     if (!meta) {
       evalOutcome = 'error';
@@ -1514,17 +1605,7 @@ export const processAlert = async (
 
       // Single-value evaluations always cover exactly the current window.
       evaluationAnalytics.backfilledBuckets = 0;
-      flushNotificationTimings();
-      const historyRecords = Array.from(histories.values());
-      for (const record of historyRecords) {
-        record.analytics = evaluationAnalytics;
-      }
-      await alertProvider.updateAlertState(
-        alert.id,
-        historyRecords,
-        executionErrors,
-        dateRange,
-      );
+      await persistHistories(Array.from(histories.values()));
       return;
     }
 
@@ -1638,7 +1719,6 @@ export const processAlert = async (
 
       for (const [groupKey, evaluation] of bucketEvaluations.entries()) {
         const history = getOrCreateHistory(groupKey);
-
         if (evaluation.exceeds) {
           history.counts += 1;
           if (shouldFireBasedOnConsecutiveWindows(groupKey)) {
@@ -1702,6 +1782,18 @@ export const processAlert = async (
       getOrCreateHistory('');
     }
 
+    // A resolve reads values only from a previous ALERT or PENDING row.
+    for (const [groupKey, history] of histories.entries()) {
+      if (
+        history.state === AlertState.ALERT ||
+        history.state === AlertState.PENDING
+      ) {
+        history.groupValues = attributesToGroupValues(
+          groupAttributes.get(groupKey) ?? {},
+        );
+      }
+    }
+
     // Check for state transitions and send notifications
     for (const [groupKey, history] of histories.entries()) {
       const previousKey = computeHistoryMapKey(alert.id, groupKey);
@@ -1735,17 +1827,7 @@ export const processAlert = async (
     }
 
     // Save all history records and update alert state
-    flushNotificationTimings();
-    const historyRecords = Array.from(histories.values());
-    for (const record of historyRecords) {
-      record.analytics = evaluationAnalytics;
-    }
-    await alertProvider.updateAlertState(
-      alert.id,
-      historyRecords,
-      executionErrors,
-      dateRange,
-    );
+    await persistHistories(Array.from(histories.values()));
   } catch (e) {
     // Uncomment this for better error messages locally
     // console.error(e);
@@ -1793,7 +1875,10 @@ export const processAlert = async (
         operation: 'alerts.evaluate',
         outcome: evalOutcome,
         durationMs: performance.now() - evalStartedAt,
-        attributes: { alert_source: alert.source ?? 'unknown' },
+        attributes: {
+          alert_source: alert.source ?? 'unknown',
+          alert_evaluator: evaluator?.name ?? THRESHOLD_EVALUATOR_NAME,
+        },
       });
     }
   }
@@ -1809,6 +1894,7 @@ export interface AggregatedAlertHistory {
   state: AlertState;
   group?: string;
   fired?: boolean;
+  groupValues?: GroupValue[] | null;
 }
 
 /**
@@ -1870,6 +1956,7 @@ export const getPreviousAlertHistories = async (
               createdAt: { $first: '$createdAt' },
               state: { $first: '$state' },
               fired: { $first: '$fired' },
+              groupValues: { $first: '$groupValues' },
             },
           },
           {
@@ -1879,6 +1966,7 @@ export const getPreviousAlertHistories = async (
               state: 1,
               group: '$_id.group',
               fired: 1,
+              groupValues: 1,
             },
           },
         ]);
@@ -1938,7 +2026,20 @@ export const getConsecutiveWindowHistories = async (
       queue.add(async () => {
         const numWindowsToLookBack = alert.numConsecutiveWindows ?? 1;
         const windowSizeInMins = ms(alert.interval) / 60000;
-        const windowStart = getAlertWindowStart(alert, now);
+        let windowStart: Date;
+        try {
+          windowStart = getAlertWindowStart(alert, now);
+        } catch (e) {
+          // The evaluator lookup runs extension code. A failure must not
+          // reject this batch, which would stop every alert loading this
+          // tick. processAlert repeats the lookup and records the error on
+          // this alert.
+          logger.error(
+            { alertId: alert.id, error: serializeError(e) },
+            'Failed to compute alert window start for history prefetch',
+          );
+          return undefined;
+        }
         const earliestAllowedTime = new Date(
           windowStart.getTime() -
             (numWindowsToLookBack - 1) * windowSizeInMins * 60_000,

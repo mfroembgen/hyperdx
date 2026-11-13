@@ -59,8 +59,8 @@ vi.mock('@/hooks/useMetadata', () => ({
   useMetadataWithSettings: () => mockMetadata,
 }));
 
-vi.mock('@/theme/ThemeProvider', () => ({
-  useBrandDisplayName: () => 'HyperDX',
+vi.mock('@/brand', () => ({
+  useBrandDisplayName: () => 'ClickStack',
 }));
 vi.mock('@/components/ConnectionForm', () => ({
   ConnectionForm: () => null,

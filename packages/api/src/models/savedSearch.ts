@@ -43,10 +43,12 @@ const savedSearchSchema = new Schema<
   ISavedSearchMethods
 >(
   {
+    // Immutable: `team` pins a saved search to its owning tenant.
     team: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: 'Team',
+      immutable: true,
     },
 
     name: String,
@@ -61,10 +63,12 @@ const savedSearchSchema = new Schema<
     },
     tags: [String],
     filters: [{ type: mongoose.Schema.Types.Mixed }],
+    // Immutable: ownership attribution is set once at creation.
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: false,
+      immutable: true,
     },
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,

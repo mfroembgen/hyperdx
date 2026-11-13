@@ -271,6 +271,7 @@ build-app:
 	$(CONTAINER_BUILD) . -f ./docker/hyperdx/Dockerfile \
 		--build-arg CODE_VERSION=${CODE_VERSION} \
 		-t ${IMAGE_NAME_DOCKERHUB}:${IMAGE_VERSION}${IMAGE_VERSION_SUB_TAG} \
+		-t ${NEXT_IMAGE_NAME_DOCKERHUB}:${IMAGE_VERSION}${IMAGE_VERSION_SUB_TAG} \
 		--target prod
 
 .PHONY: build-otel-collector-nightly
@@ -285,6 +286,7 @@ build-app-nightly:
 	$(CONTAINER_BUILD) . -f ./docker/hyperdx/Dockerfile \
 		--build-arg CODE_VERSION=${CODE_VERSION} \
 		-t ${IMAGE_NAME_DOCKERHUB}:${IMAGE_NIGHTLY_TAG} \
+		-t ${NEXT_IMAGE_NAME_DOCKERHUB}:${IMAGE_NIGHTLY_TAG} \
 		--target prod
 
 .PHONY: build-local-nightly

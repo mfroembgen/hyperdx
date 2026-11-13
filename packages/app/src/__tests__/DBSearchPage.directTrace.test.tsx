@@ -124,10 +124,10 @@ vi.mock('@/hooks/useExplainQuery', () => ({
   useExplainQuery: () => ({}),
 }));
 
-vi.mock('@/theme/ThemeProvider', () => ({
-  useAppTheme: () => ({ themeName: 'hyperdx' }),
-  useBrandDisplayName: () => 'HyperDX',
-  usePageTitle: (page?: string) => (page ? `${page} - HyperDX` : 'HyperDX'),
+vi.mock('@/brand', () => ({
+  useBrandDisplayName: () => 'ClickStack',
+  usePageTitle: (page?: string) =>
+    page ? `${page} - ClickStack` : 'ClickStack',
 }));
 
 vi.mock('../hooks/useMetadata', async () => {

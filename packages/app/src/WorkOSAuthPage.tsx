@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { Button, Center, Paper, Stack, Text } from '@mantine/core';
 import { useMounted } from '@mantine/hooks';
 
-import { usePageTitle } from './theme/ThemeProvider';
+import { usePageTitle } from './brand';
 import LandingHeader from './LandingHeader';
 
 export default function WorkOSAuthPage() {

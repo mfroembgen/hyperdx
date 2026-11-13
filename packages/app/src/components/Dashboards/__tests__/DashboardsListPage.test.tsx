@@ -66,9 +66,10 @@ vi.mock('@/favorites', () => ({
 vi.mock('@/layout', () => ({
   withAppNav: (component: unknown) => component,
 }));
-vi.mock('@/theme/ThemeProvider', () => ({
-  useBrandDisplayName: () => 'HyperDX',
-  usePageTitle: (page?: string) => (page ? `${page} - HyperDX` : 'HyperDX'),
+vi.mock('@/brand', () => ({
+  useBrandDisplayName: () => 'ClickStack',
+  usePageTitle: (page?: string) =>
+    page ? `${page} - ClickStack` : 'ClickStack',
 }));
 vi.mock('@/useConfirm', () => ({
   useConfirm: () => vi.fn(),

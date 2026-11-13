@@ -39,6 +39,7 @@ import {
   IconRefresh,
 } from '@tabler/icons-react';
 
+import { usePageTitle } from '@/brand';
 import DashboardFiltersModal from '@/components/DashboardFiltersModal';
 import OnboardingModal from '@/components/OnboardingModal';
 import SearchWhereInput, {
@@ -58,7 +59,6 @@ import { useResolvedSourceParam } from '@/hooks/useResolvedSourceParam';
 import { withAppNavForSurface } from '@/layout';
 import { useServiceDashboardExpressions } from '@/serviceDashboard';
 import { useSource, useSources } from '@/source';
-import { usePageTitle } from '@/theme/ThemeProvider';
 import { useDefaultTimeRange, useNewTimeQuery } from '@/timeQuery';
 
 import DatabaseTab from './DatabaseTab';

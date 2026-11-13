@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
-// Mock OpenTelemetry + the HyperDX SDK before importing the module under test.
+
+// Mock OpenTelemetry before importing the module under test.
 
 const mockSpan = vi.hoisted(() => ({
   setAttribute: vi.fn(),
@@ -7,6 +8,11 @@ const mockSpan = vi.hoisted(() => ({
   setStatus: vi.fn(),
   recordException: vi.fn(),
   end: vi.fn(),
+}));
+
+const mockServerSpan = vi.hoisted(() => ({
+  setAttributes: vi.fn(),
+  isRecording: vi.fn(() => true),
 }));
 
 const mockTracer = vi.hoisted(() => ({
@@ -24,11 +30,15 @@ const mockMeter = vi.hoisted(() => ({
   createHistogram: vi.fn(() => mockHistogram),
 }));
 
-const mockSetTraceAttributes = vi.hoisted(() => vi.fn());
+const mockActiveContext = vi.hoisted(() => ({}));
+const mockGetRPCMetadata = vi.hoisted(() => vi.fn());
 
 vi.mock('@opentelemetry/api', () => ({
   __esModule: true,
   default: {
+    context: {
+      active: () => mockActiveContext,
+    },
     trace: {
       getTracer: () => mockTracer,
       getActiveSpan: () => mockSpan,
@@ -41,10 +51,8 @@ vi.mock('@opentelemetry/api', () => ({
   SpanKind: { INTERNAL: 0, SERVER: 1, CLIENT: 2, PRODUCER: 3, CONSUMER: 4 },
 }));
 
-vi.mock('@hyperdx/node-opentelemetry', () => ({
-  __esModule: true,
-  setTraceAttributes: (...args: unknown[]) => mockSetTraceAttributes(...args),
-  getPinoMixinFunction: () => ({}),
+vi.mock('@opentelemetry/core', () => ({
+  getRPCMetadata: (...args: unknown[]) => mockGetRPCMetadata(...args),
 }));
 
 vi.mock('@/config', () => ({
@@ -115,40 +123,76 @@ describe('instrumentation', () => {
   });
 
   describe('setBusinessContext', () => {
-    it('maps team/user/email to standardized keys on trace and span', () => {
+    const expected = {
+      'hyperdx.team.id': 'team-1',
+      'user.id': 'user-1',
+      'user.email': 'a@b.com',
+    };
+
+    it('maps team/user/email to standardized keys on the active and server spans', () => {
+      mockGetRPCMetadata.mockReturnValue({ span: mockServerSpan });
+
       setBusinessContext({
         teamId: 'team-1',
         userId: 'user-1',
         email: 'a@b.com',
       });
 
-      const expected = {
-        'hyperdx.team.id': 'team-1',
-        'user.id': 'user-1',
-        'user.email': 'a@b.com',
-      };
-      expect(mockSetTraceAttributes).toHaveBeenCalledWith(expected);
+      expect(mockGetRPCMetadata).toHaveBeenCalledWith(mockActiveContext);
       expect(mockSpan.setAttributes).toHaveBeenCalledWith(expected);
+      expect(mockServerSpan.setAttributes).toHaveBeenCalledWith(expected);
+    });
+
+    it('sets the attributes once when the server span is the active span', () => {
+      mockGetRPCMetadata.mockReturnValue({ span: mockSpan });
+
+      setBusinessContext({ teamId: 'team-1' });
+
+      expect(mockSpan.setAttributes).toHaveBeenCalledTimes(1);
+    });
+
+    it('sets only the active span outside an HTTP request', () => {
+      mockGetRPCMetadata.mockReturnValue(undefined);
+
+      setBusinessContext({ teamId: 'team-1' });
+
+      expect(mockSpan.setAttributes).toHaveBeenCalledWith({
+        'hyperdx.team.id': 'team-1',
+      });
+      expect(mockServerSpan.setAttributes).not.toHaveBeenCalled();
+    });
+
+    it('skips a server span that has already ended', () => {
+      mockGetRPCMetadata.mockReturnValue({ span: mockServerSpan });
+      mockServerSpan.isRecording.mockReturnValueOnce(false);
+
+      setBusinessContext({ teamId: 'team-1' });
+
+      expect(mockServerSpan.setAttributes).not.toHaveBeenCalled();
     });
 
     it('passes through extra attributes and skips nullish values', () => {
+      mockGetRPCMetadata.mockReturnValue({ span: mockServerSpan });
+
       setBusinessContext({
         teamId: 'team-1',
         userId: null,
         'feature_flag.local_app_mode': true,
       });
 
-      expect(mockSetTraceAttributes).toHaveBeenCalledWith({
+      expect(mockServerSpan.setAttributes).toHaveBeenCalledWith({
         'hyperdx.team.id': 'team-1',
         'feature_flag.local_app_mode': true,
       });
     });
 
     it('is a no-op when there is nothing to set', () => {
+      mockGetRPCMetadata.mockReturnValue({ span: mockServerSpan });
+
       setBusinessContext({});
 
-      expect(mockSetTraceAttributes).not.toHaveBeenCalled();
       expect(mockSpan.setAttributes).not.toHaveBeenCalled();
+      expect(mockServerSpan.setAttributes).not.toHaveBeenCalled();
     });
   });
 

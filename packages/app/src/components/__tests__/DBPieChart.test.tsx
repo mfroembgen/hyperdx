@@ -119,7 +119,7 @@ describe('DBPieChart', () => {
       );
     });
 
-    it('pulses the empty state while a refetch is running', () => {
+    it('shows loading instead of the stale empty result during a refetch', () => {
       mockUseQueriedChartConfig.mockReturnValue({
         data: { data: [], meta: groupedData.meta },
         isLoading: false,
@@ -128,9 +128,8 @@ describe('DBPieChart', () => {
       });
 
       renderWithMantine(<DBPieChart config={baseTestConfig} />);
-      expect(screen.getByText('No data found within time range.')).toHaveClass(
-        'effect-pulse',
-      );
+      expect(screen.getByText('Loading Chart Data...')).toBeInTheDocument();
+      expect(screen.queryByText('No data found within time range.')).toBeNull();
     });
   });
 
