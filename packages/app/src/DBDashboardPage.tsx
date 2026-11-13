@@ -207,12 +207,12 @@ import { Tags } from './components/Tags';
 import useDashboardFilters from './hooks/useDashboardFilters';
 import { useDashboardRefresh } from './hooks/useDashboardRefresh';
 import useTileSelection from './hooks/useTileSelection';
-import { usePageTitle } from './brand';
 import {
   dashboardFilterValuesParser,
   parseAsJsonEncoded,
   parseAsStringEncoded,
 } from './utils/queryParsers';
+import { usePageTitle } from './brand';
 import {
   buildDashboardReplaySearchUrl,
   buildEventsSearchUrl,

@@ -207,18 +207,19 @@ export async function deleteTeamMember(
   if ((await countPeople()) <= 1) {
     return 'last_member';
   }
-  const deletedUser = await (config.WORKOS
-    ? User.findOneAndUpdate(
-        target,
-        {
-          $unset: { team: 1 },
-          // Keep email/binding reserved against automatic re-registration.
-          // Rotating also preserves the non-sparse unique access-key index.
-          $set: { accessKey: uuidv4() },
-        },
-        { returnDocument: 'before' },
-      )
-    : User.findOneAndDelete(target)
+  const deletedUser = await (
+    config.WORKOS
+      ? User.findOneAndUpdate(
+          target,
+          {
+            $unset: { team: 1 },
+            // Keep email/binding reserved against automatic re-registration.
+            // Rotating also preserves the non-sparse unique access-key index.
+            $set: { accessKey: uuidv4() },
+          },
+          { returnDocument: 'before' },
+        )
+      : User.findOneAndDelete(target)
   )
     .select('+hash +salt')
     .lean();

@@ -75,13 +75,13 @@ import {
   WebhookNotFoundError,
   WebhookRedirectError,
 } from '@/tasks/checkAlerts/errors';
-import type { AlertDataSource } from '@/tasks/checkAlerts/providers';
 import {
   AlertEvaluationContext,
   AlertEvaluator,
   findAlertEvaluator,
   THRESHOLD_EVALUATOR_NAME,
 } from '@/tasks/checkAlerts/evaluators';
+import type { AlertDataSource } from '@/tasks/checkAlerts/providers';
 import {
   AlertDetails,
   AlertProvider,

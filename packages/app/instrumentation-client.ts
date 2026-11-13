@@ -1,7 +1,7 @@
-import { env } from 'next-runtime-env';
 import { init } from '@clickhouse/clickstack-browser';
 
 import { IS_LOCAL_MODE } from '@/config';
+import { env } from '@/config/runtime-env';
 import type { NextApiConfigResponseData } from '@/types';
 import { getBrowserInitOptions } from '@/utils/browserTelemetry';
 

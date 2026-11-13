@@ -150,7 +150,7 @@ export class PromQLQueryError extends Error {
 
 const prometheusBodySchema = z.object({
   status: z.string(),
-  data: z.unknown(),
+  data: z.unknown().optional(),
   errorType: z.string().optional(),
   error: z.string().optional(),
 });
@@ -503,8 +503,7 @@ type ClickhouseQueryBackend =
 
 /** How a PromQL query against a source is evaluated. */
 type PromqlQueryBackend =
-  | { kind: 'prometheus'; host: string }
-  | ClickhouseQueryBackend;
+  { kind: 'prometheus'; host: string } | ClickhouseQueryBackend;
 
 /**
  * How to evaluate PromQL on a ClickHouse-backed target. The Prometheus HTTP
@@ -550,7 +549,7 @@ export async function resolvePromqlQueryBackend(
 }
 
 const sampleSchema = z.tuple([z.number(), z.string()]);
-const metricSchema = z.record(z.string());
+const metricSchema = z.record(z.string(), z.string());
 
 const promqlQueryDataSchema = z.discriminatedUnion('resultType', [
   z.object({

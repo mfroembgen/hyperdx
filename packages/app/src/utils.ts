@@ -569,9 +569,7 @@ function semanticTokenFallback(
     case 'chart-warning':
     case 'chart-error': {
       const key = token.slice('chart-'.length) as
-        | 'success'
-        | 'warning'
-        | 'error';
+        'success' | 'warning' | 'error';
       return SEMANTIC_CHART_PALETTE[key];
     }
     default: {

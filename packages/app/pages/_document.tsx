@@ -16,7 +16,11 @@ export default function Document() {
       <Head>
         {IS_NOINDEX && <meta name="robots" content="noindex, nofollow" />}
         <script src={`${BASE_PATH}/__ENV.js`} />
-        <link rel="icon" href={`${BASE_PATH}/favicons/clickstack/favicon.ico`} sizes="any" />
+        <link
+          rel="icon"
+          href={`${BASE_PATH}/favicons/clickstack/favicon.ico`}
+          sizes="any"
+        />
         <link
           rel="icon"
           type="image/svg+xml"

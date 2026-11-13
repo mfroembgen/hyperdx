@@ -48,7 +48,6 @@ export const globalTypes = {
   },
 };
 
-
 const NEXT_FONT_VARIABLE_CLASSES = [
   inter.variable,
   roboto.variable,

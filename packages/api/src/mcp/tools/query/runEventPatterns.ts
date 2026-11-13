@@ -150,7 +150,10 @@ export async function mineWindowPatterns(
     };
   }
 
-  const filters = getSourceTableFilters(source);
+  const filters = getSourceTableFilters({
+    ...source.toJSON(),
+    connection: source.connection.toString(),
+  });
   const tableFilterSql = andSql(
     ...filters.map(f => ('condition' in f ? f.condition : undefined)),
   );
