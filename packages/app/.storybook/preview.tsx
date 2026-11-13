@@ -1,6 +1,6 @@
 import React from 'react';
-import { initialize, mswLoader } from 'msw-storybook-addon';
-import type { Preview } from '@storybook/nextjs';
+import { mswLoader } from 'msw-storybook-addon/csf3';
+import type { Preview } from '@storybook/react-vite';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { MANTINE_FONT_MAP } from '../src/config/fonts';
@@ -47,8 +47,6 @@ export const globalTypes = {
     },
   },
 };
-
-initialize();
 
 const NEXT_FONT_VARIABLE_CLASSES = [
   inter.variable,
@@ -115,7 +113,7 @@ const preview: Preview = {
       );
     },
   ],
-  loaders: [mswLoader],
+  loaders: [mswLoader()],
   parameters: {
     msw: {
       handlers: [meHandler],

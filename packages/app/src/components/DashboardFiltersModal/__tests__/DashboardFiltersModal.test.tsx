@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   DashboardFilter,
   StaticListDashboardFilter,
@@ -9,12 +10,12 @@ import DashboardFiltersModal from '@/components/DashboardFiltersModal';
 import { FilterFormControl } from '@/components/DashboardFiltersModal/filterFormState';
 
 // ConfirmProvider pulls in next/router, which jsdom has no answer for.
-jest.mock('@/useConfirm', () => ({ useConfirm: () => jest.fn() }));
+vi.mock('@/useConfirm', () => ({ useConfirm: () => vi.fn() }));
 
-jest.mock('@/source', () => ({ useSources: () => ({ data: [] }) }));
+vi.mock('@/source', () => ({ useSources: () => ({ data: [] }) }));
 
 // Mantine's Combobox calls scrollIntoView when its dropdown opens; jsdom lacks it.
-window.HTMLElement.prototype.scrollIntoView = jest.fn();
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 /**
  * Stands in for the queried editor, which would drag CodeMirror and the source
@@ -22,7 +23,7 @@ window.HTMLElement.prototype.scrollIntoView = jest.fn();
  * real form, so the tests still cover what those rules do to a save once the
  * user has switched to the other type.
  */
-jest.mock(
+vi.mock(
   '@/components/DashboardFiltersModal/QueryExpressionFilterEditForm',
   () => ({
     QueryExpressionFilterEditForm: ({
@@ -67,16 +68,16 @@ const EXISTING_STATIC_FILTER: DashboardFilter = {
 const renderModal = (
   props: Partial<React.ComponentProps<typeof DashboardFiltersModal>> = {},
 ) => {
-  const onSaveFilter = jest.fn();
+  const onSaveFilter = vi.fn();
   renderWithMantine(
     <DashboardFiltersModal
       opened
       filters={[]}
       showVariableOptions
       showRequiredFilterOptions
-      onClose={jest.fn()}
+      onClose={vi.fn()}
       onSaveFilter={onSaveFilter}
-      onRemoveFilter={jest.fn()}
+      onRemoveFilter={vi.fn()}
       {...props}
     />,
   );

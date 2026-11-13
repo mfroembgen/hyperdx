@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import {
   ChartConfigWithDateRange,
   ChartVariable,
@@ -12,66 +13,69 @@ import userEvent from '@testing-library/user-event';
 
 import { ChartPreviewPanel } from '@/components/DBEditTimeChartForm/ChartPreviewPanel';
 
-jest.mock('@/components/ChartSQLPreview', () => ({
+vi.mock('@/components/ChartSQLPreview', () => ({
   __esModule: true,
   default: () => <div data-testid="chart-sql-preview">Chart SQL Preview</div>,
 }));
 
 // CodeMirror doesn't render meaningfully in jsdom, so the preview is stubbed
 // down to the expression it is handed — which is what these tests are about.
-jest.mock('@/components/PromQLEditor/PromQLPreview', () => ({
+vi.mock('@/components/PromQLEditor/PromQLPreview', () => ({
   __esModule: true,
   default: ({ expression }: { expression: string }) => (
     <div data-testid="chart-promql-preview">{expression}</div>
   ),
 }));
 
-jest.mock('@/components/DBTimeChart', () => ({
+vi.mock('@/components/DBTimeChart', () => ({
   DBTimeChart: () => <div data-testid="db-time-chart">Time Chart</div>,
 }));
 
-jest.mock('@/components/DBTableChart', () => ({
+vi.mock('@/components/DBTableChart', () => ({
   __esModule: true,
   default: () => <div data-testid="db-table-chart">Table Chart</div>,
 }));
 
-jest.mock('@/components/DBNumberChart', () => ({
+vi.mock('@/components/DBNumberChart', () => ({
   __esModule: true,
   default: () => <div data-testid="db-number-chart">Number Chart</div>,
 }));
 
-jest.mock('@/components/DBPieChart', () => ({
+vi.mock('@/components/DBPieChart', () => ({
   DBPieChart: () => <div data-testid="db-pie-chart">Pie Chart</div>,
 }));
 
-jest.mock('@/components/DBBarChart', () => ({
+vi.mock('@/components/DBBarChart', () => ({
   DBBarChart: () => <div data-testid="db-bar-chart">Bar Chart</div>,
 }));
 
-jest.mock('@/components/DBSqlRowTableWithSidebar', () => ({
+vi.mock('@/components/DBSqlRowTableWithSidebar', () => ({
   __esModule: true,
   default: () => <div data-testid="db-sql-row-table">SQL Row Table</div>,
 }));
 
-jest.mock('@/components/DBHeatmapChart', () => ({
-  __esModule: true,
-  default: () => <div data-testid="db-heatmap-chart">Heatmap Chart</div>,
-  toHeatmapQuery: (config: { heatmap?: { mode?: string } }) =>
-    config.heatmap?.mode === 'series'
-      ? { mode: 'series', config }
-      : { mode: 'distribution', config, scaleType: 'log' },
-  buildHeatmapBoundsConfig: ({ config }: { config: unknown }) => config,
-  buildHeatmapBucketConfig: ({ config }: { config: unknown }) => config,
-  buildHeatmapSeriesConfig: (config: unknown) => config,
-  resolveHeatmapGranularity: jest.requireActual(
-    '@/components/DBHeatmapChart/heatmapQueries',
-  ).resolveHeatmapGranularity,
-  HEATMAP_N_BUCKETS: 80,
-}));
+vi.mock('@/components/DBHeatmapChart', async () => {
+  const actualModule0 = await vi.importActual<
+    typeof import('@/components/DBHeatmapChart/heatmapQueries')
+  >('@/components/DBHeatmapChart/heatmapQueries');
+  return {
+    __esModule: true,
+    default: () => <div data-testid="db-heatmap-chart">Heatmap Chart</div>,
+    toHeatmapQuery: (config: { heatmap?: { mode?: string } }) =>
+      config.heatmap?.mode === 'series'
+        ? { mode: 'series', config }
+        : { mode: 'distribution', config, scaleType: 'log' },
+    buildHeatmapBoundsConfig: ({ config }: { config: unknown }) => config,
+    buildHeatmapBucketConfig: ({ config }: { config: unknown }) => config,
+    buildHeatmapSeriesConfig: (config: unknown) => config,
+    resolveHeatmapGranularity: actualModule0.resolveHeatmapGranularity,
+    HEATMAP_N_BUCKETS: 80,
+  };
+});
 
-const mockUseSource = jest.fn();
-jest.mock('@/source', () => ({
-  getFirstTimestampValueExpression: jest.fn().mockReturnValue('Timestamp'),
+const mockUseSource = vi.fn();
+vi.mock('@/source', () => ({
+  getFirstTimestampValueExpression: vi.fn().mockReturnValue('Timestamp'),
   useSource: (opts: { id?: string }) => mockUseSource(opts),
 }));
 
@@ -113,9 +117,9 @@ const renderPanel = (
       showGeneratedSql={false}
       showSampleEvents={false}
       showGeneratedPromql={false}
-      setValue={jest.fn()}
-      setDisplayType={jest.fn()}
-      onSubmit={jest.fn()}
+      setValue={vi.fn()}
+      setDisplayType={vi.fn()}
+      onSubmit={vi.fn()}
       {...overrides}
     />,
   );
@@ -123,7 +127,7 @@ const renderPanel = (
 
 describe('ChartPreviewPanel', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseSource.mockReturnValue({ data: undefined });
   });
 
@@ -319,7 +323,10 @@ describe('ChartPreviewPanel', () => {
     const generatedPromqlControl = () =>
       screen.getByRole('button', { name: /Generated PromQL/ });
 
-    const openGeneratedPromql = () => userEvent.click(generatedPromqlControl());
+    const openGeneratedPromql = async () => {
+      await userEvent.click(generatedPromqlControl());
+      await screen.findAllByTestId('chart-promql-preview');
+    };
 
     it('is absent outside PromQL mode', () => {
       renderPanel({

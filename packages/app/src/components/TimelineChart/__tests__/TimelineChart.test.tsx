@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 
 import { TimelineChart } from '@/components/TimelineChart/TimelineChart';
@@ -26,7 +27,7 @@ describe('TimelineChart', () => {
         maxHeight={400}
         rowHeight={22}
         rows={[makeRow('root', 0, 100), makeRow('child', 10, 40)]}
-        onEventClick={jest.fn()}
+        onEventClick={vi.fn()}
       />,
     );
 

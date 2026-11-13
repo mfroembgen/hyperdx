@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { ColumnMeta, JSDataType } from '@hyperdx/common-utils/dist/clickhouse';
 import { Field } from '@hyperdx/common-utils/dist/core/metadata';
 import { renderHook } from '@testing-library/react';
@@ -5,8 +6,8 @@ import { renderHook } from '@testing-library/react';
 import { useClauseFieldOptions } from '@/components/SearchResultsToolbar/useClauseFieldOptions';
 import { useAllFields } from '@/hooks/useMetadata';
 
-jest.mock('@/hooks/useMetadata', () => ({
-  useAllFields: jest.fn(),
+vi.mock('@/hooks/useMetadata', () => ({
+  useAllFields: vi.fn(),
 }));
 
 const column = (name: string, type: string): ColumnMeta => ({
@@ -44,7 +45,7 @@ function mockAllFields(
     errorsByTableConnection: new Map(),
     refetch: () => Promise.reject(new Error('unused')),
   };
-  jest.mocked(useAllFields).mockReturnValue(result);
+  vi.mocked(useAllFields).mockReturnValue(result);
 }
 
 describe('useClauseFieldOptions', () => {

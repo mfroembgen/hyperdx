@@ -1,10 +1,11 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { TimeZoneSelect } from '@/components/TimeZoneSelect';
 
 // Tests run with TZ=America/New_York.
-const renderSelect = (value: string, onChange = jest.fn()) => {
+const renderSelect = (value: string, onChange = vi.fn()) => {
   renderWithMantine(
     <TimeZoneSelect
       data-testid="time-zone-select"
@@ -89,7 +90,7 @@ describe('TimeZoneSelect', () => {
         <TimeZoneSelect
           data-testid="time-zone-select"
           value={null}
-          onChange={jest.fn()}
+          onChange={vi.fn()}
           defaultTimeZone={defaultTimeZone}
         />,
       );

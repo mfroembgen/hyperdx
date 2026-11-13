@@ -1,6 +1,7 @@
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
-import request, { SuperAgentTest } from 'supertest';
+import request, { Agent } from 'supertest';
+import { vi } from 'vitest';
 
 import * as config from '@/config';
 import {
@@ -20,7 +21,7 @@ const BASE_URL = '/api/v2/saved-searches';
 
 describe('External API v2 Saved Searches CRUD', () => {
   const server = getServer();
-  let agent: SuperAgentTest;
+  let agent: Agent;
   let team: ITeam;
   let user: IUser;
   let sourceId: string;
@@ -43,7 +44,7 @@ describe('External API v2 Saved Searches CRUD', () => {
       password: config.CLICKHOUSE_PASSWORD,
     });
     const source = await LogSource.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: team._id,
       name: 'Logs',
       from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
@@ -125,7 +126,7 @@ describe('External API v2 Saved Searches CRUD', () => {
       // rejected the same as a non-existent one — requireValidSourceId scopes
       // the lookup to the caller's team, preventing cross-team references.
       const otherTeamSource = await LogSource.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: new mongoose.Types.ObjectId(),
         name: 'Other Team Logs',
         from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
@@ -580,10 +581,10 @@ describe('External API v2 Saved Searches CRUD', () => {
         channel: { type: null },
       });
 
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
-      const deleteSpy = jest
+      const deleteSpy = vi
         .spyOn(SavedSearch, 'deleteOne')
         .mockImplementationOnce((() => {
           throw new Error('simulated deleteOne failure');

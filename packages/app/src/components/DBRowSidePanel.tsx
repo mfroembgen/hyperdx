@@ -541,7 +541,6 @@ export const DBRowSidePanelInner = ({
       spanLinkFrameRowIdsRef.current.has(activeRowId) &&
       resolvedFrameLabels[activeRowId] !== mainContent
     ) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResolvedFrameLabels(prev => ({ ...prev, [activeRowId]: mainContent }));
     }
   }, [activeRowId, mainContent, resolvedFrameLabels]);
@@ -1388,7 +1387,7 @@ export const SidePanelErrorFallback = ({
     </div>
 
     <div className="px-2 py-1 m-2 fs-7 font-monospace bg-body p-4">
-      {error?.message}
+      {error instanceof Error ? error.message : error ? String(error) : null}
     </div>
   </Stack>
 );

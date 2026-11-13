@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 
 import { makeTraceSource } from '@/llm/__fixtures__/sources';
@@ -5,11 +6,11 @@ import { LLMSessionPanel } from '@/llm/dashboard/LLMSessionPanel';
 import { getLLMExpressions } from '@/llm/lib/expressions';
 
 // The drawer opens off the llmSession query param.
-jest.mock('nuqs', () => ({
+vi.mock('nuqs', () => ({
   parseAsString: {},
   useQueryState: (key: string) => [
     key === 'llmSession' ? 'ses_123' : null,
-    jest.fn(),
+    vi.fn(),
   ],
 }));
 
@@ -18,7 +19,7 @@ const queryConfigs: any[] = [];
 let mockListRows: Record<string, unknown>[] = [];
 let mockListLoading = false;
 let mockTotalsLoading = false;
-jest.mock('@/hooks/useChartConfig', () => ({
+vi.mock('@/hooks/useChartConfig', () => ({
   useQueriedChartConfig: (config: any, opts: any) => {
     queryConfigs.push({ config, queryKey: opts?.queryKey });
     const key = Array.isArray(opts?.queryKey) ? opts.queryKey[0] : '';

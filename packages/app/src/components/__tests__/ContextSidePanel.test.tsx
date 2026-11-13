@@ -1,4 +1,5 @@
 import type { ComponentProps } from 'react';
+import { vi } from 'vitest';
 import { SourceKind, TLogSource } from '@hyperdx/common-utils/dist/types';
 import { MantineProvider } from '@mantine/core';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -6,35 +7,39 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import ContextSubpanel from '@/components/ContextSidePanel';
 import { ROW_DATA_ALIASES } from '@/components/DBRowDataPanel';
 
-jest.mock('nuqs', () => ({
-  createParser: jest.fn(config => config),
-  useQueryState: jest.fn(() => [null, jest.fn()]),
+vi.mock('nuqs', () => ({
+  createParser: vi.fn(config => config),
+  useQueryState: vi.fn(() => [null, vi.fn()]),
 }));
 
-jest.mock('@/source', () => ({
-  useSource: jest.fn(() => ({ data: null })),
+vi.mock('@/source', () => ({
+  useSource: vi.fn(() => ({ data: null })),
 }));
 
-jest.mock('@/components/DBRowSidePanel', () => {
-  const React = jest.requireActual('react');
+vi.mock('@/components/DBRowSidePanel', async () => {
+  const actualModule0 = await vi.importActual<typeof import('react')>('react');
+
+  const React = actualModule0;
   return {
     __esModule: true,
     default: () => null,
     RowSidePanelContext: React.createContext({
-      setChildModalOpen: jest.fn(),
+      setChildModalOpen: vi.fn(),
     }),
   };
 });
 
-jest.mock('@/components/DBRowTable', () => ({
+vi.mock('@/components/DBRowTable', () => ({
   DBSqlRowTable: ({ config }: { config: { where?: string } }) => (
     <div data-testid="row-table" data-where={config.where ?? ''} />
   ),
 }));
 
-jest.mock('@/components/SearchInput/SearchWhereInput', () => {
-  const React = jest.requireActual('react');
-  const { useController } = jest.requireActual('react-hook-form');
+vi.mock('@/components/SearchInput/SearchWhereInput', async () => {
+  const actualModule2 =
+    await vi.importActual<typeof import('react-hook-form')>('react-hook-form');
+
+  const { useController } = actualModule2;
 
   function MockSearchWhereInput({
     control,
@@ -50,7 +55,7 @@ jest.mock('@/components/SearchInput/SearchWhereInput', () => {
   return {
     __esModule: true,
     default: MockSearchWhereInput,
-    getStoredLanguage: jest.fn(() => 'lucene'),
+    getStoredLanguage: vi.fn(() => 'lucene'),
   };
 });
 

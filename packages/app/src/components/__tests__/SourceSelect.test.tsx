@@ -1,5 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { type Mock, vi } from 'vitest';
 import { SourceKind, TSource } from '@hyperdx/common-utils/dist/types';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -10,15 +11,15 @@ import {
 } from '@/components/SourceSelect';
 import { useSources } from '@/source';
 
-jest.mock('@/source', () => ({
-  useSources: jest.fn(),
+vi.mock('@/source', () => ({
+  useSources: vi.fn(),
 }));
 
 // Mantine's Combobox calls scrollIntoView when its dropdown opens; jsdom lacks it.
-window.HTMLElement.prototype.scrollIntoView = jest.fn();
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 // useSources returns a large UseQueryResult; the selector reads only `data`.
-const asMock = (fn: unknown) => fn as jest.Mock;
+const asMock = (fn: unknown) => fn as Mock;
 
 const makeSource = (
   id: string,
@@ -42,28 +43,28 @@ describe('SourceManagementMenu', () => {
 
   it('renders the kebab trigger when onSchemaPreview is wired', () => {
     renderWithMantine(
-      <SourceManagementMenu hasSelection={false} onSchemaPreview={jest.fn()} />,
+      <SourceManagementMenu hasSelection={false} onSchemaPreview={vi.fn()} />,
     );
     expect(screen.getByTestId('source-actions-menu')).toBeInTheDocument();
   });
 
   it('renders the kebab trigger when only onEdit is wired', () => {
     renderWithMantine(
-      <SourceManagementMenu hasSelection={false} onEdit={jest.fn()} />,
+      <SourceManagementMenu hasSelection={false} onEdit={vi.fn()} />,
     );
     expect(screen.getByTestId('source-actions-menu')).toBeInTheDocument();
   });
 
   it('renders the kebab trigger when only onManageSources is wired', () => {
     renderWithMantine(
-      <SourceManagementMenu hasSelection={false} onManageSources={jest.fn()} />,
+      <SourceManagementMenu hasSelection={false} onManageSources={vi.fn()} />,
     );
     expect(screen.getByTestId('source-actions-menu')).toBeInTheDocument();
   });
 
   it('renders the kebab trigger when only onCreate is wired', () => {
     renderWithMantine(
-      <SourceManagementMenu hasSelection={false} onCreate={jest.fn()} />,
+      <SourceManagementMenu hasSelection={false} onCreate={vi.fn()} />,
     );
     expect(screen.getByTestId('source-actions-menu')).toBeInTheDocument();
   });
@@ -73,7 +74,7 @@ describe('SourceManagementMenu', () => {
       renderWithMantine(
         <SourceManagementMenu
           hasSelection={false}
-          onSchemaPreview={jest.fn()}
+          onSchemaPreview={vi.fn()}
           isSchemaPreviewEnabled
         />,
       );
@@ -89,7 +90,7 @@ describe('SourceManagementMenu', () => {
       renderWithMantine(
         <SourceManagementMenu
           hasSelection
-          onSchemaPreview={jest.fn()}
+          onSchemaPreview={vi.fn()}
           isSchemaPreviewEnabled={false}
         />,
       );
@@ -105,7 +106,7 @@ describe('SourceManagementMenu', () => {
       renderWithMantine(
         <SourceManagementMenu
           hasSelection
-          onSchemaPreview={jest.fn()}
+          onSchemaPreview={vi.fn()}
           isSchemaPreviewEnabled
         />,
       );
@@ -117,7 +118,7 @@ describe('SourceManagementMenu', () => {
     });
 
     it('calls onSchemaPreview when clicked', async () => {
-      const onSchemaPreview = jest.fn();
+      const onSchemaPreview = vi.fn();
       renderWithMantine(
         <SourceManagementMenu
           hasSelection
@@ -132,7 +133,7 @@ describe('SourceManagementMenu', () => {
   });
 
   it('calls onEdit when Edit source is clicked', async () => {
-    const onEdit = jest.fn();
+    const onEdit = vi.fn();
     renderWithMantine(
       // hasSelection required: Edit source is disabled without a selection.
       <SourceManagementMenu hasSelection onEdit={onEdit} />,
@@ -143,7 +144,7 @@ describe('SourceManagementMenu', () => {
   });
 
   it('calls onManageSources when Manage sources is clicked', async () => {
-    const onManageSources = jest.fn();
+    const onManageSources = vi.fn();
     renderWithMantine(
       <SourceManagementMenu
         hasSelection={false}
@@ -156,7 +157,7 @@ describe('SourceManagementMenu', () => {
   });
 
   it('calls onCreate when Create new source is clicked', async () => {
-    const onCreate = jest.fn();
+    const onCreate = vi.fn();
     renderWithMantine(
       <SourceManagementMenu hasSelection={false} onCreate={onCreate} />,
     );

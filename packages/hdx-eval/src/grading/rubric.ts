@@ -125,6 +125,7 @@ function validateAdoptionCheck(
         `rubric.adoption for '${scenarioName}': check '${check.id}' alsoPattern is not a valid regex: ${
           err instanceof Error ? err.message : String(err)
         }`,
+        { cause: err },
       );
     }
   }

@@ -3,7 +3,7 @@ import type { Options } from 'tsup';
 export const tsup: Options = {
   splitting: true,
   clean: true, // clean up the dist folder
-  // Declarations come from (the more efficient) tsc
+  // Declarations come from the separate build:types step.
   dts: false,
   format: ['cjs', 'esm'], // generate cjs and esm files
   minify: true,

@@ -95,7 +95,7 @@ describe('MCP Service Health Tool', () => {
       password: config.CLICKHOUSE_PASSWORD,
     });
     logSource = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: team._id,
       from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_LOGS_TABLE },
       timestampValueExpression: 'Timestamp',
@@ -103,7 +103,7 @@ describe('MCP Service Health Tool', () => {
       name: 'Logs',
     });
     traceSource = await Source.create({
-      kind: SourceKind.Trace,
+      kind: SourceKind.Trace as const,
       team: team._id,
       from: { databaseName: DEFAULT_DATABASE, tableName: DEFAULT_TRACES_TABLE },
       timestampValueExpression: 'Timestamp',

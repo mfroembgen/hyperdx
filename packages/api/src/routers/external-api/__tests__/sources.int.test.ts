@@ -4,7 +4,7 @@ import {
 } from '@hyperdx/common-utils/dist/externalSource';
 import { MetricsDataType, SourceKind } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
-import request, { SuperAgentTest } from 'supertest';
+import request, { Agent } from 'supertest';
 
 import * as config from '@/config';
 import {
@@ -27,7 +27,7 @@ import { IUser } from '@/models/user';
 
 describe('External API v2 Sources', () => {
   const server = getServer();
-  let agent: SuperAgentTest;
+  let agent: Agent;
   let team: ITeam;
   let user: IUser;
   let connection: IConnection;
@@ -83,7 +83,7 @@ describe('External API v2 Sources', () => {
 
     it('should return a single log source', async () => {
       const logSource = await LogSource.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         name: 'Test Log Source',
         from: {
@@ -101,7 +101,7 @@ describe('External API v2 Sources', () => {
       expect(response.body.data[0]).toEqual({
         id: logSource._id.toString(),
         name: 'Test Log Source',
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         connection: connection._id.toString(),
         disabled: false,
         from: {
@@ -119,7 +119,7 @@ describe('External API v2 Sources', () => {
 
     it('should return a single trace source', async () => {
       const traceSource = await TraceSource.create({
-        kind: SourceKind.Trace,
+        kind: SourceKind.Trace as const,
         team: team._id,
         name: 'Test Trace Source',
         from: {
@@ -197,7 +197,7 @@ describe('External API v2 Sources', () => {
           databaseName: DEFAULT_DATABASE,
           tableName: 'otel_traces',
         },
-        kind: SourceKind.Trace,
+        kind: SourceKind.Trace as const,
         connection: connection._id.toString(),
         timestampValueExpression: 'Timestamp',
         defaultTableSelectExpression: '*',
@@ -261,7 +261,7 @@ describe('External API v2 Sources', () => {
 
     it('should return a single metric source', async () => {
       const metricSource = await MetricSource.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: team._id,
         name: 'Test Metric Source',
         from: {
@@ -284,7 +284,7 @@ describe('External API v2 Sources', () => {
       expect(response.body.data[0]).toEqual({
         id: metricSource._id.toString(),
         name: 'Test Metric Source',
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         connection: connection._id.toString(),
         disabled: false,
         from: {
@@ -304,7 +304,7 @@ describe('External API v2 Sources', () => {
 
     it('should return a single session source', async () => {
       const traceSource = await TraceSource.create({
-        kind: SourceKind.Trace,
+        kind: SourceKind.Trace as const,
         team: team._id,
         name: 'Trace Source for Session',
         from: {
@@ -324,8 +324,8 @@ describe('External API v2 Sources', () => {
       });
 
       const sessionSource = await SessionSource.create({
-        kind: SourceKind.Session,
-        team: team._id.toString(),
+        kind: SourceKind.Session as const,
+        team: team._id,
         name: 'Test Session Source',
         from: {
           databaseName: DEFAULT_DATABASE,
@@ -333,7 +333,7 @@ describe('External API v2 Sources', () => {
         },
         timestampValueExpression: 'Timestamp',
         traceSourceId: traceSource._id.toString(),
-        connection: connection._id.toString(),
+        connection: connection._id,
       } satisfies Omit<Extract<ISource, { kind: SourceKind.Session }>, 'id'>);
 
       const response = await authRequest('get', BASE_URL).expect(200);
@@ -346,7 +346,7 @@ describe('External API v2 Sources', () => {
       expect(sessionData).toEqual({
         id: sessionSource._id.toString(),
         name: 'Test Session Source',
-        kind: SourceKind.Session,
+        kind: SourceKind.Session as const,
         connection: connection._id.toString(),
         disabled: false,
         from: {
@@ -361,7 +361,7 @@ describe('External API v2 Sources', () => {
 
     it('should return multiple sources of different kinds', async () => {
       const logSource = await LogSource.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         name: 'Logs',
         from: {
@@ -374,7 +374,7 @@ describe('External API v2 Sources', () => {
       });
 
       const traceSource = await TraceSource.create({
-        kind: SourceKind.Trace,
+        kind: SourceKind.Trace as const,
         team: team._id,
         name: 'Traces',
         from: {
@@ -394,7 +394,7 @@ describe('External API v2 Sources', () => {
       });
 
       const metricSource = await MetricSource.create({
-        kind: SourceKind.Metric,
+        kind: SourceKind.Metric as const,
         team: team._id,
         name: 'Metrics',
         from: {
@@ -427,7 +427,7 @@ describe('External API v2 Sources', () => {
     it("should only return sources for the authenticated user's team", async () => {
       // Create a source for the current team
       const currentTeamSource = await LogSource.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         name: 'Current Team Source',
         from: {
@@ -450,7 +450,7 @@ describe('External API v2 Sources', () => {
       });
 
       await LogSource.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: otherTeamId,
         name: 'Other Team Source',
         from: {
@@ -472,7 +472,7 @@ describe('External API v2 Sources', () => {
 
     it('should format sources according to SourceSchema', async () => {
       await LogSource.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         name: 'Test Source',
         from: {
@@ -503,7 +503,7 @@ describe('External API v2 Sources', () => {
     it('should filter out sources that fail schema validation', async () => {
       // Create a valid source
       const validSource = await LogSource.create({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         team: team._id,
         name: 'Valid Source',
         from: {
@@ -541,7 +541,7 @@ describe('External API v2 Sources', () => {
 
       it('returns the section on a source that has one', async () => {
         const logSource = await LogSource.create({
-          kind: SourceKind.Log,
+          kind: SourceKind.Log as const,
           team: team._id,
           name: 'Sectioned Log Source',
           section: SECTION,
@@ -565,7 +565,7 @@ describe('External API v2 Sources', () => {
 
       it('omits the section on a source that has none', async () => {
         await LogSource.create({
-          kind: SourceKind.Log,
+          kind: SourceKind.Log as const,
           team: team._id,
           name: 'Unsectioned Log Source',
           from: {
@@ -593,7 +593,7 @@ describe('External API v2 Sources', () => {
       // required. applyLegacyDefaults() backfills 'TimestampTime' before
       // SourceSchema.safeParse(), so these sources still appear in the response.
       await Source.collection.insertOne({
-        kind: SourceKind.Session,
+        kind: SourceKind.Session as const,
         name: 'Legacy Session',
         team: team._id,
         connection: connection._id,
@@ -618,7 +618,7 @@ describe('External API v2 Sources', () => {
       // discriminatedUnion context still accepts null values (they pass
       // safeParse). This means logSourceId: null is NOT a breaking change.
       await Source.collection.insertOne({
-        kind: SourceKind.Trace,
+        kind: SourceKind.Trace as const,
         name: 'Trace with null logSourceId',
         team: team._id,
         connection: connection._id,
@@ -648,7 +648,7 @@ describe('External API v2 Sources', () => {
       // unknown/cross-kind fields (unlike Mongoose toJSON which keeps them).
       // This is the key difference between internal and external APIs.
       await Source.collection.insertOne({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         name: 'Flat Model Log',
         team: team._id,
         connection: connection._id,

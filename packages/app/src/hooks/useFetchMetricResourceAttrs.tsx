@@ -13,9 +13,7 @@ import { formatAttributeClause, getMetricTableName } from '@/utils';
 const METRIC_FETCH_LIMIT = 10000;
 
 export type AttributeCategory =
-  | 'ResourceAttributes'
-  | 'ScopeAttributes'
-  | 'Attributes';
+  'ResourceAttributes' | 'ScopeAttributes' | 'Attributes';
 
 export interface AttributeKey {
   name: string;
@@ -153,11 +151,11 @@ export const useFetchMetricResourceAttrs = ({
 
   const shouldFetch = Boolean(
     databaseName &&
-      tableName &&
-      metricType &&
-      metricName &&
-      tableSource &&
-      tableSource?.kind === SourceKind.Metric,
+    tableName &&
+    metricType &&
+    metricName &&
+    tableSource &&
+    tableSource?.kind === SourceKind.Metric,
   );
 
   const attribution = useMetadataQueryAttribution();

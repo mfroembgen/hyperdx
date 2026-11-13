@@ -1,5 +1,6 @@
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { vi } from 'vitest';
 
 import * as config from '@/config';
 import { PROMETHEUS_MAX_RESPONSE_BYTES } from '@/controllers/promql';
@@ -15,7 +16,7 @@ import { Source } from '@/models/source';
 
 import { callTool, createTestClient, getFirstText } from './mcpTestUtils';
 
-const mockFetch = jest.mocked(global.fetch);
+const mockFetch = vi.mocked(global.fetch);
 
 const TABLE = 'mcp_promql_sources';
 

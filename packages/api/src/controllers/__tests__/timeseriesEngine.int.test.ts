@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { ClickhouseClient } from '@/clickhouse';
 import * as config from '@/config';
 import {
@@ -340,7 +342,7 @@ describe('timeseriesEngine controller', () => {
     // Time bounds are best-effort narrowing, so the request widens instead.
     describe('table without min_time/max_time', () => {
       it('ignores the bounds instead of failing', async () => {
-        const warn = jest.spyOn(logger, 'warn');
+        const warn = vi.spyOn(logger, 'warn');
         try {
           expect(
             await queryLabelValues({

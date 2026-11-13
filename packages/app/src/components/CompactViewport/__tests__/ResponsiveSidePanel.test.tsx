@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -5,11 +6,11 @@ import userEvent from '@testing-library/user-event';
 import { ResponsiveSidePanel } from '@/components/CompactViewport/ResponsiveSidePanel';
 import { useCompactViewport } from '@/components/CompactViewport/useCompactViewport';
 
-jest.mock('@/components/CompactViewport/useCompactViewport', () => ({
-  useCompactViewport: jest.fn(() => false),
+vi.mock('@/components/CompactViewport/useCompactViewport', () => ({
+  useCompactViewport: vi.fn(() => false),
 }));
 
-const useCompactViewportMock = jest.mocked(useCompactViewport);
+const useCompactViewportMock = vi.mocked(useCompactViewport);
 
 function panelTree(opened: boolean, onClose: () => void = () => {}) {
   return (
@@ -57,7 +58,7 @@ describe('ResponsiveSidePanel', () => {
 
   it('calls onClose when the drawer is dismissed', async () => {
     useCompactViewportMock.mockReturnValue(true);
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     const user = userEvent.setup();
     renderPanel(true, onClose);
     await waitFor(() => {

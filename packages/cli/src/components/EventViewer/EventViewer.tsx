@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useMemo } from 'react';
-import { Box, useStdout } from 'ink';
+import { Box, useWindowSize } from 'ink';
 
 import type { TimeRange } from '@/utils/editor';
 import type { SpanNode } from '@/components/TraceWaterfall/types';
@@ -35,8 +35,8 @@ export default function EventViewer({
   initialQuery = '',
   follow = true,
 }: EventViewerProps) {
-  const { stdout } = useStdout();
-  const termHeight = stdout?.rows ?? 24;
+  const { rows } = useWindowSize();
+  const termHeight = rows;
   const maxRows = Math.max(1, termHeight - 8);
   // Fixed height for Event Details in Trace tab (about 1/3 of terminal)
   const detailMaxRows = Math.max(5, Math.floor(termHeight / 3));

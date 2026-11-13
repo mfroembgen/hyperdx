@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it } from 'vitest';
 
 import type { ResponseJSON } from '@hyperdx/common-utils/dist/clickhouse';
 import type { SQLInterval } from '@hyperdx/common-utils/dist/types';

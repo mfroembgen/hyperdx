@@ -41,10 +41,10 @@ concurrency:
 
 jobs:
   claude-review:
-    if:
-      github.event_name == 'workflow_dispatch' || github.event.action ==
-      'ready_for_review' || !github.event.pull_request.draft
-
+    if: >-
+      github.repository == 'hyperdxio/hyperdx' && (github.event_name ==
+      'workflow_dispatch' || github.event.action == 'ready_for_review' ||
+      !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     # A hung CLI or stalled API would otherwise hold a runner for the 6-hour default;
     # cancel-in-progress only reclaims it if someone pushes again.
@@ -64,7 +64,7 @@ jobs:
       # workflow_dispatch runs can checkout forked branches correctly.
       - name: Resolve PR metadata
         id: pr
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           DISPATCH_PR: ${{ inputs.pr_number }}
         with:
@@ -97,7 +97,7 @@ jobs:
       # Checkout the fork's branch so Claude can read the actual PR code.
       # Using the PR head repo/ref works for both fork and non-fork PRs.
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ steps.pr.outputs.head_repo }}
           # The SHA, not the branch: the diff, the line map and the posted comments must
@@ -120,7 +120,7 @@ jobs:
       # was loaded from, so the trusted copy always matches the YAML that is running.
       # base_sha (the PR's merge target) can lag it.
       - name: Checkout trusted prompt and helpers
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           path: .trusted
@@ -131,23 +131,21 @@ jobs:
             .github/prompts
             .github/scripts
             .github/workflows
-            .nvmrc
+            mise.toml
             agent_docs/code_style.md
             AGENTS.md
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
-      - uses: actions/setup-node@v6
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
         with:
-          # From the trusted tree: the fork controls its own .nvmrc.
-          node-version-file: .trusted/.nvmrc
-
+          working_directory: .trusted
       # Same pattern as pr-triage.yml: the workflow that consumes a script runs its
       # tests. Fails fast on the comment-routing logic before spending on a review.
       - name: Test review helpers
         run:
-          node --test
-          .trusted/.github/scripts/code-review/__tests__/review-comments.test.mjs
+          bun test
+          ./.trusted/.github/scripts/code-review/__tests__/review-comments.test.mjs
 
       # The reviewer reads the diff from a file: a large diff cannot be embedded in
       # workflow YAML, and subagents/later steps need a stable path.
@@ -214,7 +212,7 @@ jobs:
           fi
 
       - name: Find existing review summary
-        uses: peter-evans/find-comment@v4
+        uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad # v4.0.0
         id: find-comment
         with:
           issue-number: ${{ steps.pr.outputs.number }}
@@ -344,7 +342,7 @@ jobs:
       - name: Run Claude Code Review
         id: claude-review
         if: steps.gate.outputs.should_review == 'true'
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@d70510b174a1244958df0b03166a54912811f3e6 # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_bots: dependabot,dependabot[bot],kodiakhq,kodiakhq[bot],github-actions,github-actions[bot],cursor,cursor[bot],claude,claude[bot]
@@ -480,7 +478,7 @@ jobs:
       - name: Post inline review comments
         id: inline
         if: steps.health.outputs.healthy == 'true'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           # Compared against, never printed. Named canary so a stray log of the env block
           # does not read like the secret itself.
@@ -605,7 +603,7 @@ jobs:
         # !cancelled() rather than always(): on cancel-in-progress the superseding run is
         # already working, and a cancelled run's summary would race its sticky write.
         if: "!cancelled() && steps.gate.outputs.should_review == 'true'"
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const fs = require('fs');
@@ -649,7 +647,7 @@ jobs:
           steps.summary.outputs.body != '' && ((steps.health.outputs.healthy ==
           'true' && steps.inline.outcome == 'success')
            || steps.find-comment.outputs.comment-id == '')
-        uses: peter-evans/create-or-update-comment@v5
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
         with:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           issue-number: ${{ steps.pr.outputs.number }}

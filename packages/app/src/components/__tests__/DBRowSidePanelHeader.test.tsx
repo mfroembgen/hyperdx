@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 
 import type { HighlightedAttribute } from '@/components/DBHighlightedAttributesList';
@@ -7,37 +8,37 @@ import { makeTraceSource } from '@/llm/__fixtures__/sources';
 
 // Stub modules that touch user preferences, AI APIs, or DOM observers; the
 // behavior under test is the body-paper visibility logic, not those deps.
-jest.mock('@/useUserPreferences', () => ({
-  useUserPreferences: jest.fn().mockReturnValue({
+vi.mock('@/useUserPreferences', () => ({
+  useUserPreferences: vi.fn().mockReturnValue({
     userPreferences: { expandSidebarHeader: false },
-    setUserPreference: jest.fn(),
+    setUserPreference: vi.fn(),
   }),
 }));
 
-jest.mock('@/useFormatTime', () => ({
+vi.mock('@/useFormatTime', () => ({
   FormatTime: () => null,
 }));
 
-jest.mock('../AISummarizeButton', () => ({
+vi.mock('../AISummarizeButton', () => ({
   __esModule: true,
   default: () => null,
 }));
 
-jest.mock('../DBHighlightedAttributesList', () => ({
+vi.mock('../DBHighlightedAttributesList', () => ({
   DBHighlightedAttributesList: ({ attributes }: { attributes: unknown[] }) => (
     <div data-testid="highlighted-attributes">{attributes.length}</div>
   ),
 }));
 
-jest.mock('../DBRowSidePanel', () => ({
+vi.mock('../DBRowSidePanel', () => ({
   RowSidePanelContext: React.createContext({}),
 }));
 
-jest.mock('../DrawerUtils', () => ({
+vi.mock('../DrawerUtils', () => ({
   DrawerFullWidthToggle: () => null,
 }));
 
-jest.mock('../LogLevel', () => ({
+vi.mock('../LogLevel', () => ({
   __esModule: true,
   default: () => null,
 }));

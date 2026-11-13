@@ -1,0 +1,5 @@
+# Commands choose their environment file explicitly, as the Node scripts did.
+env = false
+
+[run]
+bun = true

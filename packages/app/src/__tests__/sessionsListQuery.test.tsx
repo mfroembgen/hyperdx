@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { vi } from 'vitest';
 import {
   SourceKind,
   TSessionSource,
@@ -9,14 +10,14 @@ import { renderHook, waitFor } from '@testing-library/react';
 
 import { useSessions } from '@/sessions';
 
-jest.mock('@hyperdx/common-utils/dist/core/renderChartConfig', () => ({
-  renderChartConfig: jest.fn(async (config: unknown) => ({
+vi.mock('@hyperdx/common-utils/dist/core/renderChartConfig', () => ({
+  renderChartConfig: vi.fn(async (config: unknown) => ({
     sql: JSON.stringify(config),
     params: {},
   })),
 }));
 
-const mockQuery = jest.fn(
+const mockQuery = vi.fn(
   async ({ format }: { query: string; format?: string }) => ({
     json: async () => ({
       data: format === 'JSON' ? [{ serviceName: 'web' }] : [],
@@ -24,18 +25,18 @@ const mockQuery = jest.fn(
   }),
 );
 
-jest.mock('@/clickhouse', () => ({
+vi.mock('@/clickhouse', () => ({
   useClickhouseClient: () => ({ query: mockQuery }),
-  getClickhouseClient: jest.fn(),
+  getClickhouseClient: vi.fn(),
 }));
 
-jest.mock('@/hooks/useMetadata', () => ({
+vi.mock('@/hooks/useMetadata', () => ({
   useMetadataWithSettings: () => ({
     getColumns: async () => [{ name: 'ServiceName' }],
   }),
 }));
 
-jest.mock('@/hooks/useFieldExpressionGenerator', () => ({
+vi.mock('@/hooks/useFieldExpressionGenerator', () => ({
   __esModule: true,
   default: () => ({
     isLoading: false,
@@ -105,7 +106,7 @@ async function renderListSql({
 
 describe('useSessions list query', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('merges replay rows into the list when there is no search', async () => {

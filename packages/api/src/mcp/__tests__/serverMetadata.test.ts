@@ -1,4 +1,6 @@
 import type { Implementation } from '@modelcontextprotocol/sdk/types.js';
+import mongoose from 'mongoose';
+import { vi } from 'vitest';
 
 import { McpContext } from '@/mcp/tools/types';
 
@@ -8,15 +10,17 @@ async function getServerInfo(
   frontendUrl: string,
 ): Promise<Implementation | undefined> {
   let createTestClient!: typeof import('./mcpTestUtils').createTestClient;
-  jest.isolateModules(() => {
-    jest.doMock('@/config', () => ({
-      ...jest.requireActual('@/config'),
+  {
+    vi.resetModules();
+    mongoose.deleteModel(/.+/);
+    vi.doMock('@/config', async () => ({
+      ...(await vi.importActual<typeof import('@/config')>('@/config')),
       FRONTEND_URL: frontendUrl,
     }));
     ({ createTestClient } =
-      jest.requireActual<typeof import('./mcpTestUtils')>('./mcpTestUtils'));
-  });
-  jest.dontMock('@/config');
+      await vi.importActual<typeof import('./mcpTestUtils')>('./mcpTestUtils'));
+  }
+  vi.doUnmock('@/config');
   const client = await createTestClient(context);
   return client.getServerVersion();
 }

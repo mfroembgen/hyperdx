@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { createOrgApiKey } from '@/controllers/orgApiKey';
 import * as userController from '@/controllers/user';
 import { getLoggedInAgent, getServer } from '@/fixtures';
@@ -13,7 +15,7 @@ describe('external api v2', () => {
 
   afterEach(async () => {
     await server.clearDBs();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterAll(async () => {
@@ -132,9 +134,9 @@ describe('external api v2', () => {
 
     it('responds with an error when the key lookup fails', async () => {
       const { agent, key } = await setup();
-      jest
-        .spyOn(userController, 'findUserByAccessKey')
-        .mockRejectedValueOnce(new Error('mongo unavailable'));
+      vi.spyOn(userController, 'findUserByAccessKey').mockRejectedValueOnce(
+        new Error('mongo unavailable'),
+      );
       await agent
         .get('/api/v2')
         .set('Authorization', `Bearer ${key}`)

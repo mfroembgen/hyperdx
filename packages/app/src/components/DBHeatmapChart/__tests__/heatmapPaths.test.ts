@@ -1,4 +1,5 @@
 import type uPlot from 'uplot';
+import { vi } from 'vitest';
 
 import {
   gridToPlotData,
@@ -6,13 +7,13 @@ import {
 } from '@/components/DBHeatmapChart/heatmapGrid';
 import { heatmapPaths } from '@/components/DBHeatmapChart/heatmapPaths';
 
-const mockRect = jest.fn();
+const mockRect = vi.fn();
 const scaleX = { min: 0, max: 10_000 };
 const scaleY = { min: -100, max: 100 };
 
 // Hand the painter identity x positions and an inverted y axis
 // (pixel = 100 - 10 * value), the way uPlot orients a canvas.
-jest.mock('uplot', () => ({
+vi.mock('uplot', () => ({
   __esModule: true,
   default: {
     orient: (
@@ -47,11 +48,11 @@ function paint(grid: HeatmapGrid, fills: number[]) {
     data: [[], gridToPlotData(grid)],
     bbox: { left: 0, top: 0, width: 100, height: 100 },
     ctx: {
-      save: jest.fn(),
-      rect: jest.fn(),
-      clip: jest.fn(),
-      fill: jest.fn(),
-      restore: jest.fn(),
+      save: vi.fn(),
+      rect: vi.fn(),
+      clip: vi.fn(),
+      fill: vi.fn(),
+      restore: vi.fn(),
     },
   };
   const paths = heatmapPaths({

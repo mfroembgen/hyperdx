@@ -1,4 +1,5 @@
 import React from 'react';
+import { type Mock, vi } from 'vitest';
 import {
   BuilderChartConfigWithDateRange,
   Filter,
@@ -9,18 +10,18 @@ import DBDeltaChart from '@/components/DBDeltaChart';
 import { useQueriedChartConfig } from '@/hooks/useChartConfig';
 import { useTableMetadata } from '@/hooks/useMetadata';
 
-jest.mock('@/hooks/useChartConfig', () => ({
-  useQueriedChartConfig: jest.fn(),
+vi.mock('@/hooks/useChartConfig', () => ({
+  useQueriedChartConfig: vi.fn(),
 }));
 
-jest.mock('@/hooks/useMetadata', () => ({
-  useTableMetadata: jest.fn(),
+vi.mock('@/hooks/useMetadata', () => ({
+  useTableMetadata: vi.fn(),
 }));
 
 // PropertyComparisonChart is the per-attribute renderer. Stubbing it out keeps
 // the legend assertions tight without dragging uPlot/element-size hooks into
 // the test environment.
-jest.mock('../PropertyComparisonChart', () => ({
+vi.mock('../PropertyComparisonChart', () => ({
   __esModule: true,
   CHART_GAP: 8,
   CHART_HEIGHT: 100,
@@ -31,8 +32,8 @@ jest.mock('../PropertyComparisonChart', () => ({
   ),
 }));
 
-const mockUseQueriedChartConfig = useQueriedChartConfig as jest.Mock;
-const mockUseTableMetadata = useTableMetadata as jest.Mock;
+const mockUseQueriedChartConfig = useQueriedChartConfig as Mock;
+const mockUseTableMetadata = useTableMetadata as Mock;
 
 // Sentinel filter on baseConfig so the allSpans assertion can prove
 // the branch passes user-supplied filters through unchanged. Without
@@ -69,7 +70,7 @@ function renderChart(
 
 describe('DBDeltaChart', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseQueriedChartConfig.mockReturnValue({
       data: { data: [], meta: [] },
       error: undefined,

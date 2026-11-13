@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
 import { parseTimeRangeInput } from '@/components/TimePicker/utils';
@@ -5,12 +6,12 @@ import { dateRangeToString, useDefaultTimeRange } from '@/timeQuery';
 
 describe('dateRangeToString', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2026-06-15T12:00:00'));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-15T12:00:00'));
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('omits the year for a past range in the current year', () => {
@@ -56,15 +57,15 @@ describe('dateRangeToString', () => {
 
 describe('useDefaultTimeRange', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('evaluates relative queries against the current clock at mount time', () => {
-    jest.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
+    vi.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
 
     const { result, unmount } = renderHook(() =>
       useDefaultTimeRange('Past 15m'),
@@ -78,7 +79,7 @@ describe('useDefaultTimeRange', () => {
 
     unmount();
 
-    jest.setSystemTime(new Date('2024-01-01T12:30:00.000Z'));
+    vi.setSystemTime(new Date('2024-01-01T12:30:00.000Z'));
 
     const { result: result2 } = renderHook(() =>
       useDefaultTimeRange('Past 15m'),
@@ -92,7 +93,7 @@ describe('useDefaultTimeRange', () => {
   });
 
   it('falls back to the current clock for unparseable queries', () => {
-    jest.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
+    vi.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
 
     const { result, unmount } = renderHook(() =>
       useDefaultTimeRange('unparseable string'),
@@ -108,7 +109,7 @@ describe('useDefaultTimeRange', () => {
   });
 
   it('maintains referential stability across re-renders when the query is unchanged', () => {
-    jest.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
+    vi.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
 
     const { result, rerender } = renderHook(
       ({ query }) => useDefaultTimeRange(query),
@@ -117,19 +118,19 @@ describe('useDefaultTimeRange', () => {
 
     const initialReference = result.current;
 
-    jest.setSystemTime(new Date('2024-01-01T12:05:00.000Z'));
+    vi.setSystemTime(new Date('2024-01-01T12:05:00.000Z'));
     rerender({ query: 'Past 15m' });
 
     expect(result.current).toBe(initialReference);
 
-    jest.setSystemTime(new Date('2024-01-01T12:10:00.000Z'));
+    vi.setSystemTime(new Date('2024-01-01T12:10:00.000Z'));
     rerender({ query: 'Past 15m' });
 
     expect(result.current).toBe(initialReference);
   });
 
   it('updates the reference and evaluates against the current clock when the query changes', () => {
-    jest.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
+    vi.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
 
     const { result, rerender } = renderHook(
       ({ query }) => useDefaultTimeRange(query),
@@ -138,7 +139,7 @@ describe('useDefaultTimeRange', () => {
 
     const initialReference = result.current;
 
-    jest.setSystemTime(new Date('2024-01-01T12:30:00.000Z'));
+    vi.setSystemTime(new Date('2024-01-01T12:30:00.000Z'));
     rerender({ query: 'Past 1h' });
 
     expect(result.current).not.toBe(initialReference);

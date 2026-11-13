@@ -1,3 +1,4 @@
+import { type Mock, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -5,14 +6,14 @@ import { TimePicker } from '@/components/TimePicker';
 
 let mockOverride: {
   timeZone: string | null;
-  setTimeZone: jest.Mock;
+  setTimeZone: Mock;
 } | null = null;
-jest.mock('@/timeZoneOverride', () => ({
+vi.mock('@/timeZoneOverride', () => ({
   useTimeZoneOverride: () => mockOverride,
 }));
 
 let mockDisplayTimeZone: string | undefined;
-jest.mock('@/useDisplayTimeZone', () => ({
+vi.mock('@/useDisplayTimeZone', () => ({
   useDisplayTimeZone: () => mockDisplayTimeZone,
 }));
 
@@ -20,8 +21,8 @@ const renderPicker = (inputValue = 'Oct 22 14:00:00 - Oct 22 15:00:00') => {
   renderWithMantine(
     <TimePicker
       inputValue={inputValue}
-      setInputValue={jest.fn()}
-      onSearch={jest.fn()}
+      setInputValue={vi.fn()}
+      onSearch={vi.fn()}
     />,
   );
 };
@@ -41,7 +42,7 @@ describe('TimePicker time zone override', () => {
   });
 
   it('shows the display zone in the input', () => {
-    mockOverride = { timeZone: 'Asia/Tokyo', setTimeZone: jest.fn() };
+    mockOverride = { timeZone: 'Asia/Tokyo', setTimeZone: vi.fn() };
     mockDisplayTimeZone = 'Asia/Tokyo';
     renderPicker();
 
@@ -56,7 +57,7 @@ describe('TimePicker time zone override', () => {
   ])('shows the offset during the range %s', (inputValue, label) => {
     mockOverride = {
       timeZone: 'America/Los_Angeles',
-      setTimeZone: jest.fn(),
+      setTimeZone: vi.fn(),
     };
     mockDisplayTimeZone = 'America/Los_Angeles';
     renderPicker(inputValue);
@@ -74,7 +75,7 @@ describe('TimePicker time zone override', () => {
   ])(
     'highlights the zone %s only when it is not local',
     (timeZone, isLocal) => {
-      mockOverride = { timeZone: timeZone ?? null, setTimeZone: jest.fn() };
+      mockOverride = { timeZone: timeZone ?? null, setTimeZone: vi.fn() };
       mockDisplayTimeZone = timeZone;
       renderPicker();
 
@@ -94,7 +95,7 @@ describe('TimePicker time zone override', () => {
   }
 
   it('sets the page override', async () => {
-    const setTimeZone = jest.fn();
+    const setTimeZone = vi.fn();
     mockOverride = { timeZone: null, setTimeZone };
     renderPicker();
 
@@ -107,7 +108,7 @@ describe('TimePicker time zone override', () => {
     ['time-picker-time-zone-utc', 'Etc/UTC'],
     ['time-picker-time-zone-local', 'local'],
   ])('sets the override from the %s shortcut', async (testId, timeZone) => {
-    const setTimeZone = jest.fn();
+    const setTimeZone = vi.fn();
     mockOverride = { timeZone: 'Asia/Tokyo', setTimeZone };
     renderPicker();
     fireEvent.click(screen.getByTestId('time-picker-input'));
@@ -118,7 +119,7 @@ describe('TimePicker time zone override', () => {
   });
 
   it('clears the page override with the Default shortcut', async () => {
-    const setTimeZone = jest.fn();
+    const setTimeZone = vi.fn();
     mockOverride = { timeZone: 'Asia/Tokyo', setTimeZone };
     renderPicker();
     fireEvent.click(screen.getByTestId('time-picker-input'));
@@ -136,7 +137,7 @@ describe('TimePicker time zone override', () => {
   });
 
   it('clears the page override with the default option', async () => {
-    const setTimeZone = jest.fn();
+    const setTimeZone = vi.fn();
     mockOverride = { timeZone: 'Etc/UTC', setTimeZone };
     mockDisplayTimeZone = 'Etc/UTC';
     renderPicker();

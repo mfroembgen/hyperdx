@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { ClickhouseClient } from '@hyperdx/common-utils/dist/clickhouse/browser';
 import {
   Metadata,
@@ -17,10 +18,15 @@ import {
   getRRWebTimestampExpression,
 } from '@/sessions';
 
-jest.mock('@hyperdx/common-utils/dist/core/renderChartConfig', () => ({
-  ...jest.requireActual('@hyperdx/common-utils/dist/core/renderChartConfig'),
-  renderChartConfig: jest.fn(async () => ({ sql: 'SQL', params: { p: 1 } })),
-}));
+vi.mock('@hyperdx/common-utils/dist/core/renderChartConfig', async () => {
+  const actualModule0 = await vi.importActual<
+    typeof import('@hyperdx/common-utils/dist/core/renderChartConfig')
+  >('@hyperdx/common-utils/dist/core/renderChartConfig');
+  return {
+    ...actualModule0,
+    renderChartConfig: vi.fn(async () => ({ sql: 'SQL', params: { p: 1 } })),
+  };
+});
 
 describe('buildRRWebStreamChartConfig', () => {
   // Mirrors useFieldExpressionGenerator's output for Map columns
@@ -146,7 +152,7 @@ describe('getRRWebTimestampExpression', () => {
       new ClickhouseClient({ host: '' }),
       new MetadataCache(),
     );
-    const getColumns = jest.spyOn(metadata, 'getColumns');
+    const getColumns = vi.spyOn(metadata, 'getColumns');
     if (columns instanceof Error) {
       getColumns.mockRejectedValue(columns);
     } else {
@@ -193,7 +199,7 @@ describe('getRRWebTimestampExpression', () => {
 
   it('falls back instead of failing when the columns lookup fails', async () => {
     const { metadata } = metadataWithColumns(new Error('DESCRIBE failed'));
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(await getRRWebTimestampExpression(source, metadata)).toBe(
       'TimestampTime',
     );
@@ -257,7 +263,7 @@ describe('fetchServiceScopeFilters', () => {
   }: { columns?: string[]; rows?: unknown[] } = {}) {
     const clickhouseClient = new ClickhouseClient({ host: '' });
     const metadata = new Metadata(clickhouseClient, new MetadataCache());
-    const getColumns = jest.spyOn(metadata, 'getColumns').mockResolvedValue(
+    const getColumns = vi.spyOn(metadata, 'getColumns').mockResolvedValue(
       columns.map(name => ({
         name,
         type: 'String',
@@ -268,7 +274,7 @@ describe('fetchServiceScopeFilters', () => {
         ttl_expression: '',
       })),
     );
-    const query = jest
+    const query = vi
       .spyOn(clickhouseClient, 'query')
       .mockImplementation(async () => jsonResultSet(rows));
     const run = (overrides: { traceSource?: TTraceSource } = {}) =>
@@ -353,7 +359,7 @@ describe('fetchServiceScopeFilters', () => {
   });
 
   it('returns no filter and warns when the lookup throws', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { run, query } = setup();
     query.mockRejectedValue(new Error('boom'));
     expect(await run()).toEqual([]);

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 // MUST be the first import — silences console.debug/warn/error before
 // any common-utils code runs. ESM hoists imports above inline code,
@@ -29,9 +29,11 @@ import { parseGranularityFlag, sortTilesForDisplay } from '@/shared/tileConfig';
 import { fetchTileData } from '@/shared/tileQuery';
 import { renderTileContent } from '@/shared/tileRender';
 import { clearSession, loadSession, setActiveTeam } from '@/utils/config';
+import { normalizeLegacyUploadFlags } from '@/utils/legacyFlags';
 import { parseTimeValue } from '@/utils/editor';
 import { isValidUrl } from '@/utils/url';
 import { uploadSourcemaps } from '@/sourcemaps';
+import { version } from '#package';
 import { mcpClients } from '@/mcp/install';
 import McpInstallPrompt, { type InstallResult } from '@/mcp/McpInstallPrompt';
 
@@ -385,7 +387,7 @@ const program = new Command();
 program
   .name('hdx')
   .description('HyperDX CLI — search and tail events from the terminal')
-  .version(process.env.npm_package_version ?? '0.0.0')
+  .version(version)
   .enablePositionalOptions();
 
 // ---- Interactive mode (default) ------------------------------------
@@ -2428,7 +2430,7 @@ Examples:
 
 // ---- Upload Sourcemaps ---------------------------------------------
 
-program
+const uploadSourcemapsCommand = program
   .command('upload-sourcemaps')
   .description(
     'Upload JavaScript source maps to HyperDX for stack trace de-obfuscation',
@@ -2439,7 +2441,7 @@ program
     'An optional api url for self-hosted deployments',
   )
   .option(
-    '-rid, --releaseId [string]',
+    '--releaseId [string]',
     'An optional release id to associate the sourcemaps with',
   )
   .option(
@@ -2448,7 +2450,7 @@ program
     '.',
   )
   .option(
-    '-bp, --basePath [string]',
+    '--basePath [string]',
     'An optional base path for the uploaded sourcemaps',
   )
   .option(
@@ -2468,4 +2470,6 @@ program
     }
   });
 
-program.parse();
+program.parse(
+  normalizeLegacyUploadFlags(process.argv, uploadSourcemapsCommand.options),
+);

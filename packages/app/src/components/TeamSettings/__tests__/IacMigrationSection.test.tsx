@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -8,21 +9,21 @@ import IacMigrationSection, {
   RESOURCE_TYPE_ORDER,
 } from '@/components/TeamSettings/IacMigrationSection';
 
-// Indirected through a module-scope jest.fn so individual tests can vary the
-// hook result; `jest.mock` factories are hoisted above module initialisers, so
+// Indirected through a module-scope vi.fn so individual tests can vary the
+// hook result; `vi.mock` factories are hoisted above module initialisers, so
 // the factory may only close over the fn, never read it at hoist time.
-const useIacImportManifest = jest.fn();
+const useIacImportManifest = vi.fn();
 // Forwards args: the component passes `{ enabled: active }`, and a mock that
 // dropped them made the tab gating structurally untestable.
-jest.mock('@/components/Iac/useIacImportManifest', () => ({
+vi.mock('@/components/Iac/useIacImportManifest', () => ({
   useIacImportManifest: (...args: unknown[]) => useIacImportManifest(...args),
 }));
 
-// `mock` prefix so the hoisted jest.mock factory below may close over them.
+// `mock` prefix so the hoisted vi.mock factory below may close over them.
 const mockTeamId = '7a1c0de5b2f34c9d8e0a1b2c';
 // Blanked by one test to stand in for a `me` that has not resolved yet.
 let mockMeTeamId: string | undefined = mockTeamId;
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useMe: () => ({
@@ -61,9 +62,9 @@ const MANIFEST = {
   truncatedTypes: [],
 };
 
-const refetch = jest.fn();
-const downloadTextFile = jest.fn();
-jest.mock('@/utils/downloadFile', () => ({
+const refetch = vi.fn();
+const downloadTextFile = vi.fn();
+vi.mock('@/utils/downloadFile', () => ({
   downloadTextFile: (...args: unknown[]) => downloadTextFile(...args),
 }));
 
@@ -98,7 +99,7 @@ describe('resource type registry', () => {
 
 describe('IacMigrationSection', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockMeTeamId = mockTeamId;
     refetch.mockResolvedValue({ data: MANIFEST, isSuccess: true });
     useIacImportManifest.mockReturnValue({

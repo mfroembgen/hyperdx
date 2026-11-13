@@ -1,4 +1,5 @@
 import { useForm } from 'react-hook-form';
+import { type Mock, vi } from 'vitest';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -8,29 +9,29 @@ import { DatabaseSelectControlled } from '@/components/DatabaseSelect';
 import { DBTableSelectControlled } from '@/components/DBTableSelect';
 import { useConnections } from '@/connection';
 
-jest.mock('@/clickhouse', () => ({
-  useDatabasesDirect: jest.fn(),
-  useTablesDirect: jest.fn(),
+vi.mock('@/clickhouse', () => ({
+  useDatabasesDirect: vi.fn(),
+  useTablesDirect: vi.fn(),
 }));
-jest.mock('@/connection', () => ({
-  useConnections: jest.fn(),
+vi.mock('@/connection', () => ({
+  useConnections: vi.fn(),
 }));
 // DBTableSelect renders these next to the table picker; not relevant to this test.
-jest.mock('../SourceSchemaPreview', () => ({
+vi.mock('../SourceSchemaPreview', () => ({
   __esModule: true,
   default: () => null,
   isSourceSchemaPreviewEnabled: () => false,
 }));
-jest.mock('../SourceSelect', () => ({
+vi.mock('../SourceSelect', () => ({
   SourceManagementMenu: () => null,
 }));
 
 // Mantine's Combobox calls scrollIntoView when its dropdown opens; jsdom lacks it.
-window.HTMLElement.prototype.scrollIntoView = jest.fn();
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 // The hooks return large `UseQueryResult`/connection types; the components only
 // read a couple of fields, so cast to a loose mock for these minimal fixtures.
-const asMock = (fn: unknown) => fn as jest.Mock;
+const asMock = (fn: unknown) => fn as Mock;
 
 // Use a large list so the dropdown overflows like the bug report (HDX-4445).
 const OPTION_COUNT = 20;

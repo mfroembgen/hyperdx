@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { isBuilderSavedChartConfig } from '@hyperdx/common-utils/dist/guards';
 import type {
   BuilderSavedChartConfig,
@@ -18,8 +19,8 @@ import {
   validateChartForm,
 } from '@/components/ChartEditor/utils';
 
-jest.mock('../../SearchInput', () => ({
-  getStoredLanguage: jest.fn().mockReturnValue('lucene'),
+vi.mock('../../SearchInput', () => ({
+  getStoredLanguage: vi.fn().mockReturnValue('lucene'),
 }));
 
 const traceSource: TSource = {
@@ -187,7 +188,7 @@ describe('heatmap validation', () => {
     validateChartForm(
       { series: [], ...form } as ChartEditorFormState,
       source,
-      jest.fn(),
+      vi.fn(),
     ).map(e => e.message);
 
   it('requires a value expression in distribution mode', () => {

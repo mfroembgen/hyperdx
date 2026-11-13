@@ -1,23 +1,24 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { SourceKind, TSource } from '@hyperdx/common-utils/dist/types';
 
 import { RowOverviewPanel } from '@/components/DBRowOverviewPanel';
 
 let mockRow: Record<string, unknown>;
-jest.mock('../DBRowDataPanel', () => ({
+vi.mock('../DBRowDataPanel', () => ({
   useRowData: () => ({ data: { data: [mockRow] } }),
   getJSONColumnNames: () => [],
   getMapColumnNames: () => [],
 }));
 
-const mockExceptionSubpanel = jest.fn();
-jest.mock('../ExceptionSubpanel', () => ({
+const mockExceptionSubpanel = vi.fn();
+vi.mock('../ExceptionSubpanel', () => ({
   ExceptionSubpanel: (props: unknown) => mockExceptionSubpanel(props),
 }));
 
-jest.mock('../DBRowJsonViewer', () => ({ DBRowJsonViewer: () => null }));
+vi.mock('../DBRowJsonViewer', () => ({ DBRowJsonViewer: () => null }));
 
-jest.mock('../linkedSpans', () => ({
+vi.mock('../linkedSpans', () => ({
   useReverseSpanLinks: () => ({ links: [] }),
   useLinkedSpanDetails: () => ({ details: new Map() }),
 }));
@@ -68,7 +69,9 @@ const exceptionRow = (
 });
 
 describe('RowOverviewPanel exception section', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('reads exception.* from the row attributes', () => {
     renderRow({

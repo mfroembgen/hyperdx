@@ -1,3 +1,4 @@
+import { type Mock, vi } from 'vitest';
 import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -5,27 +6,27 @@ import api from '@/api';
 import OrgApiKeysSection from '@/components/TeamSettings/OrgApiKeysSection';
 import { useConfirm } from '@/useConfirm';
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
-    useOrgApiKeys: jest.fn(),
-    useCreateOrgApiKey: jest.fn(),
-    useUpdateOrgApiKey: jest.fn(),
-    useDeleteOrgApiKey: jest.fn(),
+    useOrgApiKeys: vi.fn(),
+    useCreateOrgApiKey: vi.fn(),
+    useUpdateOrgApiKey: vi.fn(),
+    useDeleteOrgApiKey: vi.fn(),
   },
-  hdxServer: jest.fn(),
+  hdxServer: vi.fn(),
 }));
 
-jest.mock('@/useConfirm', () => ({ useConfirm: jest.fn() }));
+vi.mock('@/useConfirm', () => ({ useConfirm: vi.fn() }));
 
-const mockUseOrgApiKeys: jest.Mock = jest.mocked(api.useOrgApiKeys);
-const mockUseCreate: jest.Mock = jest.mocked(api.useCreateOrgApiKey);
-const mockUseUpdate: jest.Mock = jest.mocked(api.useUpdateOrgApiKey);
-const mockUseDelete: jest.Mock = jest.mocked(api.useDeleteOrgApiKey);
-const mockUseConfirm: jest.Mock = jest.mocked(useConfirm);
+const mockUseOrgApiKeys: Mock = vi.mocked(api.useOrgApiKeys);
+const mockUseCreate: Mock = vi.mocked(api.useCreateOrgApiKey);
+const mockUseUpdate: Mock = vi.mocked(api.useUpdateOrgApiKey);
+const mockUseDelete: Mock = vi.mocked(api.useDeleteOrgApiKey);
+const mockUseConfirm: Mock = vi.mocked(useConfirm);
 
-const createMutate = jest.fn();
-const deleteMutate = jest.fn();
+const createMutate = vi.fn();
+const deleteMutate = vi.fn();
 let confirmAccepts = true;
 
 const key = (overrides = {}) => ({
@@ -42,11 +43,11 @@ const setKeys = (data: ReturnType<typeof key>[]) =>
   mockUseOrgApiKeys.mockReturnValue({ data: { data }, isLoading: false });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   confirmAccepts = true;
   setKeys([]);
   mockUseCreate.mockReturnValue({ mutate: createMutate, isPending: false });
-  mockUseUpdate.mockReturnValue({ mutateAsync: jest.fn() });
+  mockUseUpdate.mockReturnValue({ mutateAsync: vi.fn() });
   mockUseDelete.mockReturnValue({ mutate: deleteMutate });
   mockUseConfirm.mockReturnValue(() => Promise.resolve(confirmAccepts));
 });
@@ -133,24 +134,24 @@ describe('OrgApiKeysSection', () => {
   });
 
   it('marks a key expired once its expiry passes while the page is open', () => {
-    jest.useFakeTimers({ now: new Date('2026-10-01T00:00:00.000Z') });
+    vi.useFakeTimers({ now: new Date('2026-10-01T00:00:00.000Z') });
     try {
       setKeys([key({ expiresAt: '2026-10-01T00:00:30.000Z' })]);
       renderWithMantine(<OrgApiKeysSection />);
       expect(screen.queryByText('Expired')).not.toBeInTheDocument();
       act(() => {
-        jest.advanceTimersByTime(60_000);
+        vi.advanceTimersByTime(60_000);
       });
       expect(screen.getByText('Expired')).toBeInTheDocument();
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
   it('limits descriptions to 100 characters and reports failed edits', async () => {
     setKeys([key()]);
     mockUseUpdate.mockReturnValue({
-      mutateAsync: jest.fn().mockRejectedValue(new Error('Save failed')),
+      mutateAsync: vi.fn().mockRejectedValue(new Error('Save failed')),
     });
     renderWithMantine(<OrgApiKeysSection />);
 

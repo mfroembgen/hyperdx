@@ -67,12 +67,7 @@ export type StacktraceFrame = {
 };
 
 type StacktraceBreadcrumbCategory =
-  | 'ui.click'
-  | 'fetch'
-  | 'xhr'
-  | 'console'
-  | 'navigation'
-  | string;
+  'ui.click' | 'fetch' | 'xhr' | 'console' | 'navigation' | string;
 
 export type StacktraceBreadcrumb = {
   type?: string;

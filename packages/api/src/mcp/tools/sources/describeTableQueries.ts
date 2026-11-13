@@ -1,4 +1,4 @@
-import type { ClickHouseSettings } from '@clickhouse/client-common';
+import type { ClickHouseSettings } from '@clickhouse/client';
 import {
   type ChSql,
   chSql,

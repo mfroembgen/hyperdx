@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import produce from 'immer';
+import { produce } from 'immer';
 import type { ResponseJSON } from '@hyperdx/common-utils/dist/clickhouse';
 import {
   chSql,

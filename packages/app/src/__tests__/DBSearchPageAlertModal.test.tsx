@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react';
 import { Controller as MockController } from 'react-hook-form';
+import { vi } from 'vitest';
 import {
   AlertSource,
   AlertThresholdType,
@@ -11,13 +12,13 @@ import type { AlertChannelForm } from '@/components/Alerts';
 import { DBSearchPageAlertModal } from '@/DBSearchPageAlertModal';
 
 // --- Mutation spies ------------------------------------------------------
-const createAlertMutateAsync = jest.fn().mockResolvedValue({ data: {} });
-const updateAlertMutateAsync = jest.fn().mockResolvedValue({ data: {} });
-const deleteAlertMutateAsync = jest.fn().mockResolvedValue(undefined);
-const createSavedSearchMutateAsync = jest
+const createAlertMutateAsync = vi.fn().mockResolvedValue({ data: {} });
+const updateAlertMutateAsync = vi.fn().mockResolvedValue({ data: {} });
+const deleteAlertMutateAsync = vi.fn().mockResolvedValue(undefined);
+const createSavedSearchMutateAsync = vi
   .fn()
   .mockResolvedValue({ id: 'new-saved-search-id' });
-const routerPush = jest.fn();
+const routerPush = vi.fn();
 
 // Two alerts so the test can edit the second tab and confirm the PUT targets
 // the right id.
@@ -53,7 +54,7 @@ const savedSearch = {
   alerts: [firstAlert, secondAlert],
 };
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useCreateAlert: () => ({
@@ -77,17 +78,17 @@ jest.mock('@/api', () => ({
       data: { data: ['prod'] },
       isLoading: false,
       isError: false,
-      refetch: jest.fn(),
+      refetch: vi.fn(),
     }),
   },
 }));
 
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   __esModule: true,
   default: { push: (...args: unknown[]) => routerPush(...args) },
 }));
 
-jest.mock('@/savedSearch', () => ({
+vi.mock('@/savedSearch', () => ({
   __esModule: true,
   // Mirrors the hook's `enabled` option: no id, no saved search.
   useSavedSearch: ({ id }: { id: string }) => ({
@@ -97,12 +98,12 @@ jest.mock('@/savedSearch', () => ({
   useCreateSavedSearch: () => ({ mutateAsync: createSavedSearchMutateAsync }),
 }));
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   __esModule: true,
   useSource: () => ({ data: undefined }),
 }));
 
-jest.mock('@/brand', () => ({
+vi.mock('@/brand', () => ({
   __esModule: true,
   useBrandDisplayName: () => 'ClickStack',
 }));
@@ -110,22 +111,22 @@ jest.mock('@/brand', () => ({
 // Heavy / visual child components are stubbed so the form still renders and
 // its submit handler runs. The alert channel form must register the
 // `channel.type` field so form validation passes.
-jest.mock('@/components/alerts/AlertHistoryCards', () => ({
+vi.mock('@/components/alerts/AlertHistoryCards', () => ({
   __esModule: true,
   AlertHistoryCardList: () => <div data-testid="alert-history" />,
 }));
-jest.mock('@/components/alerts/AckAlert', () => ({
+vi.mock('@/components/alerts/AckAlert', () => ({
   __esModule: true,
   AckAlert: () => <div data-testid="ack-alert" />,
 }));
-jest.mock('@/components/AlertPreviewChart', () => ({
+vi.mock('@/components/AlertPreviewChart', () => ({
   __esModule: true,
   AlertPreviewChart: () => <div data-testid="alert-preview-chart" />,
 }));
 // Stubbed, but it still has to register the webhook id: the form schema
 // rejects an empty one, so a create submitted through an inert stub would
 // never reach the mutation.
-jest.mock('@/components/Alerts', () => {
+vi.mock('@/components/Alerts', () => {
   return {
     __esModule: true,
     AlertChannelForm: ({
@@ -146,7 +147,7 @@ jest.mock('@/components/Alerts', () => {
     ),
   };
 });
-jest.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
+vi.mock('@/components/SQLEditor/SQLInlineEditor', () => ({
   __esModule: true,
   SQLInlineEditorControlled: () => <div data-testid="sql-inline-editor" />,
 }));
@@ -162,7 +163,7 @@ const renderModal = (
       <DBSearchPageAlertModal
         id="saved-search-id"
         open
-        onClose={jest.fn()}
+        onClose={vi.fn()}
         {...props}
       />
     </QueryClientProvider>,

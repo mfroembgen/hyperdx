@@ -4,9 +4,10 @@
 # custom receivers/processors we add in the future.
 #
 # Version placeholders are replaced at Docker build time via sed:
-#   __OTEL_COLLECTOR_VERSION__      -> contrib/core component version (e.g. 0.149.0)
+#   __OTEL_COLLECTOR_VERSION__      -> builder/unstable core component version
+#   __OTEL_COLLECTOR_CONTRIB_VERSION__ -> contrib component version
 #   __OTEL_COLLECTOR_CORE_VERSION__ -> core confmap provider version (e.g. 1.55.0)
-# Both values are defined in the root .env file.
+# These values are defined in the root .env file.
 #
 # The upstream contrib manifest for reference:
 #   https://github.com/open-telemetry/opentelemetry-collector-releases/blob/main/distributions/otelcol-contrib/manifest.yaml
@@ -29,31 +30,31 @@ receivers:
   # Contrib
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/receiver/datadogreceiver
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/receiver/fluentforwardreceiver
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/receiver/statsdreceiver
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
 
 processors:
   # Core
@@ -66,46 +67,46 @@ processors:
   # Contrib
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v1.3.1
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/logdedupprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/redactionprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
 
 exporters:
   # Core
@@ -124,10 +125,10 @@ exporters:
   # Contrib
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
 
 connectors:
   # Core
@@ -137,10 +138,10 @@ connectors:
   # Contrib
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
 
 extensions:
   # Core
@@ -153,22 +154,22 @@ extensions:
   # Contrib
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/extension/oidcauthextension
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/extension/storage/filestorage
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampextension
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension
-      v__OTEL_COLLECTOR_VERSION__
+      v__OTEL_COLLECTOR_CONTRIB_VERSION__
 
 providers:
   - gomod:

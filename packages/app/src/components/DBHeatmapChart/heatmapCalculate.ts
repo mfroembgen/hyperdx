@@ -26,9 +26,10 @@ const ALL_MULTS = [
  * Covers the full range of numbers representable in JavaScript floats.
  */
 const NICE_Y_STEPS = range(-16, 308).flatMap(exp =>
-  ALL_MULTS.map(m => round(m * 10 ** exp, yStepDecimals(m * 10 ** exp))).filter(
-    yStep => exp < 0 || Number.isInteger(yStep),
-  ),
+  ALL_MULTS.map(m => {
+    const step = Number(`${m}e${exp}`);
+    return round(step, yStepDecimals(step));
+  }).filter(yStep => exp < 0 || Number.isInteger(yStep)),
 );
 
 /** The largest nice y step that splits `[min, max]` into at least `count` buckets. */

@@ -1,14 +1,16 @@
+import { vi } from 'vitest';
+
 import { Metadata } from '@/core/metadata';
 import { renderRawSqlChartConfig } from '@/core/renderChartConfig';
 import { DisplayType } from '@/types';
 
 const mockMetadata = {
-  getColumns: jest.fn().mockResolvedValue([]),
-  getMaterializedColumnsLookupTable: jest.fn().mockResolvedValue(null),
-  getColumn: jest.fn().mockResolvedValue(undefined),
-  getTableMetadata: jest.fn().mockResolvedValue({ primary_key: '' }),
-  getSkipIndices: jest.fn().mockResolvedValue([]),
-  getSetting: jest.fn().mockResolvedValue(undefined),
+  getColumns: vi.fn().mockResolvedValue([]),
+  getMaterializedColumnsLookupTable: vi.fn().mockResolvedValue(null),
+  getColumn: vi.fn().mockResolvedValue(undefined),
+  getTableMetadata: vi.fn().mockResolvedValue({ primary_key: '' }),
+  getSkipIndices: vi.fn().mockResolvedValue([]),
+  getSetting: vi.fn().mockResolvedValue(undefined),
 } as unknown as Metadata;
 
 describe('renderRawSqlChartConfig', () => {

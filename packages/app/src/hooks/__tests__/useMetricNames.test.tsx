@@ -1,4 +1,5 @@
 import React from 'react';
+import { vi } from 'vitest';
 import {
   MetricsDataType,
   SourceKind,
@@ -9,10 +10,10 @@ import { renderHook, waitFor } from '@testing-library/react';
 
 import { useMetricNames } from '@/hooks/useMetricNames';
 
-const streamDistinctIndexValues = jest.fn();
-const useGetMetricNames = jest.fn();
+const streamDistinctIndexValues = vi.fn();
+const useGetMetricNames = vi.fn();
 
-jest.mock('@/hooks/useMetadata', () => ({
+vi.mock('@/hooks/useMetadata', () => ({
   useMetadataWithSettings: () => ({
     streamDistinctIndexValues: (...args: unknown[]) =>
       streamDistinctIndexValues(...args),
@@ -72,7 +73,7 @@ const failingStream = (message: string) => () => ({
 });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   useGetMetricNames.mockReturnValue(IDLE_EXHAUSTIVE);
   streamDistinctIndexValues.mockImplementation(streamOf());
 });

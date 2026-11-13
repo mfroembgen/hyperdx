@@ -7,6 +7,7 @@ import express from 'express';
 import mongoose, { Types } from 'mongoose';
 import request from 'supertest';
 
+import { LOCAL_APP_TEAM } from '@/controllers/team';
 import {
   getLoggedInAgent as getFixtureLoggedInAgent,
   getServer,
@@ -16,8 +17,8 @@ import Connection from '@/models/connection';
 import { Source } from '@/models/source';
 import sourcesRouter from '@/routers/api/sources';
 
-const MOCK_SOURCE: Omit<Extract<TSource, { kind: 'log' }>, 'id'> = {
-  kind: SourceKind.Log,
+const MOCK_SOURCE: Omit<Extract<TSource, { kind: SourceKind.Log }>, 'id'> = {
+  kind: SourceKind.Log as const,
   name: 'Test Source',
   connection: new Types.ObjectId().toString(),
   from: {
@@ -28,8 +29,11 @@ const MOCK_SOURCE: Omit<Extract<TSource, { kind: 'log' }>, 'id'> = {
   defaultTableSelectExpression: 'body',
 };
 
-const MOCK_METRIC_SOURCE: Omit<Extract<TSource, { kind: 'metric' }>, 'id'> = {
-  kind: SourceKind.Metric,
+const MOCK_METRIC_SOURCE: Omit<
+  Extract<TSource, { kind: SourceKind.Metric }>,
+  'id'
+> = {
+  kind: SourceKind.Metric as const,
   name: 'Test Metric Source',
   connection: new Types.ObjectId().toString(),
   from: {
@@ -47,8 +51,11 @@ const MOCK_METRIC_SOURCE: Omit<Extract<TSource, { kind: 'metric' }>, 'id'> = {
   },
 };
 
-const MOCK_PROMQL_SOURCE: Omit<Extract<TSource, { kind: 'promql' }>, 'id'> = {
-  kind: SourceKind.Promql,
+const MOCK_PROMQL_SOURCE: Omit<
+  Extract<TSource, { kind: SourceKind.Promql }>,
+  'id'
+> = {
+  kind: SourceKind.Promql as const,
   name: 'Test PromQL Source',
   connection: new Types.ObjectId().toString(),
   from: {
@@ -228,7 +235,7 @@ describe('sources router', () => {
     await agent
       .post('/sources')
       .send({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         name: 'Test Source',
       })
       .expect(400);
@@ -400,7 +407,7 @@ describe('sources router', () => {
 
     // Create a metric source with metricTables property
     const metricSource = await Source.create({
-      kind: SourceKind.Metric,
+      kind: SourceKind.Metric as const,
       name: 'Test Metric Source',
       connection: MOCK_METRIC_SOURCE.connection,
       from: {
@@ -423,7 +430,7 @@ describe('sources router', () => {
     // Update the source to a trace source
     const traceSource = {
       id: metricSource._id.toString(),
-      kind: SourceKind.Trace,
+      kind: SourceKind.Trace as const,
       name: 'Test Trace Source',
       connection: metricSource.connection,
       from: {
@@ -462,7 +469,7 @@ describe('sources router', () => {
 
     // Create a metric source with metricTables property
     const metricSource = await Source.create({
-      kind: SourceKind.Metric,
+      kind: SourceKind.Metric as const,
       name: 'Test Metric Source',
       connection: MOCK_METRIC_SOURCE.connection,
       from: {
@@ -481,7 +488,7 @@ describe('sources router', () => {
     // Step 1: Update the metric source (but keep it as Metric)
     const updatedMetricSource = {
       id: metricSource._id.toString(),
-      kind: SourceKind.Metric,
+      kind: SourceKind.Metric as const,
       name: 'Updated Metric Source',
       connection: metricSource.connection,
       from: metricSource.from,
@@ -513,7 +520,7 @@ describe('sources router', () => {
     // Step 2: Change the source to a Log type
     const logSource = {
       id: metricSource._id.toString(),
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       name: 'Test Log Source',
       connection: metricSource.connection,
       from: {
@@ -569,8 +576,11 @@ describe('sources router', () => {
     it('POST / - persists the expression on a trace source', async () => {
       const { agent } = await getLoggedInAgent(server);
 
-      const traceSource: Omit<Extract<TSource, { kind: 'trace' }>, 'id'> = {
-        kind: SourceKind.Trace,
+      const traceSource: Omit<
+        Extract<TSource, { kind: SourceKind.Trace }>,
+        'id'
+      > = {
+        kind: SourceKind.Trace as const,
         name: 'Test Trace Source',
         // The suite provisions a real Connection for this id; POST now 400s on
         // one that doesn't exist for the team.
@@ -965,7 +975,7 @@ describe('sources router', () => {
 
       // Old flat model allowed Session sources without timestampValueExpression
       await Source.collection.insertOne({
-        kind: SourceKind.Session,
+        kind: SourceKind.Session as const,
         name: 'Legacy Session',
         team: team._id,
         connection: new Types.ObjectId(),
@@ -987,7 +997,7 @@ describe('sources router', () => {
 
       // Old flat model allowed Trace sources without defaultTableSelectExpression
       await Source.collection.insertOne({
-        kind: SourceKind.Trace,
+        kind: SourceKind.Trace as const,
         name: 'Legacy Trace',
         team: team._id,
         connection: new Types.ObjectId(),
@@ -1014,7 +1024,7 @@ describe('sources router', () => {
       const { agent, team } = await getLoggedInAgent(server);
 
       await Source.collection.insertOne({
-        kind: SourceKind.Trace,
+        kind: SourceKind.Trace as const,
         name: 'Trace with null logSourceId',
         team: team._id,
         connection: new Types.ObjectId(),
@@ -1049,7 +1059,7 @@ describe('sources router', () => {
       // This means the internal API response shape may differ from the external
       // API (which runs SourceSchema.safeParse() to strip extra fields).
       await Source.collection.insertOne({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         name: 'Flat Model Log',
         team: team._id,
         connection: new Types.ObjectId(),
@@ -1079,7 +1089,7 @@ describe('sources router', () => {
       const { agent, team } = await getLoggedInAgent(server);
 
       const result = await Source.collection.insertOne({
-        kind: SourceKind.Session,
+        kind: SourceKind.Session as const,
         name: 'Legacy Session',
         team: team._id,
         connection: new Types.ObjectId(),
@@ -1091,7 +1101,7 @@ describe('sources router', () => {
       await agent
         .put(`/sources/${result.insertedId}`)
         .send({
-          kind: SourceKind.Session,
+          kind: SourceKind.Session as const,
           id: result.insertedId.toString(),
           name: 'Updated Session',
           connection: new Types.ObjectId().toString(),
@@ -1107,7 +1117,7 @@ describe('sources router', () => {
 
       const connectionId = new Types.ObjectId(MOCK_SOURCE.connection);
       const result = await Source.collection.insertOne({
-        kind: SourceKind.Session,
+        kind: SourceKind.Session as const,
         name: 'Legacy Session',
         team: team._id,
         connection: connectionId,
@@ -1118,7 +1128,7 @@ describe('sources router', () => {
       await agent
         .put(`/sources/${result.insertedId}`)
         .send({
-          kind: SourceKind.Session,
+          kind: SourceKind.Session as const,
           id: result.insertedId.toString(),
           name: 'Updated Session',
           connection: connectionId.toString(),
@@ -1138,7 +1148,7 @@ describe('sources router', () => {
 
       // Insert a flat-model doc with cross-kind fields
       const result = await Source.collection.insertOne({
-        kind: SourceKind.Log,
+        kind: SourceKind.Log as const,
         name: 'Flat Log',
         team: team._id,
         connection: new Types.ObjectId(),
@@ -1157,7 +1167,6 @@ describe('sources router', () => {
       // NOTE: Mongoose discriminator toJSON does NOT strip cross-kind fields.
       // Unknown fields stored in MongoDB are still included in toJSON() output.
       const hydrated = await Source.findById(result.insertedId);
-      // @ts-expect-error toJSON has differing type signatures depending on the source, but it's fine at runtime
       const json = hydrated?.toJSON({ getters: true });
       expect(json).toHaveProperty('metricTables');
     });
@@ -1168,7 +1177,7 @@ describe('sources router', () => {
 
       await Source.collection.insertMany([
         {
-          kind: SourceKind.Log,
+          kind: SourceKind.Log as const,
           name: 'Log',
           team: team._id,
           connection: connectionId,
@@ -1177,7 +1186,7 @@ describe('sources router', () => {
           defaultTableSelectExpression: 'Body',
         },
         {
-          kind: SourceKind.Trace,
+          kind: SourceKind.Trace as const,
           name: 'Trace',
           team: team._id,
           connection: connectionId,
@@ -1193,7 +1202,7 @@ describe('sources router', () => {
           spanKindExpression: 'SpanKind',
         },
         {
-          kind: SourceKind.Session,
+          kind: SourceKind.Session as const,
           name: 'Session',
           team: team._id,
           connection: connectionId,
@@ -1202,7 +1211,7 @@ describe('sources router', () => {
           traceSourceId: 'some-id',
         },
         {
-          kind: SourceKind.Metric,
+          kind: SourceKind.Metric as const,
           name: 'Metric',
           team: team._id,
           connection: connectionId,
@@ -1224,17 +1233,15 @@ describe('sources router', () => {
   });
 
   describe('local app mode (string team id)', () => {
-    // In Local App Mode (IS_LOCAL_APP_MODE) the auth middleware injects a
-    // plain string team id ("_local_team_") onto req.user instead of a
-    // Mongoose ObjectId. Regression test for HDX-4713 where the POST/PUT
-    // handlers called teamId.toJSON() — a method that only exists on
-    // ObjectId, not on strings — producing an HTTP 500
+    // Keep exercising a serialized local team id. Regression test for
+    // HDX-4713 where the POST/PUT handlers called teamId.toJSON() — a method
+    // that only exists on ObjectId, not on strings — producing an HTTP 500
     // "TypeError: teamId.toJSON is not a function".
-    const LOCAL_APP_TEAM_ID = '_local_team_';
+    const LOCAL_APP_TEAM_ID = LOCAL_APP_TEAM._id.toString();
 
     // Build a minimal Express app that mirrors how api-app.ts mounts the
     // sources router, but with a middleware that emulates the Local App Mode
-    // branch of isUserAuthenticated (string team id).
+    // team identity after serialization to a BSON-compatible string.
     const getLocalAppModeApp = () => {
       const app = express();
       app.use(express.json());
@@ -1253,10 +1260,7 @@ describe('sources router', () => {
 
     it('POST / - creates a source when team id is a string', async () => {
       const app = getLocalAppModeApp();
-      await createTestConnection(
-        new Types.ObjectId('_local_team_'),
-        MOCK_SOURCE.connection,
-      );
+      await createTestConnection(LOCAL_APP_TEAM._id, MOCK_SOURCE.connection);
 
       const response = await request(app)
         .post('/sources')
@@ -1274,10 +1278,7 @@ describe('sources router', () => {
 
     it('PUT /:id - updates a source when team id is a string', async () => {
       const app = getLocalAppModeApp();
-      await createTestConnection(
-        new Types.ObjectId('_local_team_'),
-        MOCK_SOURCE.connection,
-      );
+      await createTestConnection(LOCAL_APP_TEAM._id, MOCK_SOURCE.connection);
 
       const source = await Source.create({
         ...MOCK_SOURCE,
@@ -1437,7 +1438,7 @@ describe('sources router', () => {
         .put(`/sources/${source._id}`)
         .send({
           id: source._id.toString(),
-          kind: SourceKind.Trace,
+          kind: SourceKind.Trace as const,
           name: 'Test Trace Source',
           connection: MOCK_SOURCE.connection,
           from: { databaseName: 'test_db', tableName: 'otel_traces' },
@@ -1494,8 +1495,11 @@ describe('sources router', () => {
     it('POST / - persists useTextIndexForImplicitColumn on a Trace source and returns it', async () => {
       const { agent } = await getLoggedInAgent(server);
 
-      const traceSource: Omit<Extract<TSource, { kind: 'trace' }>, 'id'> = {
-        kind: SourceKind.Trace,
+      const traceSource: Omit<
+        Extract<TSource, { kind: SourceKind.Trace }>,
+        'id'
+      > = {
+        kind: SourceKind.Trace as const,
         name: 'Trace with text index pref',
         connection: MOCK_SOURCE.connection,
         from: { databaseName: 'test_db', tableName: 'otel_traces' },

@@ -486,7 +486,7 @@ const TimePickerComponent = ({
 
                     // Find the closest duration option
                     const halfRangeMinutes = halfRangeMs / (1000 * 60);
-                    let closestDuration = '15m'; // default
+                    let closestDuration: string;
 
                     if (halfRangeMinutes <= 0.5) closestDuration = '30s';
                     else if (halfRangeMinutes <= 1) closestDuration = '1m';

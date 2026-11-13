@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, Stack } from '@mantine/core';
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   IconAlertTriangle,
   IconCircleCheck,

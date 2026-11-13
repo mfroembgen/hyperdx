@@ -11,8 +11,7 @@ export const MCP_TOOL_TIMEOUT_MS = MCP_QUERY_MAX_EXECUTION_SEC * 1000;
 export const MCP_TIMEOUT_GRACE_MS = 2_000;
 
 export type TimeoutOutcome<T> =
-  | { timedOut: false; value: T }
-  | { timedOut: true };
+  { timedOut: false; value: T } | { timedOut: true };
 
 const TIMED_OUT = Symbol('timedOut');
 

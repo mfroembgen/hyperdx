@@ -130,7 +130,13 @@ router.get('/import-manifest', async (req, res, next) => {
               'tiles.config.displayType': 1,
             },
           ),
-        ).lean(),
+        ).lean<
+          {
+            _id: import('mongoose').Types.ObjectId;
+            name?: string | null;
+            tiles?: { config?: unknown }[];
+          }[]
+        >(),
         bounded(
           Alert.find(
             { team: teamId },

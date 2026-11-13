@@ -160,6 +160,7 @@ test.describe('Heatmap modes', { tag: ['@full-stack', '@dashboard'] }, () => {
     const ts = Date.now();
 
     let dashboardId = '';
+
     await test.step('Seed a distribution heatmap tile saved before heatmap modes existed', async () => {
       const traceSource = (await getSources(page, 'trace')).find(
         s => s.name === DEFAULT_TRACES_SOURCE_NAME,

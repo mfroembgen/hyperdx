@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   DisplayType,
   PromqlConfigWithDateRange,
@@ -7,8 +8,8 @@ import { renderHook } from '@testing-library/react';
 import { useCalculatedHeatmapData } from '@/components/DBHeatmapChart/useCalculatedHeatmapData';
 import { useSeriesHeatmapData } from '@/components/DBHeatmapChart/useSeriesHeatmapData';
 
-const mockUseQueriedChartConfig = jest.fn();
-jest.mock('@/hooks/useChartConfig', () => ({
+const mockUseQueriedChartConfig = vi.fn();
+vi.mock('@/hooks/useChartConfig', () => ({
   useQueriedChartConfig: (...args: unknown[]) =>
     mockUseQueriedChartConfig(...args),
 }));

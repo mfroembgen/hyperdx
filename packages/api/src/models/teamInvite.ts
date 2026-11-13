@@ -5,12 +5,12 @@ interface ITeamInvite {
   createdAt: Date;
   email: string;
   name?: string;
-  teamId: string;
+  teamId: mongoose.Types.ObjectId;
   token: string;
   updatedAt: Date;
 }
 
-const TeamInviteSchema = new Schema(
+const TeamInviteSchema = new Schema<ITeamInvite>(
   {
     teamId: {
       type: Schema.Types.ObjectId,

@@ -17,12 +17,7 @@ import SourcePicker from '@/components/SourcePicker';
 import EventViewer from '@/components/EventViewer';
 
 type Screen =
-  | 'loading'
-  | 'login'
-  | 'pick-source'
-  | 'events'
-  | 'alerts'
-  | 'dashboards';
+  'loading' | 'login' | 'pick-source' | 'events' | 'alerts' | 'dashboards';
 
 interface AppProps {
   appUrl: string;

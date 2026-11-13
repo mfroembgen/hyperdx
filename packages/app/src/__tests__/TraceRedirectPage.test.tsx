@@ -1,10 +1,11 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { waitFor } from '@testing-library/react';
 
 // eslint-disable-next-line no-restricted-imports -- Next.js pages/ dir lives outside src, no @/ alias reaches it
 import { TraceRedirectPage } from '../../pages/trace/[traceId]';
 
-const mockReplace = jest.fn();
+const mockReplace = vi.fn();
 
 let mockRouter = {
   isReady: true,
@@ -14,17 +15,17 @@ let mockRouter = {
   replace: mockReplace,
 };
 
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   useRouter: () => mockRouter,
 }));
 
-jest.mock('@/layout', () => ({
+vi.mock('@/layout', () => ({
   withAppNav: (component: unknown) => component,
 }));
 
 describe('TraceRedirectPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockRouter = {
       isReady: true,
       query: {

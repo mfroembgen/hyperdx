@@ -45,7 +45,7 @@ function copyTextWithTextarea(text: string): boolean {
   textArea.select();
   textArea.setSelectionRange(0, textArea.value.length);
 
-  let copied = false;
+  let copied: boolean;
   try {
     copied = document.execCommand('copy');
   } catch {

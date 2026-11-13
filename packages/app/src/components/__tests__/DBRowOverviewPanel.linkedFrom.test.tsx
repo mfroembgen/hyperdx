@@ -1,80 +1,87 @@
 import React from 'react';
+import { vi } from 'vitest';
 import { SourceKind, TSource } from '@hyperdx/common-utils/dist/types';
 import { screen } from '@testing-library/react';
 
-const mockUseRowData = jest.fn();
-jest.mock('../DBRowDataPanel', () => ({
+const mockUseRowData = vi.fn();
+vi.mock('../DBRowDataPanel', () => ({
   __esModule: true,
   useRowData: (args: unknown) => mockUseRowData(args),
   getJSONColumnNames: () => [],
   getMapColumnNames: () => [],
 }));
 
-jest.mock('../DBRowSidePanel', () => {
-  const { createContext } = jest.requireActual('react');
+vi.mock('../DBRowSidePanel', async () => {
+  const actualModule0 = await vi.importActual<typeof import('react')>('react');
+
+  const { createContext } = actualModule0;
   return {
     __esModule: true,
     RowSidePanelContext: createContext({}),
   };
 });
 
-jest.mock('../DBRowJsonViewer', () => ({
+vi.mock('../DBRowJsonViewer', () => ({
   __esModule: true,
   DBRowJsonViewer: () => null,
 }));
-jest.mock('../DBRowSidePanelHeader', () => ({
+vi.mock('../DBRowSidePanelHeader', () => ({
   __esModule: true,
   default: () => null,
 }));
-jest.mock('../EventTag', () => ({ __esModule: true, default: () => null }));
-jest.mock('../ExceptionSubpanel', () => ({
+vi.mock('../EventTag', () => ({ __esModule: true, default: () => null }));
+vi.mock('../ExceptionSubpanel', () => ({
   __esModule: true,
   ExceptionSubpanel: () => null,
 }));
-jest.mock('../NetworkPropertyPanel', () => ({
+vi.mock('../NetworkPropertyPanel', () => ({
   __esModule: true,
   NetworkPropertySubpanel: () => null,
 }));
-jest.mock('../SpanEventsSubpanel', () => ({
+vi.mock('../SpanEventsSubpanel', () => ({
   __esModule: true,
   SpanEventsSubpanel: () => null,
 }));
-const mockSpanLinksSubpanel = jest.fn();
-jest.mock('../SpanLinksSubpanel', () => ({
-  __esModule: true,
-  getValidSpanLinks: jest.requireActual('../SpanLinksSubpanel')
-    .getValidSpanLinks,
-  SpanLinksSubpanel: (props: unknown) => {
-    mockSpanLinksSubpanel(props);
-    return null;
-  },
-}));
+const mockSpanLinksSubpanel = vi.fn();
+vi.mock('../SpanLinksSubpanel', async () => {
+  const actualModule1 = await vi.importActual<
+    typeof import('../SpanLinksSubpanel')
+  >('../SpanLinksSubpanel');
+  return {
+    __esModule: true,
+    getValidSpanLinks: actualModule1.getValidSpanLinks,
+    SpanLinksSubpanel: (props: unknown) => {
+      mockSpanLinksSubpanel(props);
+      return null;
+    },
+  };
+});
 
-const mockUseReverseSpanLinks = jest.fn();
-const mockUseLinkedSpanDetails = jest.fn();
-jest.mock('../linkedSpans', () => ({
+const mockUseReverseSpanLinks = vi.fn();
+const mockUseLinkedSpanDetails = vi.fn();
+vi.mock('../linkedSpans', () => ({
   __esModule: true,
   useReverseSpanLinks: (args: unknown) => mockUseReverseSpanLinks(args),
   useLinkedSpanDetails: (args: unknown) => mockUseLinkedSpanDetails(args),
   linkedSpanKey: (traceId: string, spanId: string) => `${traceId}:${spanId}`,
   LinkedSpanMetaLine: () => null,
 }));
-jest.mock('../SpanLinkedFromSubpanel', () => ({
+vi.mock('../SpanLinkedFromSubpanel', () => ({
   __esModule: true,
   SpanLinkedFromSubpanel: () => <div data-testid="linked-from-subpanel" />,
 }));
 
-jest.mock('@/source', () => ({
+vi.mock('@/source', () => ({
   __esModule: true,
   getEventBody: () => undefined,
 }));
-jest.mock('@/utils/highlightedAttributes', () => ({
+vi.mock('@/utils/highlightedAttributes', () => ({
   __esModule: true,
   getHighlightedAttributesFromData: () => [],
 }));
 
 const ANCHOR = new Date('2024-01-02T12:00:00.000Z');
-jest.mock('@/utils/rowTimestamps', () => ({
+vi.mock('@/utils/rowTimestamps', () => ({
   __esModule: true,
   resolveRowTimestampAnchor: () => new Date('2024-01-02T12:00:00.000Z'),
 }));

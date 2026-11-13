@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import express from 'express';
 import { z } from 'zod';
-import { validateRequest } from 'zod-express-middleware';
 
 import { getTeam, getTeamInviteUrl } from '@/controllers/team';
 import {
@@ -9,6 +8,7 @@ import {
   findUserByEmail,
   findUsersByTeam,
 } from '@/controllers/user';
+import { validateRequest } from '@/middleware/validation';
 import TeamInvite from '@/models/teamInvite';
 import { objectIdSchema } from '@/utils/zod';
 

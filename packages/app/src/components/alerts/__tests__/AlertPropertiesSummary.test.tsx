@@ -1,10 +1,11 @@
+import { vi } from 'vitest';
 import { AlertThresholdType } from '@hyperdx/common-utils/dist/types';
 import { act, screen } from '@testing-library/react';
 
 import { AlertPropertiesSummary } from '@/components/alerts/AlertPropertiesSummary';
 import type { AlertsPageItem } from '@/types';
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useWebhooks: () => ({

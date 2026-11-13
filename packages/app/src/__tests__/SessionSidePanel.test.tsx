@@ -1,3 +1,4 @@
+import { type Mock, type MockedFunction, vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 import { Notifications, notifications } from '@mantine/notifications';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -8,13 +9,15 @@ import {
   copyTextToClipboard,
 } from '@/utils/clipboard';
 
-jest.mock('../SessionSubpanel', () => ({
+vi.mock('../SessionSubpanel', () => ({
   __esModule: true,
   default: () => <div data-testid="session-subpanel-mock" />,
 }));
 
-jest.mock('@/components/DBRowSidePanel', () => {
-  const ReactActual = jest.requireActual('react');
+vi.mock('@/components/DBRowSidePanel', async () => {
+  const actualModule0 = await vi.importActual<typeof import('react')>('react');
+
+  const ReactActual = actualModule0;
   return {
     __esModule: true,
     DBRowSidePanelInner: (props: { rowId: string }) => (
@@ -28,14 +31,16 @@ jest.mock('@/components/DBRowSidePanel', () => {
 // simulate a value left in the URL by a previously selected session.
 const mockNuqs: {
   sessionPanelEvent: unknown;
-  setSessionPanelEvent: jest.Mock;
+  setSessionPanelEvent: Mock;
 } = {
   sessionPanelEvent: null,
-  setSessionPanelEvent: jest.fn(),
+  setSessionPanelEvent: vi.fn(),
 };
 
-jest.mock('nuqs', () => {
-  const actual = jest.requireActual('nuqs');
+vi.mock('nuqs', async () => {
+  const actualModule1 = await vi.importActual<typeof import('nuqs')>('nuqs');
+
+  const actual = actualModule1;
 
   const noop = () => {};
   return {
@@ -51,28 +56,32 @@ jest.mock('nuqs', () => {
   };
 });
 
-jest.mock('../utils/clipboard', () => ({
+vi.mock('../utils/clipboard', () => ({
   __esModule: true,
   CLIPBOARD_ERROR_MESSAGE:
     'Could not access the clipboard. Check browser permissions or use HTTPS.',
-  copyTextToClipboard: jest.fn(),
+  copyTextToClipboard: vi.fn(),
 }));
 
-jest.mock('@mantine/notifications', () => {
-  const actual = jest.requireActual('@mantine/notifications');
+vi.mock('@mantine/notifications', async () => {
+  const actualModule2 = await vi.importActual<
+    typeof import('@mantine/notifications')
+  >('@mantine/notifications');
+
+  const actual = actualModule2;
   return {
     ...actual,
     notifications: {
       ...actual.notifications,
-      show: jest.fn(),
+      show: vi.fn(),
     },
   };
 });
 
-const mockedCopy = copyTextToClipboard as jest.MockedFunction<
+const mockedCopy = copyTextToClipboard as MockedFunction<
   typeof copyTextToClipboard
 >;
-const mockedShow = notifications.show as jest.MockedFunction<
+const mockedShow = notifications.show as MockedFunction<
   typeof notifications.show
 >;
 
@@ -100,7 +109,7 @@ function renderPanel() {
           } as any
         }
         dateRange={[new Date(0), new Date(1)]}
-        onClose={jest.fn()}
+        onClose={vi.fn()}
       />
     </MantineProvider>,
   );

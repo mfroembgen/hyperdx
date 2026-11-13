@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { tcFromSource } from '@hyperdx/common-utils/dist/core/metadata';
 import {
   type Alert,
@@ -58,6 +57,7 @@ import {
   TILE_ALERT_INTERVAL_OPTIONS,
   TILE_ALERT_THRESHOLD_TYPE_OPTIONS,
 } from '@/utils/alerts';
+import { passthroughFormResolver } from '@/utils/formResolver';
 
 // Same validation as the saved-search alert modal: only the fields this form
 // edits are validated; everything else (source discriminator fields, name,
@@ -192,7 +192,7 @@ export function EditAlertModal({
     formState: { dirtyFields },
   } = useForm<Alert>({
     defaultValues,
-    resolver: zodResolver(EditAlertFormSchema),
+    resolver: passthroughFormResolver<Alert>(EditAlertFormSchema),
   });
 
   // Re-sync the form when the modal is (re)opened or the alert refreshes

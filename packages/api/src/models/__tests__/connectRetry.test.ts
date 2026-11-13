@@ -1,17 +1,22 @@
 import mongoose from 'mongoose';
+import { type MockInstance, vi } from 'vitest';
 
 // --- mocks (hoisted; names must be prefixed with `mock`) ---
-const mockCounterAdd = jest.fn();
-const mockLogger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
-const mockConfig: { MONGO_URI: string | undefined } = {
+const mockCounterAdd = vi.hoisted(() => vi.fn());
+const mockLogger = vi.hoisted(() => ({
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}));
+const mockConfig: { MONGO_URI: string | undefined } = vi.hoisted(() => ({
   MONGO_URI: 'mongodb://localhost:27017/hyperdx-test',
-};
+}));
 
-jest.mock('@/config', () => mockConfig);
-jest.mock('@/utils/instrumentation', () => ({
+vi.mock('@/config', () => mockConfig);
+vi.mock('@/utils/instrumentation', () => ({
   getCounter: () => ({ add: (...args: unknown[]) => mockCounterAdd(...args) }),
 }));
-jest.mock('@/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   __esModule: true,
   default: mockLogger,
 }));
@@ -19,12 +24,12 @@ jest.mock('@/utils/logger', () => ({
 import { connectDBWithRetry } from '@/models';
 
 describe('connectDBWithRetry', () => {
-  let connectSpy: jest.SpyInstance;
+  let connectSpy: MockInstance;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockConfig.MONGO_URI = 'mongodb://localhost:27017/hyperdx-test';
-    connectSpy = jest.spyOn(mongoose, 'connect');
+    connectSpy = vi.spyOn(mongoose, 'connect');
   });
 
   afterEach(() => {

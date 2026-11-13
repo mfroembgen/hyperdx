@@ -2,6 +2,7 @@ import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { MetricsDataType } from '@hyperdx/common-utils/dist/types';
 import { ObjectId } from 'mongodb';
 import request from 'supertest';
+import { vi } from 'vitest';
 
 import * as config from '@/config';
 import {
@@ -75,7 +76,7 @@ const createSeriesRequestPayload = (sourceId: string, overrides: any = {}) => {
 
 describe('External API v2 Charts', () => {
   const server = getServer();
-  let agent: request.SuperTest<request.Test>;
+  let agent: request.Agent;
   let team: any;
   let user: any;
   let connection: any;
@@ -101,7 +102,7 @@ describe('External API v2 Charts', () => {
     });
 
     logSource = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -113,7 +114,7 @@ describe('External API v2 Charts', () => {
     });
 
     metricSource = await Source.create({
-      kind: SourceKind.Metric,
+      kind: SourceKind.Metric as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -417,7 +418,7 @@ describe('External API v2 Charts', () => {
 
     it('should handle lucene query errors gracefully', async () => {
       // Spy on console.error to suppress expected error output
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -435,7 +436,7 @@ describe('External API v2 Charts', () => {
 
     it('should handle sql query errors gracefully', async () => {
       // Spy on console.error to suppress expected error output
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 

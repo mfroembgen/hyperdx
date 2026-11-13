@@ -1,6 +1,7 @@
-import { ClickHouseError } from '@clickhouse/client-common';
+import { ClickHouseError } from '@clickhouse/client';
 import { SourceKind } from '@hyperdx/common-utils/dist/types';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { vi } from 'vitest';
 
 import { ClickhouseClient } from '@/clickhouse';
 import * as config from '@/config';
@@ -100,7 +101,7 @@ describe('MCP Trace Tools', () => {
     });
 
     logSource = await Source.create({
-      kind: SourceKind.Log,
+      kind: SourceKind.Log as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -117,7 +118,7 @@ describe('MCP Trace Tools', () => {
     });
 
     traceSource = await Source.create({
-      kind: SourceKind.Trace,
+      kind: SourceKind.Trace as const,
       team: team._id,
       from: {
         databaseName: DEFAULT_DATABASE,
@@ -806,7 +807,7 @@ describe('MCP Trace Tools', () => {
           },
         ]);
         const original = ClickhouseClient.prototype.query;
-        const spy = jest
+        const spy = vi
           .spyOn(ClickhouseClient.prototype, 'query')
           .mockImplementation(function (this: ClickhouseClient, args) {
             if (args.query.includes('AS firstSeen')) {
@@ -929,7 +930,7 @@ describe('MCP Trace Tools', () => {
       it('should handle missing logSourceId gracefully (no logs section)', async () => {
         // Create a trace source WITHOUT logSourceId
         const noLogTraceSource = await Source.create({
-          kind: SourceKind.Trace,
+          kind: SourceKind.Trace as const,
           team: team._id,
           from: {
             databaseName: DEFAULT_DATABASE,
@@ -969,7 +970,7 @@ describe('MCP Trace Tools', () => {
 
       it('should note when logSourceId points to a non-existent source', async () => {
         const badLogTraceSource = await Source.create({
-          kind: SourceKind.Trace,
+          kind: SourceKind.Trace as const,
           team: team._id,
           from: {
             databaseName: DEFAULT_DATABASE,
@@ -1010,7 +1011,7 @@ describe('MCP Trace Tools', () => {
       it('should note when logSourceId points to a non-log source', async () => {
         // Point logSourceId at the trace source itself (wrong kind)
         const wrongKindTraceSource = await Source.create({
-          kind: SourceKind.Trace,
+          kind: SourceKind.Trace as const,
           team: team._id,
           from: {
             databaseName: DEFAULT_DATABASE,
@@ -1366,7 +1367,7 @@ describe('MCP Trace Tools', () => {
             ],
           },
         );
-        const querySpy = jest.spyOn(ClickhouseClient.prototype, 'query');
+        const querySpy = vi.spyOn(ClickhouseClient.prototype, 'query');
         try {
           const result = await callTool(
             client,
@@ -1388,8 +1389,11 @@ describe('MCP Trace Tools', () => {
             readonly: '2',
             max_threads: '2',
           });
-          const ctx: ClickhouseClient =
+          const ctx =
             querySpy.mock.contexts[querySpy.mock.calls.indexOf(call!)];
+          expect(ctx).toBeInstanceOf(ClickhouseClient);
+          if (!(ctx instanceof ClickhouseClient))
+            throw new Error('Missing ClickHouse client context');
           expect(ctx.requestTimeoutMs).toBe(MCP_REQUEST_TIMEOUT);
         } finally {
           querySpy.mockRestore();
@@ -1427,7 +1431,7 @@ describe('MCP Trace Tools', () => {
 
       async function callBreakdownWithFailingQuery(error: Error) {
         const original = ClickhouseClient.prototype.query;
-        const querySpy = jest
+        const querySpy = vi
           .spyOn(ClickhouseClient.prototype, 'query')
           .mockImplementation(function (this: ClickhouseClient, args) {
             if (args.query.includes('parent_traces')) {

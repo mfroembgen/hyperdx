@@ -2,11 +2,13 @@ import {
   ColumnMetaType,
   convertCHDataTypeToJSType,
 } from '@hyperdx/common-utils/dist/clickhouse';
-import { Row, SortingFnOption } from '@tanstack/react-table';
+import { Row, SortFnOption } from '@tanstack/react-table';
+
+import type { AppTableFeatures } from '@/tableFeatures';
 
 export const numericRowSortingFn = ((
-  a: Row<unknown>,
-  b: Row<unknown>,
+  a: Row<AppTableFeatures, Record<string, unknown>>,
+  b: Row<AppTableFeatures, Record<string, unknown>>,
   columnId: string,
 ) => {
   const aValue = a.getValue(columnId);
@@ -19,12 +21,12 @@ export const numericRowSortingFn = ((
   if (bInvalid) return -1;
 
   return Number(aValue) - Number(bValue);
-}) satisfies SortingFnOption<unknown>;
+}) satisfies SortFnOption<AppTableFeatures, Record<string, unknown>>;
 
 export const getClientSideSortingFn = (
   meta: ColumnMetaType[] | undefined,
   columnName: string,
-): SortingFnOption<unknown> => {
+): SortFnOption<AppTableFeatures, Record<string, unknown>> => {
   const columnMeta = meta?.find(col => col.name === columnName);
   const jsType = columnMeta
     ? convertCHDataTypeToJSType(columnMeta.type)

@@ -1,7 +1,5 @@
 import request from 'supertest';
 
-import { getWorkosSessionCollection } from '@/utils/workosSessionStore';
-
 import {
   authorization,
   callbackPath,
@@ -16,7 +14,7 @@ describe('WorkOS login across Mongo-backed replicas', () => {
   let cookie: string;
   let sid: string;
   const stored = async () =>
-    (await getWorkosSessionCollection(first.store)).findOne({ _id: sid });
+    (await first.store.collectionP).findOne({ _id: sid });
   beforeEach(async () => {
     fixture.authorize.mockReset().mockResolvedValue(authorization);
     fixture.exchange
@@ -29,8 +27,8 @@ describe('WorkOS login across Mongo-backed replicas', () => {
     sid = response.body.id;
   });
   afterEach(async () => {
-    jest.restoreAllMocks();
-    await (await getWorkosSessionCollection(first.store)).deleteMany({});
+    vi.restoreAllMocks();
+    await (await first.store.collectionP).deleteMany({});
     await Promise.all([first.store.close(), second.store.close()]);
   });
 
@@ -91,15 +89,15 @@ describe('WorkOS login across Mongo-backed replicas', () => {
     fixture.exchange.mockRejectedValueOnce(
       new Error('Synthetic exchange failure'),
     );
-    const collection = await getWorkosSessionCollection(first.store);
+    const collection = await first.store.collectionP;
     const update = collection.updateOne.bind(collection);
-    jest
-      .spyOn(collection, 'updateOne')
-      .mockImplementationOnce(async (...args) => {
+    vi.spyOn(collection, 'updateOne').mockImplementationOnce(
+      async (...args) => {
         entered.release();
         await resume.promise;
         return update(...args);
-      });
+      },
+    );
     const callback = request(first.app)
       .get(callbackPath)
       .set('Cookie', cookie)
@@ -120,7 +118,7 @@ describe('WorkOS login across Mongo-backed replicas', () => {
   it('exchanges one code for concurrent callbacks and writes the regenerated SID once', async () => {
     const entered = gate();
     const resume = gate();
-    const save = jest.spyOn(first.store, 'set');
+    const save = vi.spyOn(first.store, 'set');
     fixture.exchange.mockImplementationOnce(async () => {
       entered.release();
       await resume.promise;
@@ -143,9 +141,7 @@ describe('WorkOS login across Mongo-backed replicas', () => {
     expect(fixture.exchange).toHaveBeenCalledTimes(1);
     expect(save).toHaveBeenCalledTimes(1);
     expect(await stored()).toBeNull();
-    const sessions = await (await getWorkosSessionCollection(first.store))
-      .find({})
-      .toArray();
+    const sessions = await (await first.store.collectionP).find({}).toArray();
     expect(sessions).toHaveLength(1);
     expect(JSON.parse(String(sessions[0].session)).workosSession).toBe(
       'new-login',
@@ -198,16 +194,14 @@ describe('WorkOS login across Mongo-backed replicas', () => {
     const response = await callback;
     expect(response.headers.location).toContain('workosDenied');
     expect(response.headers['set-cookie']).toBeUndefined();
-    expect(
-      await (await getWorkosSessionCollection(first.store)).countDocuments(),
-    ).toBe(0);
+    expect(await (await first.store.collectionP).countDocuments()).toBe(0);
   });
 
   it('persists an auth-free new SID once before sending its cookie', async () => {
     const entered = gate();
     const resume = gate();
     const save = first.store.set.bind(first.store);
-    const set = jest
+    const set = vi
       .spyOn(first.store, 'set')
       .mockImplementationOnce((...args) => {
         entered.release();
@@ -225,7 +219,9 @@ describe('WorkOS login across Mongo-backed replicas', () => {
     resume.release();
     expect((await initializing).headers['set-cookie']).toHaveLength(1);
     expect(set).toHaveBeenCalledTimes(1);
-    const sessions = await (await getWorkosSessionCollection(first.store))
+    const sessions = await (
+      await first.store.collectionP
+    )
       .find({ _id: { $ne: sid } })
       .toArray();
     expect(sessions).toHaveLength(1);
@@ -235,21 +231,17 @@ describe('WorkOS login across Mongo-backed replicas', () => {
   });
 
   it('never retries or sends a cookie when an explicit new-SID save and cleanup fail', async () => {
-    const set = jest
+    const set = vi
       .spyOn(first.store, 'set')
       .mockImplementationOnce((_sid, _value, callback) =>
         callback?.(new Error('Synthetic save failure')),
       );
-    jest
-      .spyOn(first.store, 'destroy')
-      .mockImplementationOnce((_sid, callback) =>
-        callback?.(new Error('Synthetic cleanup failure')),
-      );
+    vi.spyOn(first.store, 'destroy').mockImplementationOnce((_sid, callback) =>
+      callback?.(new Error('Synthetic cleanup failure')),
+    );
     const response = await request(first.app).get('/auth/workos').expect(503);
     expect(response.headers['set-cookie']).toBeUndefined();
     expect(set).toHaveBeenCalledTimes(1);
-    expect(
-      await (await getWorkosSessionCollection(first.store)).countDocuments(),
-    ).toBe(1);
+    expect(await (await first.store.collectionP).countDocuments()).toBe(1);
   });
 });

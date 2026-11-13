@@ -1,5 +1,10 @@
 import { useMemo } from 'react';
-import { Control, Controller } from 'react-hook-form';
+import {
+  Control,
+  Controller,
+  type FieldPath,
+  type FieldValues,
+} from 'react-hook-form';
 import { WebhookService } from '@hyperdx/common-utils/dist/types';
 import { ComboboxData, Group, Select } from '@mantine/core';
 import { IconWebhook } from '@tabler/icons-react';
@@ -17,12 +22,12 @@ type Webhook = {
 // (and re-render loop) on every render.
 const NO_TAKEN_WEBHOOK_IDS: string[] = [];
 
-export const WebhookChannelForm = ({
+export const WebhookChannelForm = <T extends FieldValues>({
   control,
   namePrefix = '',
   takenWebhookIds = NO_TAKEN_WEBHOOK_IDS,
 }: {
-  control: Control<any>;
+  control: Control<T>;
   namePrefix?: string;
   /** Webhooks already chosen by the alert's other channels. */
   takenWebhookIds?: string[];
@@ -35,7 +40,7 @@ export const WebhookChannelForm = ({
 
   const hasWebhooks = Array.isArray(webhooks?.data) && webhooks.data.length > 0;
 
-  const webhookIdField = `${namePrefix}webhookId`;
+  const webhookIdField = `${namePrefix}webhookId` as FieldPath<T>;
 
   const options = useMemo<ComboboxData>(() => {
     const taken = new Set(takenWebhookIds);
@@ -78,6 +83,7 @@ export const WebhookChannelForm = ({
             withinPortal: false,
           }}
           required
+          allowDeselect={false}
           size="xs"
           flex={1}
           placeholder={

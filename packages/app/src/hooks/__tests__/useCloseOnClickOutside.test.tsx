@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 
 import { useCloseOnClickOutside } from '@/hooks/useCloseOnClickOutside';
@@ -19,7 +20,7 @@ describe('useCloseOnClickOutside', () => {
     const outside = document.createElement('div');
     document.body.appendChild(outside);
 
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     renderHook(() => useCloseOnClickOutside({ enabled: true, onClose }));
 
     mouseDownOn(outside);
@@ -33,7 +34,7 @@ describe('useCloseOnClickOutside', () => {
     table.appendChild(cell);
     document.body.appendChild(table);
 
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     renderHook(() =>
       useCloseOnClickOutside({
         enabled: true,
@@ -59,7 +60,7 @@ describe('useCloseOnClickOutside', () => {
 
     document.body.append(dialog, dropdown);
 
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     renderHook(() => useCloseOnClickOutside({ enabled: true, onClose }));
 
     mouseDownOn(dialogChild);
@@ -71,7 +72,7 @@ describe('useCloseOnClickOutside', () => {
     const outside = document.createElement('div');
     document.body.appendChild(outside);
 
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     const { rerender, unmount } = renderHook(
       ({ enabled }) => useCloseOnClickOutside({ enabled, onClose }),
       { initialProps: { enabled: false } },

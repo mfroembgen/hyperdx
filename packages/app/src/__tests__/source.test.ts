@@ -1,3 +1,4 @@
+import { type Mock, vi } from 'vitest';
 import { ColumnMetaType } from '@hyperdx/common-utils/dist/clickhouse';
 import { Metadata } from '@hyperdx/common-utils/dist/core/metadata';
 import {
@@ -23,15 +24,15 @@ import {
   useUpdateSource,
 } from '@/source';
 
-jest.mock('../api', () => ({ hdxServer: jest.fn() }));
-jest.mock('../config', () => ({ IS_LOCAL_MODE: false }));
-jest.mock('@mantine/notifications', () => ({
-  notifications: { show: jest.fn() },
+vi.mock('../api', () => ({ hdxServer: vi.fn() }));
+vi.mock('../config', () => ({ IS_LOCAL_MODE: false }));
+vi.mock('@mantine/notifications', () => ({
+  notifications: { show: vi.fn() },
 }));
-jest.mock('@tanstack/react-query', () => ({
-  useQuery: jest.fn(),
-  useMutation: jest.fn(),
-  useQueryClient: jest.fn(),
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: vi.fn(),
+  useMutation: vi.fn(),
+  useQueryClient: vi.fn(),
 }));
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -295,12 +296,12 @@ describe('getTraceDurationNumberFormat', () => {
 
 describe('useUpdateSource', () => {
   it("drops the updated source's cached PromQL lookups", () => {
-    const invalidateQueries = jest.fn();
+    const invalidateQueries = vi.fn();
     // @ts-expect-error return value type
-    jest.mocked(useQueryClient).mockReturnValue({ invalidateQueries });
+    vi.mocked(useQueryClient).mockReturnValue({ invalidateQueries });
     let onSuccess: ((data: unknown, vars: unknown) => void) | undefined;
     // @ts-expect-error param type
-    jest.mocked(useMutation).mockImplementation(options => {
+    vi.mocked(useMutation).mockImplementation(options => {
       // @ts-expect-error return value type
       onSuccess = options.onSuccess;
     });
@@ -318,12 +319,12 @@ describe('useUpdateSource', () => {
 });
 
 describe('useSources validation notifications', () => {
-  const mockUseQuery = useQuery as jest.Mock;
-  const mockHdxServer = hdxServer as jest.Mock;
-  const mockShow = notifications.show as jest.Mock;
+  const mockUseQuery = useQuery as Mock;
+  const mockHdxServer = hdxServer as Mock;
+  const mockShow = notifications.show as Mock;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('reuses the same notification id for repeated validation errors', async () => {
@@ -345,7 +346,7 @@ describe('useSources validation notifications', () => {
     };
 
     mockHdxServer.mockReturnValue({
-      json: jest.fn().mockResolvedValue([invalidSource]),
+      json: vi.fn().mockResolvedValue([invalidSource]),
     });
 
     useSources();
@@ -411,10 +412,10 @@ function makeRawSqlConfig(
 }
 
 describe('useSingleSeriesNumberFormat', () => {
-  const mockUseQuery = useQuery as jest.Mock;
+  const mockUseQuery = useQuery as Mock;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseQuery.mockReturnValue({ data: TRACE_SOURCE });
   });
 
@@ -519,13 +520,13 @@ describe('useSingleSeriesNumberFormat', () => {
 });
 
 describe('useChartNumberFormats', () => {
-  const mockUseQuery = useQuery as jest.Mock;
+  const mockUseQuery = useQuery as Mock;
 
   const META_A = { name: 'col_a', type: 'Float64' } as ColumnMetaType;
   const META_B = { name: 'col_b', type: 'Float64' } as ColumnMetaType;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseQuery.mockReturnValue({ data: TRACE_SOURCE });
   });
 

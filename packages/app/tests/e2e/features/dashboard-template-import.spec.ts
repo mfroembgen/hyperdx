@@ -455,6 +455,7 @@ test.describe('Dashboard Template Import', { tag: ['@dashboard'] }, () => {
       // Pre-create the target dashboard — the mapping dropdown only lists
       // dashboards that already exist in the workspace.
       let targetDashboardId = '';
+
       await test.step('Create a target dashboard for the onClick link', async () => {
         await dashboardPage.goto();
         await dashboardPage.createNewDashboard();
@@ -1414,6 +1415,7 @@ test.describe('Dashboard Template Import', { tag: ['@dashboard'] }, () => {
       });
 
       let exported: Record<string, any> = {};
+
       await test.step('Export the dashboard and verify the downloaded template', async () => {
         exported = await dashboardPage.exportDashboard();
         expect(exported.name).toBe(dashboardName);

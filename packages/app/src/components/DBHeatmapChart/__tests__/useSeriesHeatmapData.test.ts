@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { ResponseJSON } from '@hyperdx/common-utils/dist/clickhouse';
 import {
   BuilderChartConfigWithDateRange,
@@ -8,8 +9,8 @@ import { renderHook } from '@testing-library/react';
 
 import { useSeriesHeatmapData } from '@/components/DBHeatmapChart/useSeriesHeatmapData';
 
-const mockUseQueriedChartConfig = jest.fn();
-jest.mock('@/hooks/useChartConfig', () => ({
+const mockUseQueriedChartConfig = vi.fn();
+vi.mock('@/hooks/useChartConfig', () => ({
   useQueriedChartConfig: (...args: unknown[]) =>
     mockUseQueriedChartConfig(...args),
 }));

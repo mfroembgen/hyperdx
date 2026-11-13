@@ -8,7 +8,9 @@ import Handlebars from 'handlebars';
 import _ from 'lodash';
 import { performance } from 'perf_hooks';
 import { serializeError } from 'serialize-error';
-import { Agent, fetch } from 'undici';
+// Bun resolves the bare `undici` specifier to a built-in fetch that ignores
+// `dispatcher`, which would skip the webhook DNS check. Load the package.
+import { Agent, fetch } from 'undici/index.js';
 
 import { IWebhook } from '@/models/webhook';
 import {

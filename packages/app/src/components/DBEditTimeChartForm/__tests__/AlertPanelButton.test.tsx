@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -8,7 +9,7 @@ describe('AlertPanelButton', () => {
     renderWithMantine(
       <AlertPanelButton
         hasAlert
-        onAddAlert={jest.fn()}
+        onAddAlert={vi.fn()}
         error="Missing time filter"
         warning="References $svc"
       />,
@@ -24,7 +25,7 @@ describe('AlertPanelButton', () => {
     renderWithMantine(
       <AlertPanelButton
         hasAlert={false}
-        onAddAlert={jest.fn()}
+        onAddAlert={vi.fn()}
         error="Missing time filter"
       />,
     );

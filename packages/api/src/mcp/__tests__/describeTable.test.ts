@@ -1,16 +1,20 @@
-const mockQuery = jest.fn();
-const mockGetConnectionById = jest.fn();
+import { vi } from 'vitest';
+const mockQuery = vi.fn();
+const mockGetConnectionById = vi.fn();
 
-jest.mock('@/models/source', () => ({}));
-jest.mock('@/controllers/sources', () => ({}));
-jest.mock('@/controllers/connection', () => ({
+vi.mock('@/models/source', () => ({}));
+vi.mock('@/controllers/sources', () => ({}));
+vi.mock('@/controllers/connection', () => ({
   getConnectionById: (...args: unknown[]) => mockGetConnectionById(...args),
 }));
-jest.mock('@/clickhouse', () => ({
-  ClickhouseClient: jest.fn(() => ({ query: mockQuery })),
+vi.mock('@/clickhouse', () => ({
+  // A function, not an arrow: the code under test calls it with `new`.
+  ClickhouseClient: vi.fn(function () {
+    return { query: mockQuery };
+  }),
 }));
 
-import { ClickHouseError } from '@clickhouse/client-common';
+import { ClickHouseError } from '@clickhouse/client';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { registerDescribeTable } from '@/mcp/tools/sources/describeTable';
@@ -35,7 +39,7 @@ type QueryArgs = {
 };
 
 const queryCalls = (): QueryArgs[] =>
-  mockQuery.mock.calls.map(([args]: [QueryArgs]) => args);
+  mockQuery.mock.calls.map(([args]): QueryArgs => args);
 
 function respondWith(routes: Record<string, unknown[] | Error>) {
   mockQuery.mockImplementation(async ({ query: sql }: QueryArgs) => {
@@ -50,8 +54,7 @@ function respondWith(routes: Record<string, unknown[] | Error>) {
 
 function getHandler() {
   let handler:
-    | ((args: Record<string, unknown>) => Promise<ToolResult>)
-    | undefined;
+    ((args: Record<string, unknown>) => Promise<ToolResult>) | undefined;
   const registerTool: RegisterToolFn = (_name, config, h) => {
     handler = args => h(config.inputSchema.parse(args));
   };

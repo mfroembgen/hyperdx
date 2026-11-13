@@ -1,25 +1,26 @@
+import { type Mock, vi } from 'vitest';
 // Mirrors the local-mode tests in `dashboard.test.ts` but exercises the
 // non-local branch of `fetchDashboards`: `hdxServer('dashboards').json<>()`
 // followed by the same `normalizeDashboardTileColors` pass. The two files
 // are split because `IS_LOCAL_MODE` is bound at module load and the two
-// branches need different top-level mocks; `jest.doMock` inside
-// `jest.isolateModules` did not override the hoisted `jest.mock` factory
+// branches need different top-level mocks; `vi.doMock` inside
+// `vi.isolateModules` did not override the hoisted `vi.mock` factory
 // reliably enough to share a file.
-jest.mock('../config', () => ({ IS_LOCAL_MODE: false }));
-jest.mock('../api', () => ({
+vi.mock('../config', () => ({ IS_LOCAL_MODE: false }));
+vi.mock('../api', () => ({
   __esModule: true,
   default: { useMe: () => ({ data: null }) },
-  hdxServer: jest.fn(),
-  useMarkOnboardingTaskComplete: () => jest.fn(),
-  useInvalidateTags: () => jest.fn(),
-  useCompleteOnboardingTask: () => ({ mutate: jest.fn() }),
+  hdxServer: vi.fn(),
+  useMarkOnboardingTaskComplete: () => vi.fn(),
+  useInvalidateTags: () => vi.fn(),
+  useCompleteOnboardingTask: () => ({ mutate: vi.fn() }),
 }));
-jest.mock('@mantine/notifications', () => ({
-  notifications: { show: jest.fn() },
+vi.mock('@mantine/notifications', () => ({
+  notifications: { show: vi.fn() },
 }));
-jest.mock('nuqs', () => ({
-  parseAsJson: jest.fn(),
-  useQueryState: jest.fn(),
+vi.mock('nuqs', () => ({
+  parseAsJson: vi.fn(),
+  useQueryState: vi.fn(),
 }));
 
 // Capture each mutation's `mutationFn` so the tests can invoke it directly
@@ -27,15 +28,15 @@ jest.mock('nuqs', () => ({
 // call appends its config to `mutationFnCalls`; tests pull the most
 // recently registered fn and invoke it as if `mutate({...})` had run.
 const mutationFnCalls: Array<(input: any) => any> = [];
-jest.mock('@tanstack/react-query', () => ({
-  useQuery: jest.fn(),
-  useMutation: jest.fn((cfg: { mutationFn: (input: any) => any }) => {
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: vi.fn(),
+  useMutation: vi.fn((cfg: { mutationFn: (input: any) => any }) => {
     mutationFnCalls.push(cfg.mutationFn);
-    return { mutate: jest.fn(), mutateAsync: jest.fn() };
+    return { mutate: vi.fn(), mutateAsync: vi.fn() };
   }),
-  useQueryClient: jest.fn(() => ({ invalidateQueries: jest.fn() })),
+  useQueryClient: vi.fn(() => ({ invalidateQueries: vi.fn() })),
 }));
-jest.mock('@/utils', () => ({ hashCode: jest.fn(() => 0) }));
+vi.mock('@/utils', () => ({ hashCode: vi.fn(() => 0) }));
 
 import { LEGACY_CHART_PALETTE_TOKEN_MAP } from '@hyperdx/common-utils/dist/types';
 
@@ -47,7 +48,7 @@ import {
   useUpdateDashboard,
 } from '@/dashboard';
 
-const hdxServerMock = hdxServer as jest.Mock;
+const hdxServerMock = hdxServer as Mock;
 
 const LEGACY_TO_HUE_CASES = Object.entries(LEGACY_CHART_PALETTE_TOKEN_MAP);
 
@@ -62,7 +63,7 @@ const remoteDashboardWithTileColor = (color: unknown) => [
 
 const setRemotePayload = (payload: unknown) => {
   hdxServerMock.mockReturnValue({
-    json: jest.fn().mockResolvedValue(payload),
+    json: vi.fn().mockResolvedValue(payload),
   });
 };
 
@@ -146,7 +147,7 @@ describe('useCreateDashboard / useUpdateDashboard write-time normalization', () 
     // hdxServer is invoked as `hdxServer(url, opts).json<T>()` for POST
     // but as `hdxServer(url, opts)` for PATCH; mock to handle both.
     hdxServerMock.mockReturnValue({
-      json: jest.fn().mockResolvedValue({ id: 'a' }),
+      json: vi.fn().mockResolvedValue({ id: 'a' }),
     });
   });
 

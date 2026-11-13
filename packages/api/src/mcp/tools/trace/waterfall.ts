@@ -440,7 +440,7 @@ export function registerTraceWaterfall({
           dateRange: [startDate, endDate],
         };
 
-        let pickResult: { data?: Array<Record<string, unknown>> } = {};
+        let pickResult: { data?: Array<Record<string, unknown>> };
         try {
           pickResult = (await clickhouseClient.queryChartConfig({
             config: pickConfig as ChartConfigWithDateRange,

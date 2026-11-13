@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import {
   ClickHouseQueryError,
   convertCHDataTypeToJSType,
@@ -81,10 +83,10 @@ describe('isMissingColumnError', () => {
 describe('extractColumnReferencesFromKey', () => {
   // Suppress expected console.error from parse failures in edge-case tests
   beforeAll(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
   afterAll(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should extract column references from simple column names', () => {
@@ -215,19 +217,19 @@ class TestClickhouseClient extends ClickhouseClient {
 
 describe('BaseClickhouseClient.logQuery', () => {
   const makeLogger = () => ({
-    trace: jest.fn(),
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('stays silent when no customLogger is configured', () => {
-    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
     const client = new TestClickhouseClient({ host: 'http://localhost' });
     client.logQuery('SELECT 1 FROM system.one');
     expect(debugSpy).not.toHaveBeenCalled();

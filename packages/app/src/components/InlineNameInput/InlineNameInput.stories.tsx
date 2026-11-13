@@ -12,7 +12,7 @@ import {
   Stack,
   Text,
 } from '@mantine/core';
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { IconX } from '@tabler/icons-react';
 
 import { InlineNameInput, InlineNameInputControlled } from './InlineNameInput';

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 
 import { makeTraceSource } from '@/llm/__fixtures__/sources';
@@ -6,7 +7,7 @@ import { getLLMExpressions, llmGatedSumExpr } from '@/llm/lib/expressions';
 
 // Capture the chart config the tab hands to DBTableChart.
 const tableChartProps: any[] = [];
-jest.mock('@/components/DBTableChart', () => ({
+vi.mock('@/components/DBTableChart', () => ({
   __esModule: true,
   default: (props: unknown) => {
     tableChartProps.push(props);
@@ -15,7 +16,7 @@ jest.mock('@/components/DBTableChart', () => ({
 }));
 
 // Reactive URL params for row-href construction (see buildSessionRowHref).
-jest.mock('next/navigation', () => ({
+vi.mock('next/navigation', () => ({
   useSearchParams: () =>
     new URLSearchParams('tab=sessions&where=foo&from=1&to=2'),
 }));

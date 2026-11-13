@@ -1,10 +1,11 @@
+import { vi } from 'vitest';
 import { DisplayType } from '@hyperdx/common-utils/dist/types';
 
 import { prometheusApi } from '@/api';
 import { queryPromqlChartConfig } from '@/utils/promqlChartQuery';
 
-jest.mock('@/api', () => ({
-  prometheusApi: { query: jest.fn(), queryRange: jest.fn() },
+vi.mock('@/api', () => ({
+  prometheusApi: { query: vi.fn(), queryRange: vi.fn() },
 }));
 
 describe('queryPromqlChartConfig', () => {
@@ -14,15 +15,13 @@ describe('queryPromqlChartConfig', () => {
   ];
 
   beforeEach(() => {
-    jest
-      .mocked(prometheusApi.query)
+    vi.mocked(prometheusApi.query)
       .mockReset()
       .mockResolvedValue({
         status: 'success',
         data: { resultType: 'vector', result: [] },
       });
-    jest
-      .mocked(prometheusApi.queryRange)
+    vi.mocked(prometheusApi.queryRange)
       .mockReset()
       .mockResolvedValue({
         status: 'success',
@@ -52,7 +51,7 @@ describe('queryPromqlChartConfig', () => {
         {},
       );
 
-      const params = jest.mocked(endpoint).mock.calls[0][0];
+      const params = vi.mocked(endpoint).mock.calls[0][0];
       expect(params).toHaveProperty('sourceId', 'source-promql');
       expect(params).not.toHaveProperty('connectionId');
       expect(params).not.toHaveProperty('database');
@@ -123,7 +122,7 @@ describe('queryPromqlChartConfig', () => {
   describe('series labels of a time chart', () => {
     const t0 = dateRange[0].getTime() / 1000;
     const mockRange = (...metrics: Record<string, string>[][]) => {
-      const mock = jest.mocked(prometheusApi.queryRange).mockReset();
+      const mock = vi.mocked(prometheusApi.queryRange).mockReset();
       for (const series of metrics) {
         mock.mockResolvedValueOnce({
           status: 'success',
@@ -191,8 +190,7 @@ describe('queryPromqlChartConfig', () => {
   });
 
   it('runs a heatmap as a range query of its first expression', async () => {
-    jest
-      .mocked(prometheusApi.queryRange)
+    vi.mocked(prometheusApi.queryRange)
       .mockReset()
       .mockResolvedValue({
         status: 'success',
@@ -247,8 +245,7 @@ describe('queryPromqlChartConfig', () => {
   });
 
   it('keys a histogram heatmap rows by bucket, not series name', async () => {
-    jest
-      .mocked(prometheusApi.queryRange)
+    vi.mocked(prometheusApi.queryRange)
       .mockReset()
       .mockResolvedValue({
         status: 'success',

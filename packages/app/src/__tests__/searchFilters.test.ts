@@ -1,4 +1,5 @@
 import { enableMapSet } from 'immer';
+import { vi } from 'vitest';
 import { filtersToQuery } from '@hyperdx/common-utils/dist/filters';
 import type { Filter } from '@hyperdx/common-utils/dist/types';
 import { act, renderHook } from '@testing-library/react';
@@ -20,7 +21,7 @@ describe('searchFilters', () => {
   ])(
     'preserves quoted SQL expression %s through filter changes',
     expression => {
-      const onFilterChange = jest.fn();
+      const onFilterChange = vi.fn();
       const emptyQuery: Filter[] = [];
       const { result, rerender } = renderHook(
         ({ searchQuery }: { searchQuery: Filter[] }) =>
@@ -79,7 +80,7 @@ describe('searchFilters', () => {
       column === 'ResourceAttributes'
         ? 'ResourceAttributes.`k8s`.`namespace`.`name`'
         : key;
-    const onFilterChange = jest.fn();
+    const onFilterChange = vi.fn();
     const emptyQuery: Filter[] = [];
     const { result, rerender } = renderHook(
       ({ searchQuery }: { searchQuery: Filter[] }) =>
@@ -1053,7 +1054,7 @@ describe('searchFilters', () => {
   });
 
   describe('useSearchPageFilterState', () => {
-    const onFilterChange = jest.fn();
+    const onFilterChange = vi.fn();
 
     it('adding filter to empty query', () => {
       const { result } = renderHook(() =>
@@ -1223,7 +1224,7 @@ describe('searchFilters', () => {
 
     describe('retainFiltersByColumns', () => {
       it('returns [] and does not touch URL when filter state is empty', () => {
-        const onFilterChangeLocal = jest.fn();
+        const onFilterChangeLocal = vi.fn();
         const { result } = renderHook(() =>
           useSearchPageFilterState({
             searchQuery: [],
@@ -1244,7 +1245,7 @@ describe('searchFilters', () => {
       });
 
       it('keeps filters whose root column exists on the new source', () => {
-        const onFilterChangeLocal = jest.fn();
+        const onFilterChangeLocal = vi.fn();
         const { result } = renderHook(() =>
           useSearchPageFilterState({
             searchQuery: [
@@ -1269,7 +1270,7 @@ describe('searchFilters', () => {
       });
 
       it('keeps nested JSON/Map keys when the root column exists', () => {
-        const onFilterChangeLocal = jest.fn();
+        const onFilterChangeLocal = vi.fn();
         const { result } = renderHook(() =>
           useSearchPageFilterState({
             searchQuery: [
@@ -1295,7 +1296,7 @@ describe('searchFilters', () => {
       });
 
       it('drops filters whose root column is missing and returns their keys', () => {
-        const onFilterChangeLocal = jest.fn();
+        const onFilterChangeLocal = vi.fn();
         const { result } = renderHook(() =>
           useSearchPageFilterState({
             searchQuery: [
@@ -1319,7 +1320,7 @@ describe('searchFilters', () => {
       });
 
       it('keeps matching filters and drops the rest in mixed input', () => {
-        const onFilterChangeLocal = jest.fn();
+        const onFilterChangeLocal = vi.fn();
         const { result } = renderHook(() =>
           useSearchPageFilterState({
             searchQuery: [

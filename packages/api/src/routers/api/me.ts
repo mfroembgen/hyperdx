@@ -9,7 +9,6 @@ import {
   OnboardingDataSchema,
 } from '@hyperdx/common-utils/dist/types';
 import express from 'express';
-import { validateRequest } from 'zod-express-middleware';
 
 import { AI_API_KEY, ANTHROPIC_API_KEY, USAGE_STATS_ENABLED } from '@/config';
 import { getTeam } from '@/controllers/team';
@@ -18,6 +17,7 @@ import {
   rotateUserAccessKey,
   setOnboardingDismissed,
 } from '@/controllers/user';
+import { validateRequest } from '@/middleware/validation';
 import { Api404Error } from '@/utils/errors';
 import { sendJson } from '@/utils/serialization';
 

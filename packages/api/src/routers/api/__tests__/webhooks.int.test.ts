@@ -1,4 +1,6 @@
+import { AlertThresholdType } from '@hyperdx/common-utils/dist/types';
 import { Types } from 'mongoose';
+import { type MockInstance, vi } from 'vitest';
 
 import { getLoggedInAgent, getServer } from '@/fixtures';
 import Alert from '@/models/alert';
@@ -273,7 +275,7 @@ describe('webhooks router', () => {
     });
 
     // 2. Create an alert pointing to that webhook
-    await Alert.create({
+    await new Alert({
       team: team._id,
       name: 'Test Alert',
       channel: {
@@ -284,8 +286,8 @@ describe('webhooks router', () => {
       groupBy: 'test',
       interval: '5m',
       threshold: 1,
-      thresholdType: 'above',
-    });
+      thresholdType: AlertThresholdType.ABOVE,
+    }).save();
 
     // 3. Attempt to delete — should be blocked
     const response = await agent.delete(`/webhooks/${webhook._id}`).expect(409);
@@ -305,7 +307,7 @@ describe('webhooks router', () => {
       team: team._id,
     });
 
-    const alert = await Alert.create({
+    const alert = await new Alert({
       team: team._id,
       name: 'Test Alert',
       channel: {
@@ -316,8 +318,8 @@ describe('webhooks router', () => {
       groupBy: 'test',
       interval: '5m',
       threshold: 1,
-      thresholdType: 'above',
-    });
+      thresholdType: AlertThresholdType.ABOVE,
+    }).save();
 
     // First attempt should fail
     await agent.delete(`/webhooks/${webhook._id}`).expect(409);
@@ -766,7 +768,7 @@ describe('webhooks router', () => {
 
     it('POST /test - rejects a broken body without sending', async () => {
       const { agent } = await getLoggedInAgent(server);
-      const spy = jest.spyOn(transports, 'handleSendGenericWebhook');
+      const spy = vi.spyOn(transports, 'handleSendGenericWebhook');
 
       const response = await agent
         .post('/webhooks/test')
@@ -1396,14 +1398,14 @@ describe('webhooks router', () => {
   });
 
   describe('POST /test - test webhook', () => {
-    let genericSpy: jest.SpyInstance;
-    let slackSpy: jest.SpyInstance;
+    let genericSpy: MockInstance;
+    let slackSpy: MockInstance;
 
     beforeEach(() => {
-      genericSpy = jest
+      genericSpy = vi
         .spyOn(transports, 'handleSendGenericWebhook')
         .mockResolvedValue(undefined);
-      slackSpy = jest
+      slackSpy = vi
         .spyOn(transports, 'handleSendSlackWebhook')
         .mockResolvedValue(undefined);
     });
@@ -1633,7 +1635,7 @@ describe('webhooks router', () => {
     it('returns an error without making a request for a private IP webhook (SSRF prevention)', async () => {
       const { agent } = await getLoggedInAgent(server);
       genericSpy.mockRestore();
-      const fetchMock = jest.mocked(global.fetch);
+      const fetchMock = vi.mocked(global.fetch);
       fetchMock.mockClear();
 
       const response = await agent
@@ -1652,7 +1654,7 @@ describe('webhooks router', () => {
     it('returns an error without making a request for a private IPv6 webhook', async () => {
       const { agent } = await getLoggedInAgent(server);
       genericSpy.mockRestore();
-      const fetchMock = jest.mocked(global.fetch);
+      const fetchMock = vi.mocked(global.fetch);
       fetchMock.mockClear();
 
       const response = await agent
@@ -1671,7 +1673,7 @@ describe('webhooks router', () => {
     it('returns an error without making a request for localhost with a trailing dot', async () => {
       const { agent } = await getLoggedInAgent(server);
       genericSpy.mockRestore();
-      const fetchMock = jest.mocked(global.fetch);
+      const fetchMock = vi.mocked(global.fetch);
       fetchMock.mockClear();
 
       const response = await agent
@@ -1711,7 +1713,7 @@ describe('webhooks router', () => {
 
     it('returns 400 without making a request when URL is invalid', async () => {
       const { agent } = await getLoggedInAgent(server);
-      const fetchMock = jest.mocked(global.fetch);
+      const fetchMock = vi.mocked(global.fetch);
       fetchMock.mockClear();
 
       await agent

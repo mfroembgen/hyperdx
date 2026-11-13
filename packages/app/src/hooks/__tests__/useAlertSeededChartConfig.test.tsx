@@ -1,20 +1,21 @@
+import { vi } from 'vitest';
 import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import { notifications } from '@mantine/notifications';
 import { renderHook } from '@testing-library/react';
 
 import { useAlertSeededChartConfig } from '@/hooks/useAlertSeededChartConfig';
 
-const useAlert = jest.fn();
+const useAlert = vi.fn();
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useAlert: (id: string | undefined) => useAlert(id),
   },
 }));
 
-jest.mock('@mantine/notifications', () => ({
-  notifications: { show: jest.fn() },
+vi.mock('@mantine/notifications', () => ({
+  notifications: { show: vi.fn() },
 }));
 
 const chartConfig = {
@@ -25,8 +26,8 @@ const chartConfig = {
   where: '',
 };
 
-const setChartConfig = jest.fn();
-const clearAlertId = jest.fn();
+const setChartConfig = vi.fn();
+const clearAlertId = vi.fn();
 
 const render = (alertId: string | null) =>
   renderHook(() =>
@@ -34,7 +35,7 @@ const render = (alertId: string | null) =>
   );
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   useAlert.mockReturnValue({
     data: undefined,
     isLoading: false,

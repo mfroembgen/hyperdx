@@ -9,7 +9,6 @@ import {
 } from '@hyperdx/common-utils/dist/types';
 import express from 'express';
 import { z } from 'zod';
-import { processRequest, validateRequest } from 'zod-express-middleware';
 
 import {
   createOrgApiKey,
@@ -19,6 +18,7 @@ import {
   updateOrgApiKeyDescription,
 } from '@/controllers/orgApiKey';
 import { getNonNullUserWithTeam } from '@/middleware/auth';
+import { processRequest, validateRequest } from '@/middleware/validation';
 import { getCounter } from '@/utils/instrumentation';
 import { objectIdSchema } from '@/utils/zod';
 

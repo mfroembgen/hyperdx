@@ -6,8 +6,8 @@ import request from 'supertest';
 import { workos } from '@/utils/workosClient';
 import { authenticateWorkosSession } from '@/utils/workosSession';
 
-jest.mock('@/config', () => ({
-  ...jest.requireActual<typeof import('@/config')>('@/config'),
+vi.mock('@/config', async () => ({
+  ...(await vi.importActual<typeof import('@/config')>('@/config')),
   WORKOS: {
     apiKey: 'fixture-api-key',
     clientId: 'client_app',
@@ -17,7 +17,7 @@ jest.mock('@/config', () => ({
 }));
 
 // Persistence is mocked here; the Mongo integration suite tests atomicity.
-jest.mock('@/utils/workosSessionStore', () => ({
+vi.mock('@/utils/workosSessionStore', () => ({
   replaceStoredWorkosSession: async (
     req: express.Request,
     expected: string,
@@ -118,7 +118,7 @@ describe('Native WorkOS SDK session verification and rotation', () => {
     const pair = await generateKeyPair('RS256', { extractable: true });
     key = pair.privateKey;
     jwk = await exportJWK(pair.publicKey);
-    jest.mocked(global.fetch).mockImplementation(async (input, options) => {
+    vi.mocked(global.fetch).mockImplementation(async (input, options) => {
       const url = String(input);
       if (url.includes('/sso/jwks/'))
         return new Response(

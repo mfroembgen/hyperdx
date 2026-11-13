@@ -1,8 +1,9 @@
+import { vi } from 'vitest';
 import { screen } from '@testing-library/react';
 
 import { HeatmapTooltip } from '@/components/DBHeatmapChart/HeatmapTooltip';
 
-jest.mock('@/useFormatTime', () => ({
+vi.mock('@/useFormatTime', () => ({
   FormatTime: ({ value }: { value: number }) => <span>time:{value}</span>,
 }));
 
@@ -91,7 +92,7 @@ describe('HeatmapTooltip', () => {
   });
 
   it('renders the tooltip outside the chart container, in viewport coordinates', () => {
-    const viewportHeight = jest
+    const viewportHeight = vi
       .spyOn(document.documentElement, 'clientHeight', 'get')
       .mockReturnValue(1000);
     const { container } = renderTooltip();
@@ -108,10 +109,10 @@ describe('HeatmapTooltip', () => {
 
   it('keeps the tooltip inside the viewport near its bottom and right edges', () => {
     const viewport = [
-      jest
+      vi
         .spyOn(document.documentElement, 'clientHeight', 'get')
         .mockReturnValue(400),
-      jest
+      vi
         .spyOn(document.documentElement, 'clientWidth', 'get')
         .mockReturnValue(1200),
     ];

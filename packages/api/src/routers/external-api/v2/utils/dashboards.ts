@@ -32,21 +32,20 @@ import {
   DashboardContainerSchema,
   DisplayType,
   HeatmapMode,
-  isLogSource,
   isOnClickDashboardById,
   isOnClickSearchById,
   isPromqlSource,
-  isTraceSource,
   NumberTileColorCondition,
   NumberTileColorConditionSchema,
   PromqlSavedChartConfig,
   RawSqlSavedChartConfig,
   resolveChartPaletteToken,
   SavedChartConfig,
+  SourceKind,
 } from '@hyperdx/common-utils/dist/types';
 import { SearchConditionLanguageSchema as whereLanguageSchema } from '@hyperdx/common-utils/dist/types';
-import { pick } from 'lodash';
 import _ from 'lodash';
+import { pick } from 'lodash';
 import mongoose from 'mongoose';
 import { z } from 'zod';
 
@@ -770,7 +769,18 @@ function convertTileToExternalChart(
 }
 
 export function convertToExternalDashboard(
-  dashboard: DashboardDocument,
+  dashboard: Pick<
+    DashboardDocument,
+    | '_id'
+    | 'name'
+    | 'tiles'
+    | 'tags'
+    | 'filters'
+    | 'savedQuery'
+    | 'savedQueryLanguage'
+    | 'savedFilterValues'
+    | 'containers'
+  >,
   {
     hidePromql = false,
   }: {
@@ -1555,7 +1565,9 @@ async function getInvalidOnClickSearchSources(
   if (sourceIds.size === 0) return [];
 
   const sources = await getSources(team.toString());
-  const validSources = sources.filter(s => isLogSource(s) || isTraceSource(s));
+  const validSources = sources.filter(
+    s => s.kind === SourceKind.Log || s.kind === SourceKind.Trace,
+  );
   const validSourceIds = new Set(validSources.map(s => s._id.toString()));
   return [...sourceIds].filter(id => !validSourceIds.has(id));
 }
@@ -1888,13 +1900,9 @@ export async function cleanupDashboardAlerts({
 // Body validation schemas
 // --------------------------------------------------------------------------------
 
-function buildDashboardBodySchema(filterSchema: z.ZodTypeAny): z.ZodEffects<
-  z.ZodObject<
-    typeof dashboardBodyBaseShape & {
-      filters: z.ZodOptional<z.ZodArray<z.ZodTypeAny>>;
-    }
-  >
-> {
+function buildDashboardBodySchema<T extends z.ZodType<ExternalDashboardFilter>>(
+  filterSchema: T,
+) {
   return z
     .object({
       ...dashboardBodyBaseShape,

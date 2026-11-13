@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { NextSeo } from 'next-seo';
 import {
   Button,
   List,
@@ -31,7 +31,9 @@ export default function JoinTeam() {
 
   return (
     <div className="AuthPage">
-      <NextSeo title={title} />
+      <Head>
+        <title>{title}</title>
+      </Head>
       <div className="d-flex align-items-center justify-content-center vh-100 p-2">
         <div style={{ width: '26rem', maxWidth: '100%' }}>
           <div className="text-center mb-4">

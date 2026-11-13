@@ -6,6 +6,7 @@ import {
   Tile,
 } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
+import { vi } from 'vitest';
 
 import {
   makeAlertChartConfig,
@@ -55,7 +56,7 @@ beforeAll(async () => {
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
 const mockMetadata = {
-  getColumn: jest.fn().mockImplementation(({ column }) => {
+  getColumn: vi.fn().mockImplementation(({ column }) => {
     const columnMap = {
       Timestamp: { name: 'Timestamp', type: 'DateTime' },
       Body: { name: 'Body', type: 'String' },
@@ -64,15 +65,15 @@ const mockMetadata = {
     };
     return Promise.resolve(columnMap[column]);
   }),
-  getColumns: jest.fn().mockResolvedValue([]),
-  getMapKeys: jest.fn().mockResolvedValue([]),
-  getMapValues: jest.fn().mockResolvedValue([]),
-  getAllFields: jest.fn().mockResolvedValue([]),
-  getTableMetadata: jest.fn().mockResolvedValue({}),
-  getClickHouseSettings: jest.fn().mockReturnValue({}),
-  setClickHouseSettings: jest.fn(),
-  getSkipIndices: jest.fn().mockResolvedValue([]),
-  getSetting: jest.fn().mockResolvedValue(undefined),
+  getColumns: vi.fn().mockResolvedValue([]),
+  getMapKeys: vi.fn().mockResolvedValue([]),
+  getMapValues: vi.fn().mockResolvedValue([]),
+  getAllFields: vi.fn().mockResolvedValue([]),
+  getTableMetadata: vi.fn().mockResolvedValue({}),
+  getClickHouseSettings: vi.fn().mockReturnValue({}),
+  setClickHouseSettings: vi.fn(),
+  getSkipIndices: vi.fn().mockResolvedValue([]),
+  getSetting: vi.fn().mockResolvedValue(undefined),
 } as any;
 
 const sampleLogsCsv = [
@@ -82,15 +83,15 @@ const sampleLogsCsv = [
 ].join('\n');
 
 const sampleLogsResultSet = () => ({
-  json: jest.fn().mockResolvedValue({ data: [] }),
-  text: jest.fn().mockResolvedValue(sampleLogsCsv),
+  json: vi.fn().mockResolvedValue({ data: [] }),
+  text: vi.fn().mockResolvedValue(sampleLogsCsv),
 });
 
 // Typed separately from the client so tests can swap the implementation
 // without spying through the `any` cast below, which erases the arg types.
 const defaultClickhouseQuery = async (_props: { query: string }) =>
   sampleLogsResultSet();
-const mockClickhouseQuery = jest.fn(defaultClickhouseQuery);
+const mockClickhouseQuery = vi.fn(defaultClickhouseQuery);
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
 const mockClickhouseClient = {
@@ -129,8 +130,8 @@ const makeSearchView = (
   },
   source: {
     id: 'fake-source-id',
-    kind: SourceKind.Log,
-    team: 'team-123',
+    kind: SourceKind.Log as const,
+    team: new mongoose.Types.ObjectId(),
     from: { databaseName: 'default', tableName: 'otel_logs' },
     timestampValueExpression: 'Timestamp',
     connection: 'connection-123',
@@ -338,9 +339,9 @@ describe('renderAlertTemplate', () => {
 
           // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
           const maliciousClickhouseClient = {
-            query: jest.fn().mockResolvedValue({
-              json: jest.fn().mockResolvedValue({ data: [] }),
-              text: jest.fn().mockResolvedValue(maliciousCsv),
+            query: vi.fn().mockResolvedValue({
+              json: vi.fn().mockResolvedValue({ data: [] }),
+              text: vi.fn().mockResolvedValue(maliciousCsv),
             }),
           } as any;
 

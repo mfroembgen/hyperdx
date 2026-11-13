@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   AlertSource,
   AlertThresholdType,
@@ -7,7 +8,7 @@ import { screen } from '@testing-library/react';
 import { AlertDetailProperties } from '@/components/alerts/AlertDetailProperties';
 import type { AlertsPageItem } from '@/types';
 
-jest.mock('@/api', () => ({
+vi.mock('@/api', () => ({
   __esModule: true,
   default: {
     useWebhooks: () => ({
@@ -23,7 +24,7 @@ jest.mock('@/api', () => ({
 
 // Render raw ISO timestamps so time assertions don't depend on the test
 // runner's timezone or the user's clock-format preference.
-jest.mock('@/useFormatTime', () => ({
+vi.mock('@/useFormatTime', () => ({
   FormatTime: ({ value }: { value?: number | string | Date }) =>
     value ? new Date(value).toISOString() : null,
 }));

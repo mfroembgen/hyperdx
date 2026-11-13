@@ -1,3 +1,4 @@
+import { DisplayType } from '@hyperdx/common-utils/dist/types';
 import mongoose from 'mongoose';
 
 import { createTeam } from '@/controllers/team';
@@ -125,7 +126,7 @@ describe('backfillAlertDisplayFields', () => {
         ...baseAlert,
         team: team._id,
         source: AlertSource.INLINE,
-        chartConfig: { name: 'CPU usage', displayType: 'line' },
+        chartConfig: { name: 'CPU usage', displayType: DisplayType.Line },
       },
     ]);
 

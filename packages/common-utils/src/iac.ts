@@ -56,12 +56,7 @@ const TERRAFORM_VERSION_CONSTRAINT = '>= 1.5.0';
 export const IAC_MANIFEST_LIMIT = 1000;
 
 export type IacResourceType =
-  | 'dashboard'
-  | 'alert'
-  | 'saved_search'
-  | 'source'
-  | 'connection'
-  | 'webhook';
+  'dashboard' | 'alert' | 'saved_search' | 'source' | 'connection' | 'webhook';
 
 export const TERRAFORM_RESOURCE_TYPES: Record<IacResourceType, string> = {
   dashboard: 'clickhouse_clickstack_dashboard',

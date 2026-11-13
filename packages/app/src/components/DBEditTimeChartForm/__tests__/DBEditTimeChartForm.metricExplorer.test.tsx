@@ -5,6 +5,7 @@
  * tests past the 5s-per-test budget under parallel load.
  */
 import React from 'react';
+import { vi } from 'vitest';
 import {
   DisplayType,
   MetricsDataType,
@@ -23,25 +24,25 @@ import DBEditTimeChartForm from '@/components/DBEditTimeChartForm';
  * for CPU with the rest of the run. Verified pre-existing: the slowest tests
  * here time out the same way on a clean origin/main checkout.
  */
-jest.setTimeout(20_000);
+vi.setConfig({ testTimeout: 20_000 });
 
 // Mock the hooks that fetch data
-jest.mock('@/hooks/useFetchMetricResourceAttrs', () => ({
-  useFetchMetricResourceAttrs: jest.fn().mockReturnValue({
+vi.mock('@/hooks/useFetchMetricResourceAttrs', () => ({
+  useFetchMetricResourceAttrs: vi.fn().mockReturnValue({
     data: [],
   }),
-  parseAttributeKeysFromSuggestions: jest.fn().mockReturnValue([]),
+  parseAttributeKeysFromSuggestions: vi.fn().mockReturnValue([]),
 }));
 
-jest.mock('@/hooks/useFetchMetricMetadata', () => ({
-  useFetchMetricMetadata: jest.fn().mockReturnValue({
+vi.mock('@/hooks/useFetchMetricMetadata', () => ({
+  useFetchMetricMetadata: vi.fn().mockReturnValue({
     data: null,
   }),
 }));
 
-jest.mock('@/hooks/useMetadata', () => ({
-  useMetadataWithSettings: jest.fn().mockReturnValue({}),
-  useGetKeyValues: jest.fn().mockReturnValue({
+vi.mock('@/hooks/useMetadata', () => ({
+  useMetadataWithSettings: vi.fn().mockReturnValue({}),
+  useGetKeyValues: vi.fn().mockReturnValue({
     data: [
       {
         key: 'MetricName',
@@ -49,15 +50,15 @@ jest.mock('@/hooks/useMetadata', () => ({
       },
     ],
   }),
-  useGetValuesDistribution: jest.fn().mockReturnValue({
+  useGetValuesDistribution: vi.fn().mockReturnValue({
     data: undefined,
     isFetching: false,
     error: undefined,
   }),
 }));
 
-jest.mock('@/source', () => ({
-  useSource: jest.fn().mockImplementation(props => {
+vi.mock('@/source', () => ({
+  useSource: vi.fn().mockImplementation(props => {
     if (props && props.id === 'metric-source') {
       return {
         data: {
@@ -80,13 +81,13 @@ jest.mock('@/source', () => ({
     }
     return { data: undefined };
   }),
-  getFirstTimestampValueExpression: jest.fn().mockReturnValue('Timestamp'),
-  getFirstSeriesNumberFormat: jest.fn().mockReturnValue(undefined),
-  useSources: jest.fn().mockReturnValue({ data: [] }),
+  getFirstTimestampValueExpression: vi.fn().mockReturnValue('Timestamp'),
+  getFirstSeriesNumberFormat: vi.fn().mockReturnValue(undefined),
+  useSources: vi.fn().mockReturnValue({ data: [] }),
 }));
 
 // What the stubbed explorer reports as staged when a metric is applied. The
-// `mock` prefix is required for a jest.mock factory to close over it.
+// `mock` prefix is required for a vi.mock factory to close over it.
 let mockStagedWhere: string[] = [];
 let mockStagedGroupBy: string[] = [];
 
@@ -94,7 +95,7 @@ let mockStagedGroupBy: string[] = [];
 // down to "emit a chosen metric", so these tests cover only the form wiring —
 // mounting the real tree six times pushed this suite past the 5s-per-test
 // budget under parallel load.
-jest.mock('@/components/MetricExplorer/MetricExplorerModal', () => ({
+vi.mock('@/components/MetricExplorer/MetricExplorerModal', () => ({
   MetricExplorerModal: ({
     opened,
     onApply,
@@ -136,7 +137,7 @@ jest.mock('@/components/MetricExplorer/MetricExplorerModal', () => ({
     ) : null,
 }));
 
-jest.mock('../../MetricNameSelect', () => ({
+vi.mock('../../MetricNameSelect', () => ({
   MetricNameSelect: (props: any) => {
     const { error, onFocus, setMetricName, metricName } = props;
     const testId = props['data-testid'];
@@ -159,7 +160,7 @@ jest.mock('../../MetricNameSelect', () => ({
   },
 }));
 
-jest.mock('../../SourceSelect', () => ({
+vi.mock('../../SourceSelect', () => ({
   SourceSelectControlled: () => (
     <select data-testid="source-selector" defaultValue="metric-source">
       <option value="metric-source">Metric Source</option>
@@ -167,47 +168,47 @@ jest.mock('../../SourceSelect', () => ({
   ),
 }));
 
-jest.mock('../../ChartSQLPreview', () => ({
+vi.mock('../../ChartSQLPreview', () => ({
   __esModule: true,
   default: () => <div>Chart SQL Preview</div>,
 }));
 
-jest.mock('../../DBTimeChart', () => ({
+vi.mock('../../DBTimeChart', () => ({
   DBTimeChart: () => <div>Time Chart</div>,
 }));
 
-jest.mock('../../DBTableChart', () => ({
+vi.mock('../../DBTableChart', () => ({
   __esModule: true,
   default: () => <div>Table Chart</div>,
 }));
 
-jest.mock('../../DBNumberChart', () => ({
+vi.mock('../../DBNumberChart', () => ({
   __esModule: true,
   default: () => <div>Number Chart</div>,
 }));
 
-jest.mock('@/components/SearchInput/SearchInputV2', () => ({
+vi.mock('@/components/SearchInput/SearchInputV2', () => ({
   __esModule: true,
   default: () => <div>Search Input</div>,
 }));
 
 // The sample-events panel (rendered for event sources) reads Next router
 // query state via nuqs, which isn't mounted in this test environment.
-jest.mock('@/components/DBSqlRowTableWithSidebar', () => ({
+vi.mock('@/components/DBSqlRowTableWithSidebar', () => ({
   __esModule: true,
   default: () => <div>SQL Row Table</div>,
 }));
 
-jest.mock('../../MaterializedViews/MVOptimizationIndicator', () => ({
+vi.mock('../../MaterializedViews/MVOptimizationIndicator', () => ({
   __esModule: true,
   default: () => <div>MV Indicator</div>,
 }));
 
-jest.mock('../../SQLEditor/SQLInlineEditor', () => ({
+vi.mock('../../SQLEditor/SQLInlineEditor', () => ({
   SQLInlineEditorControlled: () => <div>SQL Editor</div>,
 }));
 
-jest.mock('@/HDXMarkdownChart', () => ({
+vi.mock('@/HDXMarkdownChart', () => ({
   __esModule: true,
   default: () => <div>Markdown Chart</div>,
 }));
@@ -256,11 +257,11 @@ const renderComponent = (
 
 describe('DBEditTimeChartForm - Metric explorer', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockStagedWhere = [];
     mockStagedGroupBy = [];
     // No re-pinning of the useSource mock needed: this file has a single
-    // describe, and jest.clearAllMocks only clears calls, so the factory's
+    // describe, and vi.clearAllMocks only clears calls, so the factory's
     // mockImplementation survives.
   });
 
@@ -290,7 +291,7 @@ describe('DBEditTimeChartForm - Metric explorer', () => {
   });
 
   it('applies a gauge with an average aggregation', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderComponent({ onSave });
 
     await pickMetric('gauge');
@@ -306,7 +307,7 @@ describe('DBEditTimeChartForm - Metric explorer', () => {
   });
 
   it('replaces the series filter with the tag filters staged in the explorer', async () => {
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderComponent({
       onSave,
       chartConfig: {
@@ -344,7 +345,7 @@ describe('DBEditTimeChartForm - Metric explorer', () => {
     // metric without staging filters left the previous metric's condition
     // attached to the new one — an empty chart rather than an error, because a
     // Map lookup for an absent key yields '' instead of failing.
-    const onSave = jest.fn();
+    const onSave = vi.fn();
     renderComponent({
       onSave,
       chartConfig: {

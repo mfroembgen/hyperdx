@@ -34,6 +34,19 @@ cleanup() {
 }
 trap cleanup EXIT
 
+diagnostics() {
+  docker logs "$NAME" --tail 200 || true
+  # The all-in-one launcher redirects these processes away from Docker stdout.
+  docker exec "$NAME" sh -c '
+    for log in /var/log/otel-collector.log /var/log/app.log /var/log/mongod.log; do
+      if [ -f "$log" ]; then
+        printf "\n--- %s ---\n" "$log"
+        tail -n 100 "$log"
+      fi
+    done
+  ' || true
+}
+
 # Pull with a small retry so a transient registry hiccup can't flake the release
 # gate (docker run would otherwise pull implicitly, with no retry). Skip the pull
 # when the image is already in the local daemon — the PR build loads its image
@@ -62,11 +75,11 @@ for i in $(seq 1 90); do
   # Fail fast if the container exited (bad entrypoint, port clash, missing env)
   # instead of polling a dead container for the full timeout.
   if [ "$(docker inspect -f '{{.State.Running}}' "$NAME" 2>/dev/null)" != "true" ]; then
-    echo "::error::container exited during startup"; docker logs "$NAME" --tail 200; exit 1
+    echo "::error::container exited during startup"; diagnostics; exit 1
   fi
   curl -fsS "http://localhost:$APP_PORT/api/health" >/dev/null 2>&1 && break
   if [ "$i" = 90 ]; then
-    echo "::error::app never became healthy"; docker logs "$NAME" --tail 100; exit 1
+    echo "::error::app never became healthy"; diagnostics; exit 1
   fi
   sleep 2
 done
@@ -81,7 +94,7 @@ if [ "$HEALTH_ONLY" = 1 ]; then
       exit 0
     fi
     if [ "$i" = 45 ]; then
-      echo "::error::clickhouse never came up"; docker logs "$NAME" --tail 200; exit 1
+      echo "::error::clickhouse never came up"; diagnostics; exit 1
     fi
     sleep 2
   done
@@ -104,7 +117,7 @@ for i in $(seq 1 45); do
   fi
   if [ "$i" = 45 ]; then
     echo "::error::collector never accepted the OTLP canary on :$OTLP_PORT"
-    docker logs "$NAME" --tail 200; exit 1
+    diagnostics; exit 1
   fi
   sleep 2
 done
@@ -121,5 +134,5 @@ for i in $(seq 1 45); do
   sleep 2
 done
 echo "::error::canary never arrived in ClickHouse"
-docker logs "$NAME" --tail 200
+diagnostics
 exit 1

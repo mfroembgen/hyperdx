@@ -27,9 +27,7 @@ function isErrorOrWarning(row: Record<string, unknown>) {
 }
 
 export type DenoiseSkipReason =
-  | 'no_body_expression'
-  | 'body_not_in_results'
-  | 'patterns_failed';
+  'no_body_expression' | 'body_not_in_results' | 'patterns_failed';
 
 /**
  * The result column holding the source's body. `columns` follow the order of

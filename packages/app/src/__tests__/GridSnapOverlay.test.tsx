@@ -1,3 +1,4 @@
+import { type MockInstance, vi } from 'vitest';
 import { render } from '@testing-library/react';
 
 import GridSnapOverlay from '@/components/dashboard/GridSnapOverlay';
@@ -6,14 +7,14 @@ import GridSnapOverlay from '@/components/dashboard/GridSnapOverlay';
 // render nothing. Feed a fixed size so the geometry (12 cols, rowHeight 30,
 // default margin [10,10]) resolves to colWidth 40 and 5 fully visible rows.
 describe('GridSnapOverlay', () => {
-  let widthSpy: jest.SpyInstance;
-  let heightSpy: jest.SpyInstance;
+  let widthSpy: MockInstance;
+  let heightSpy: MockInstance;
 
   beforeAll(() => {
-    widthSpy = jest
+    widthSpy = vi
       .spyOn(HTMLElement.prototype, 'clientWidth', 'get')
       .mockReturnValue(590);
-    heightSpy = jest
+    heightSpy = vi
       .spyOn(HTMLElement.prototype, 'clientHeight', 'get')
       .mockReturnValue(200);
   });

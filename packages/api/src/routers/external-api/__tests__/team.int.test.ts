@@ -1,8 +1,8 @@
-import request, { SuperAgentTest } from 'supertest';
+import request, { Agent } from 'supertest';
 
 import { createOrgApiKey } from '@/controllers/orgApiKey';
 import { getLoggedInAgent, getServer } from '@/fixtures';
-import Alert from '@/models/alert';
+import Alert, { AlertSource, AlertThresholdType } from '@/models/alert';
 import { ITeam } from '@/models/team';
 import User from '@/models/user';
 import { IUser } from '@/models/user';
@@ -11,7 +11,7 @@ const TEAM_BASE_URL = '/api/v2/team';
 
 describe('External API v2 Team', () => {
   const server = getServer();
-  let agent: SuperAgentTest;
+  let agent: Agent;
   let team: ITeam;
   let user: IUser;
 
@@ -176,8 +176,8 @@ describe('External API v2 Team', () => {
         team: team._id,
         threshold: 1,
         interval: '5m',
-        thresholdType: 'above',
-        source: 'saved_search',
+        thresholdType: AlertThresholdType.ABOVE,
+        source: AlertSource.SAVED_SEARCH,
         channel: { type: 'webhook', webhookId: 'x' },
         createdBy: member._id,
       });
@@ -245,8 +245,8 @@ describe('External API v2 Team', () => {
         team: team._id,
         threshold: 1,
         interval: '5m',
-        thresholdType: 'above',
-        source: 'saved_search',
+        thresholdType: AlertThresholdType.ABOVE,
+        source: AlertSource.SAVED_SEARCH,
         channel: { type: 'webhook', webhookId: 'x' },
         createdBy: account?._id,
       });

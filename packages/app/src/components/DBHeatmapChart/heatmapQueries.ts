@@ -40,8 +40,7 @@ export type HeatmapChartConfig = {
 
 /** The configs a series-mode heatmap can query. */
 export type HeatmapSeriesChartConfig =
-  | BuilderChartConfigWithDateRange
-  | PromqlConfigWithDateRange;
+  BuilderChartConfigWithDateRange | PromqlConfigWithDateRange;
 
 /** Linear, since PromQL samples often include zeros, which log scale drops. */
 export const PROMQL_DEFAULT_HEATMAP_SCALE_TYPE: HeatmapScaleType = 'linear';

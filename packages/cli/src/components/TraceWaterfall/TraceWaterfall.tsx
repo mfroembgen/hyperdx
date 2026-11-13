@@ -13,7 +13,7 @@
  */
 
 import React, { useEffect, useMemo } from 'react';
-import { Box, Text, useStdout } from 'ink';
+import { Box, Text, useWindowSize } from 'ink';
 import Spinner from 'ink-spinner';
 
 import ColumnValues from '@/components/ColumnValues';
@@ -51,8 +51,8 @@ export default function TraceWaterfall({
   onChSqlChange,
   onSelectedNodeChange,
 }: TraceWaterfallProps) {
-  const { stdout } = useStdout();
-  const termWidth = propWidth ?? stdout?.columns ?? 80;
+  const { columns } = useWindowSize();
+  const termWidth = propWidth ?? columns;
   const maxRows = propMaxRows ?? 50;
 
   // ---- Data fetching -----------------------------------------------

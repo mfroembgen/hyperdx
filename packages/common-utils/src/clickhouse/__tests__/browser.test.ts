@@ -1,12 +1,14 @@
+import { vi } from 'vitest';
+
 import { consoleLogger } from '@/clickhouse/browser';
 
 describe('consoleLogger', () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('pretty-prints SQL into a single multi-line message', () => {
-    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
     const sql = 'SELECT a, b FROM default.otel_logs WHERE a = 1';
 
     consoleLogger.debug({
@@ -26,7 +28,7 @@ describe('consoleLogger', () => {
   });
 
   it('falls back to the raw SQL when it cannot be formatted', () => {
-    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
     const sql = 'SELECT ((( FROM';
 
     consoleLogger.debug({
@@ -39,7 +41,7 @@ describe('consoleLogger', () => {
   });
 
   it('keeps the prefixed form for logs that carry no SQL', () => {
-    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
 
     consoleLogger.debug({
       module: 'clickhouse',
@@ -51,7 +53,7 @@ describe('consoleLogger', () => {
   });
 
   it('appends the error to error logs', () => {
-    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const err = new Error('boom');
 
     consoleLogger.error({

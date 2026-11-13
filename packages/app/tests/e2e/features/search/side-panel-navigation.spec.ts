@@ -86,6 +86,7 @@ test.describe('Search side panel navigation', { tag: '@search' }, () => {
     // The trail lives entirely in the URL (rowWhere + sidePanelSourceStack +
     // sidePanelStackRoot + sidePanelTab), so a shared link must reconstruct it.
     let deepLink = '';
+
     await test.step('Capture the deep link and navigate away to a clean page', async () => {
       deepLink = page.url();
       expect(deepLink).toContain('sidePanelSourceStack');

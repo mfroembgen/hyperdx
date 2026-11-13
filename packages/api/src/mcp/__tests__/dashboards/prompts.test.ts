@@ -1,3 +1,5 @@
+import { SourceKind } from '@hyperdx/common-utils/dist/types';
+
 import {
   buildCreateDashboardPrompt,
   buildDashboardExamplesPrompt,
@@ -312,13 +314,13 @@ describe('MCP Dashboard Prompts', () => {
           {
             _id: '000000000000000000000001',
             name: 'Traces',
-            kind: 'trace',
+            kind: SourceKind.Trace as const,
             connection: '000000000000000000000002',
           },
           {
             _id: '000000000000000000000003',
             name: 'Logs',
-            kind: 'log',
+            kind: SourceKind.Log as const,
             connection: '000000000000000000000002',
           },
         ],

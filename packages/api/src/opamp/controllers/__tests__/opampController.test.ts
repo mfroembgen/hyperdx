@@ -1,3 +1,7 @@
+import { vi } from 'vitest';
+vi.mock('@/utils/logger', () => ({
+  default: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+}));
 // Use mutable object so individual tests can flip flags. The values here are
 // the defaults used by every test unless explicitly overridden.
 const configState = {
@@ -9,7 +13,8 @@ const configState = {
   ENABLE_DATADOG_RECEIVER: false,
 };
 
-jest.mock('@/config', () => ({
+vi.mock('@/config', async () => ({
+  ...(await vi.importActual<typeof import('@/config')>('@/config')),
   get IS_ALL_IN_ONE_IMAGE() {
     return configState.IS_ALL_IN_ONE_IMAGE;
   },

@@ -6,14 +6,19 @@ import { ExceptionSubpanel } from '@/components/ExceptionSubpanel';
 
 // click-ui encodes state only in hashed CSS module class names, so the mock
 // exposes the props as attributes to assert on.
-jest.mock('@clickhouse/click-ui', () => ({
-  ...jest.requireActual('@clickhouse/click-ui'),
-  Badge: ({ text, state }: { text: React.ReactNode; state?: string }) => (
-    <span data-testid="badge" data-state={state}>
-      {text}
-    </span>
-  ),
-}));
+vi.mock('@clickhouse/click-ui', async () => {
+  const actualModule0 = await vi.importActual<
+    typeof import('@clickhouse/click-ui')
+  >('@clickhouse/click-ui');
+  return {
+    ...actualModule0,
+    Badge: ({ text, state }: { text: React.ReactNode; state?: string }) => (
+      <span data-testid="badge" data-state={state}>
+        {text}
+      </span>
+    ),
+  };
+});
 
 describe('ExceptionSubpanel', () => {
   it.each([
@@ -183,7 +188,7 @@ describe('ExceptionSubpanel stack frames', () => {
     );
     const causes = () =>
       screen
-        .getAllByRole('button', { name: /^Caused by: / })
+        .getAllByRole('button', { name: /^Caused by:/ })
         .map(cause => [cause.textContent, cause.getAttribute('aria-expanded')]);
 
     expect(causes()).toEqual([
@@ -301,7 +306,7 @@ describe('ExceptionSubpanel stack frames', () => {
         logData={{ timestamp: 0 }}
       />,
     );
-    const cause = screen.getByRole('button', { name: /^Caused by: / });
+    const cause = screen.getByRole('button', { name: /^Caused by:/ });
     const title = () => within(cause).getByText('Error').parentElement;
 
     expect(cause.textContent).toBe(

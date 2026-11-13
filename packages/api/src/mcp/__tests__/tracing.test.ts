@@ -1,15 +1,16 @@
+import { vi } from 'vitest';
 // Mock OpenTelemetry and all modules that transitively import it
 // These must be declared before any imports
 
-const mockSpan = {
-  setAttribute: jest.fn(),
-  setAttributes: jest.fn(),
-  setStatus: jest.fn(),
-  recordException: jest.fn(),
-  end: jest.fn(),
-};
+const mockSpan = vi.hoisted(() => ({
+  setAttribute: vi.fn(),
+  setAttributes: vi.fn(),
+  setStatus: vi.fn(),
+  recordException: vi.fn(),
+  end: vi.fn(),
+}));
 
-const mockTracer = {
+const mockTracer = vi.hoisted(() => ({
   startActiveSpan: (
     _name: string,
     _optionsOrFn: unknown,
@@ -20,21 +21,21 @@ const mockTracer = {
     ) as (span: typeof mockSpan) => Promise<unknown>;
     return fn(mockSpan);
   },
-};
+}));
 
-const mockCounter = { add: jest.fn() };
-const mockDurationHistogram = { record: jest.fn() };
-const mockResponseSizeHistogram = { record: jest.fn() };
-const mockMeter = {
-  createCounter: jest.fn(() => mockCounter),
-  createHistogram: jest.fn((name: string) =>
+const mockCounter = vi.hoisted(() => ({ add: vi.fn() }));
+const mockDurationHistogram = vi.hoisted(() => ({ record: vi.fn() }));
+const mockResponseSizeHistogram = vi.hoisted(() => ({ record: vi.fn() }));
+const mockMeter = vi.hoisted(() => ({
+  createCounter: vi.fn(() => mockCounter),
+  createHistogram: vi.fn((name: string) =>
     name === 'hyperdx.mcp.tool.response.size_bytes'
       ? mockResponseSizeHistogram
       : mockDurationHistogram,
   ),
-};
+}));
 
-jest.mock('@opentelemetry/api', () => ({
+vi.mock('@opentelemetry/api', () => ({
   __esModule: true,
   default: {
     trace: {
@@ -60,21 +61,21 @@ jest.mock('@opentelemetry/api', () => ({
 
 // The real package would read helpers off the mocked @opentelemetry/api at
 // load time. Only setBusinessContext uses it, and these tests never call it.
-jest.mock('@opentelemetry/core', () => ({
-  getRPCMetadata: jest.fn(),
+vi.mock('@opentelemetry/core', () => ({
+  getRPCMetadata: vi.fn(),
 }));
 
-jest.mock('@/config', () => ({
+vi.mock('@/config', () => ({
   CODE_VERSION: 'test-version',
 }));
 
-jest.mock('@/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   __esModule: true,
   default: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    debug: jest.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
   },
 }));
 
@@ -97,11 +98,11 @@ describe('withToolTracing', () => {
   const context = ctx();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should call the handler and return its result', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'hello' }],
     });
 
@@ -115,7 +116,7 @@ describe('withToolTracing', () => {
   });
 
   it('should set span attributes for tool name, team, and user', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'ok' }],
     });
 
@@ -137,7 +138,7 @@ describe('withToolTracing', () => {
   });
 
   it('should set client name and version attributes when resolved', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'ok' }],
     });
 
@@ -159,7 +160,7 @@ describe('withToolTracing', () => {
   });
 
   it('should set only the client name when version is unresolved', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'ok' }],
     });
 
@@ -181,7 +182,7 @@ describe('withToolTracing', () => {
   });
 
   it('should not set client attributes when identity is unresolved', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'ok' }],
     });
 
@@ -199,7 +200,7 @@ describe('withToolTracing', () => {
   });
 
   it('should tolerate a context without an mcpClient', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'ok' }],
     });
 
@@ -219,7 +220,7 @@ describe('withToolTracing', () => {
   });
 
   it('should set OK status for successful results', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'ok' }],
     });
 
@@ -231,7 +232,7 @@ describe('withToolTracing', () => {
   });
 
   it('should set ERROR status for isError results', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       isError: true,
       content: [{ type: 'text', text: 'something went wrong' }],
     });
@@ -248,7 +249,7 @@ describe('withToolTracing', () => {
   });
 
   it('should join all text blocks into the ERROR status message', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       isError: true,
       content: [
         { type: 'text', text: 'Query failed' },
@@ -266,7 +267,7 @@ describe('withToolTracing', () => {
   });
 
   it('should truncate a long ERROR status message', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       isError: true,
       content: [{ type: 'text', text: 'x'.repeat(600) }],
     });
@@ -281,7 +282,7 @@ describe('withToolTracing', () => {
   });
 
   it('should omit the status message when the error has no text', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       isError: true,
       content: [{ type: 'text', text: '   ' }],
     });
@@ -297,7 +298,7 @@ describe('withToolTracing', () => {
 
   it('should set ERROR status and re-throw on handler exception', async () => {
     const error = new Error('boom');
-    const handler = jest.fn().mockRejectedValue(error);
+    const handler = vi.fn().mockRejectedValue(error);
 
     const traced = withToolTracing('my_tool', context, handler);
 
@@ -312,7 +313,7 @@ describe('withToolTracing', () => {
   });
 
   it('should record duration on the span', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'ok' }],
     });
 
@@ -326,7 +327,7 @@ describe('withToolTracing', () => {
   });
 
   it('should record duration metric on success', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'ok' }],
     });
 
@@ -343,7 +344,7 @@ describe('withToolTracing', () => {
   });
 
   it('should record the response size in UTF-8 bytes on span and histogram', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       content: [
         { type: 'text', text: 'abc' },
         { type: 'text', text: 'é' }, // 2 bytes in UTF-8
@@ -364,7 +365,7 @@ describe('withToolTracing', () => {
   });
 
   it('should record the response size of error results', async () => {
-    const handler = jest.fn().mockResolvedValue(mcpUserError('bad input'));
+    const handler = vi.fn().mockResolvedValue(mcpUserError('bad input'));
 
     const traced = withToolTracing('my_tool', context, handler);
     await traced({});
@@ -376,7 +377,7 @@ describe('withToolTracing', () => {
   });
 
   it('should increment the error counter for isError results', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       isError: true,
       content: [{ type: 'text', text: 'nope' }],
     });
@@ -391,7 +392,7 @@ describe('withToolTracing', () => {
   });
 
   it('should increment the error counter on a thrown exception', async () => {
-    const handler = jest.fn().mockRejectedValue(new Error('boom'));
+    const handler = vi.fn().mockRejectedValue(new Error('boom'));
 
     const traced = withToolTracing('my_tool', context, handler);
 
@@ -412,7 +413,7 @@ describe('withToolTracing', () => {
   // ─── Error category tests ───────────────────────────────────────────────
 
   it('should default error_category to "server" when no category is set', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       isError: true,
       content: [{ type: 'text', text: 'unknown failure' }],
     });
@@ -427,7 +428,7 @@ describe('withToolTracing', () => {
   });
 
   it('should record error_category "user" on span and counter', async () => {
-    const handler = jest.fn().mockResolvedValue(mcpUserError('bad input'));
+    const handler = vi.fn().mockResolvedValue(mcpUserError('bad input'));
 
     const traced = withToolTracing('my_tool', context, handler);
     await traced({});
@@ -443,7 +444,7 @@ describe('withToolTracing', () => {
   });
 
   it('should record error_category "server" on span and counter', async () => {
-    const handler = jest
+    const handler = vi
       .fn()
       .mockResolvedValue(mcpServerError('database timeout'));
 
@@ -461,7 +462,7 @@ describe('withToolTracing', () => {
   });
 
   it('should not set error_category on successful results', async () => {
-    const handler = jest.fn().mockResolvedValue({
+    const handler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'ok' }],
     });
 
@@ -475,7 +476,7 @@ describe('withToolTracing', () => {
   });
 
   it('should not leak error category metadata on the returned result', async () => {
-    const handler = jest.fn().mockResolvedValue(mcpUserError('bad input'));
+    const handler = vi.fn().mockResolvedValue(mcpUserError('bad input'));
 
     const traced = withToolTracing('my_tool', context, handler);
     const result = await traced({});
