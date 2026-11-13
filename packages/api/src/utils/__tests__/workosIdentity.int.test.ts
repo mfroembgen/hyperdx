@@ -244,6 +244,8 @@ describe('WorkOS existing Mongo member binding', () => {
 
   it('retains removed bound and unbound members so automatic signup cannot restore them', async () => {
     fixture.settings.autoJoinDomain = 'example.com';
+    // The last member can never be removed, so keep one in the team.
+    await User.create({ email: 'keeper@example.com', team: teamId });
     const member = await resolveWorkosUser('user_member');
     const unbound = await User.create({
       email: 'unbound@example.com',
@@ -256,7 +258,7 @@ describe('WorkOS existing Mongo member binding', () => {
           removed.id,
           new mongoose.Types.ObjectId(),
         ),
-      ).toBeTruthy();
+      ).toBe('deleted');
       expect(await User.findById(removed._id)).not.toHaveProperty(
         'team',
         expect.anything(),
@@ -282,18 +284,22 @@ describe('WorkOS existing Mongo member binding', () => {
     await expect(resolveWorkosUser('user_unbound')).rejects.toMatchObject({
       status: 403,
     });
-    expect(await User.countDocuments()).toBe(2);
-    expect(await User.countDocuments({ team: teamId })).toBe(0);
-    expect(await findUsersByTeam(teamId)).toEqual([]);
+    expect(await User.countDocuments()).toBe(3);
+    expect(await User.countDocuments({ team: teamId })).toBe(1);
+    expect((await findUsersByTeam(teamId)).map(user => user.email)).toEqual([
+      'keeper@example.com',
+    ]);
   });
 
   it('preserves physical member deletion when WorkOS is unset', async () => {
     fixture.enabled = false;
+    // The last member can never be removed, so keep one in the team.
+    await User.create({ email: 'keeper@example.com', team: teamId });
     const member = await User.findOne({ email: 'member@example.com' }).orFail();
     expect(
       await deleteTeamMember(teamId, member.id, new mongoose.Types.ObjectId()),
-    ).toBeTruthy();
+    ).toBe('deleted');
     expect(await User.findById(member._id)).toBeNull();
-    expect(await User.countDocuments()).toBe(0);
+    expect(await User.countDocuments()).toBe(1);
   });
 });
