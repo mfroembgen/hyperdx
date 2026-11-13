@@ -1,16 +1,24 @@
-import type { OnboardingTaskId } from '@hyperdx/common-utils/dist/types';
+import type {
+  OnboardingTaskId,
+  TeamMember,
+} from '@hyperdx/common-utils/dist/types';
 import { isPersistableUserId as isPersistableUserIdHex } from '@hyperdx/common-utils/dist/types';
 import opentelemetry from '@opentelemetry/api';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
+import * as config from '@/config';
 import type { ObjectId } from '@/models';
 import Alert from '@/models/alert';
 import User, { type IUser } from '@/models/user';
 import { isDuplicateKeyError } from '@/utils/errors';
-import { getCounter } from '@/utils/instrumentation';
+import { getCounter, setBusinessContext } from '@/utils/instrumentation';
 import logger from '@/utils/logger';
+
+const memberRemovals = getCounter('hyperdx.team.member_removals', {
+  description: 'Team members removed from local membership',
+});
 
 export const NOT_VIRTUAL = { isVirtual: { $ne: true } };
 
@@ -81,7 +89,32 @@ export function findUserByEmail(email: string) {
 }
 
 export function findUsersByTeam(team: string | ObjectId) {
-  return User.find({ team, ...NOT_VIRTUAL }).sort({ createdAt: 1 });
+  return User.aggregate<
+    Pick<TeamMember, 'email' | 'name' | 'hasPasswordAuth'> & Pick<IUser, '_id'>
+  >([
+    {
+      $match: {
+        team: new mongoose.Types.ObjectId(team),
+        ...NOT_VIRTUAL,
+      },
+    },
+    { $sort: { createdAt: 1 } },
+    {
+      $project: {
+        _id: 1,
+        email: 1,
+        name: 1,
+        hasPasswordAuth: {
+          $and: [
+            { $eq: [{ $type: '$hash' }, 'string'] },
+            { $ne: ['$hash', ''] },
+            { $eq: [{ $type: '$salt' }, 'string'] },
+            { $ne: ['$salt', ''] },
+          ],
+        },
+      },
+    },
+  ]);
 }
 
 // Type-guard wrapper over the shared 24-hex check; rejects the synthetic
@@ -158,6 +191,11 @@ export async function deleteTeamMember(
   userIdToDelete: string,
   userIdRequestingDelete: string | ObjectId,
 ): Promise<'deleted' | 'not_found' | 'last_member'> {
+  setBusinessContext({
+    teamId: teamId.toString(),
+    userId: userIdRequestingDelete.toString(),
+    'hyperdx.team.removed_user_id': userIdToDelete,
+  });
   const countPeople = () =>
     User.countDocuments({ team: teamId, ...NOT_VIRTUAL });
   const target = { team: teamId, _id: userIdToDelete, ...NOT_VIRTUAL };
@@ -169,7 +207,20 @@ export async function deleteTeamMember(
   if ((await countPeople()) <= 1) {
     return 'last_member';
   }
-  const deletedUser = await User.findOneAndDelete(target)
+  const deletedUser = await (
+    config.WORKOS
+      ? User.findOneAndUpdate(
+          target,
+          {
+            $unset: { team: 1 },
+            // Keep email/binding reserved against automatic re-registration.
+            // Rotating also preserves the non-sparse unique access-key index.
+            $set: { accessKey: uuidv4() },
+          },
+          { returnDocument: 'before' },
+        )
+      : User.findOneAndDelete(target)
+  )
     .select('+hash +salt')
     .lean();
   if (deletedUser == null) {
@@ -193,6 +244,7 @@ export async function deleteTeamMember(
       $set: { createdBy: new mongoose.Types.ObjectId(userIdRequestingDelete) },
     },
   );
+  memberRemovals.add(1);
   return 'deleted';
 }
 
@@ -207,10 +259,23 @@ const memberRestoreFailures = getCounter(
 const RESTORE_ATTEMPTS = 3;
 const RESTORE_RETRY_DELAY_MS = 100;
 
+// With WorkOS the member document is kept and only loses its team, so the
+// restore puts the team and access key back instead of reinserting it.
+async function putBackTeamMember(user: IUser) {
+  if (config.WORKOS) {
+    await User.collection.updateOne(
+      { _id: user._id },
+      { $set: { team: user.team, accessKey: user.accessKey } },
+    );
+    return;
+  }
+  await User.collection.insertOne(user);
+}
+
 async function restoreTeamMember(user: IUser) {
   for (let attempt = 1; ; attempt++) {
     try {
-      await User.collection.insertOne(user);
+      await putBackTeamMember(user);
       return;
     } catch (err) {
       const isDuplicate = isDuplicateKeyError(err);

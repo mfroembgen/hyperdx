@@ -12,6 +12,8 @@ type ObjectId = mongoose.Types.ObjectId;
 export interface IUser {
   _id: ObjectId;
   accessKey: string;
+  workosIssuer?: string;
+  workosSubject?: string;
   createdAt: Date;
   email: string;
   name: string;
@@ -33,6 +35,8 @@ export type UserDocument = mongoose.HydratedDocument<IUser>;
 const UserSchema = new Schema(
   {
     name: String,
+    workosIssuer: String,
+    workosSubject: String,
     email: {
       type: String,
       required: true,
@@ -72,10 +76,6 @@ const UserSchema = new Schema(
   },
 );
 
-UserSchema.virtual('hasPasswordAuth').get(function (this: IUser) {
-  return true;
-});
-
 UserSchema.plugin(passportLocalMongoose, {
   usernameField: 'email',
   usernameLowerCase: true,
@@ -83,6 +83,16 @@ UserSchema.plugin(passportLocalMongoose, {
 });
 
 UserSchema.index({ email: 1 }, { unique: true });
+UserSchema.index(
+  { workosIssuer: 1, workosSubject: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      workosIssuer: { $type: 'string' },
+      workosSubject: { $type: 'string' },
+    },
+  },
+);
 UserSchema.index({ accessKey: 1 }, { unique: true });
 
 export default mongoose.model<IUser>('User', UserSchema);
