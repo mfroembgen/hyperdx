@@ -60,7 +60,7 @@ export class RecorderPage {
     await this.page.waitForFunction(
       () =>
         document.querySelector('iframe')?.contentDocument?.body &&
-        window.HyperDX,
+        window.ClickStack,
       undefined,
       { timeout: 5000 },
     );
@@ -68,21 +68,19 @@ export class RecorderPage {
 
   initialize(origin) {
     return this.page.evaluate(url => {
-      const sdk = window.HyperDX;
+      const sdk = window.ClickStack;
       sdk.init({
         apiKey: 'synthetic-local-recorder-only',
-        service: 'browser-sdk-memory-test',
-        url: `${url}/otel`,
-        consoleCapture: false,
+        serviceName: 'browser-sdk-memory-test',
+        endpoint: `${url}/otel`,
+        console: false,
         maskAllInputs: true,
         maskAllText: true,
-        replay: {},
+        replay: true,
       });
-      sdk.enableAdvancedNetworkCapture();
       return {
         init: typeof sdk.init === 'function',
-        resume: typeof sdk.resumeSessionRecorder === 'function',
-        advancedCapture: typeof sdk.enableAdvancedNetworkCapture === 'function',
+        resume: typeof sdk.resumeReplay === 'function',
       };
     }, origin);
   }
@@ -105,8 +103,9 @@ export class RecorderPage {
     return this.page.evaluate(
       async options => {
         const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+        // Each resumeReplay starts again with a full snapshot (a checkout).
         for (let i = 0; i < options.checkouts; i++) {
-          window.HyperDX.resumeSessionRecorder();
+          window.ClickStack.resumeReplay();
           await flush();
         }
         document

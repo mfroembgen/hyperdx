@@ -33,19 +33,23 @@ export async function buildSdk(root, temporary, output, publishedControl) {
   assert.ok(globalThis.Bun, 'run browser-sdk-memory.mjs with Bun');
   const app = join(root, 'packages/app');
   const requireApp = createRequire(join(app, 'package.json'));
-  const sdk = JSON.parse(
-    await readFile(requireApp.resolve('@hyperdx/browser/package.json'), 'utf8'),
+  const sdkManifest = requireApp.resolve(
+    '@clickhouse/clickstack-browser/package.json',
   );
+  const sdk = JSON.parse(await readFile(sdkManifest, 'utf8'));
   assert.equal(
     sdk.version,
-    '0.26.0',
+    '1.2.1',
     'update SDK contract expectations for a new SDK release',
   );
   const { chromium } = requireApp('@playwright/test');
   let bytes;
   let moduleGraph;
   if (publishedControl) {
-    bytes = await readFile(requireApp.resolve('@hyperdx/browser'));
+    // The published script-tag build, which embeds its own recorder.
+    bytes = await readFile(
+      join(dirname(sdkManifest), 'dist/clickstack.iife.js'),
+    );
     moduleGraph = {
       publishedControl: true,
       sdkVersion: sdk.version,
@@ -61,7 +65,7 @@ export async function buildSdk(root, temporary, output, publishedControl) {
     const entry = join(temporary, 'entry.mjs');
     await writeFile(
       entry,
-      "import SDK from '@hyperdx/browser'; globalThis.HyperDX = SDK;\n",
+      "import * as SDK from '@clickhouse/clickstack-browser'; globalThis.ClickStack = SDK;\n",
     );
     const { build, version } = await import(
       pathToFileURL(requireApp.resolve('vite')).href
@@ -111,7 +115,9 @@ export async function buildSdk(root, temporary, output, publishedControl) {
       const data = await packageAt(path);
       if (data) packages.set(data.manifest, data);
     }
-    const recorder = [...packages.values()].find(pkg => pkg.name === 'rrweb');
+    const recorder = [...packages.values()].find(
+      pkg => pkg.name === '@rrweb/record',
+    );
     assert.ok(
       recorder,
       'SDK must resolve the app recorder rather than an embedded legacy copy',
@@ -119,7 +125,7 @@ export async function buildSdk(root, temporary, output, publishedControl) {
     assert.ok(
       Number(recorder.version.split('.')[0]) === 2 &&
         Number(recorder.version.split('.')[1]) >= 2,
-      'rrweb must include the 2.2 recorder lifecycle fixes',
+      '@rrweb/record must include the 2.2 recorder lifecycle fixes',
     );
     moduleGraph = {
       publishedControl: false,

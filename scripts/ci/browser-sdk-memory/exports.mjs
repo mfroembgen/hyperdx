@@ -3,60 +3,25 @@ import { gunzipSync } from 'node:zlib';
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
-function fields(buffer) {
-  let offset = 0;
-  const integer = () => {
-    let value = 0;
-    let multiplier = 1;
-    for (let i = 0; i < 10; i++) {
-      assert.ok(offset < buffer.length, 'truncated protobuf');
-      const byte = buffer[offset++];
-      value += (byte & 127) * multiplier;
-      if (!(byte & 128)) return value;
-      multiplier *= 128;
-    }
-    throw new Error('invalid protobuf integer');
-  };
-  const result = [];
-  while (offset < buffer.length) {
-    const tag = integer();
-    const field = Math.floor(tag / 8);
-    const wire = tag % 8;
-    if (wire === 2) {
-      const size = integer();
-      assert.ok(offset + size <= buffer.length, 'truncated protobuf field');
-      result.push({ field, bytes: buffer.subarray(offset, offset + size) });
-      offset += size;
-    } else if (wire === 0) result.push({ field, value: integer() });
-    else if (wire === 1) {
-      result.push({ field, value: buffer.readDoubleLE(offset) });
-      offset += 8;
-    } else if (wire === 5) offset += 4;
-    else throw new Error('unsupported protobuf wire type');
-  }
-  return result;
-}
+const REPLAY_SCOPE = 'rum.rr-web';
 
-function protobufRecords(buffer) {
+const anyValue = value =>
+  value?.stringValue ??
+  value?.intValue ??
+  value?.doubleValue ??
+  value?.boolValue;
+
+// Replay log records of an OTLP/JSON logs export; other RUM log events are skipped.
+function replayRecords(data) {
   const records = [];
-  const children = (bytes, field) =>
-    fields(bytes).filter(value => value.field === field && value.bytes);
-  const anyValue = bytes => {
-    const value = fields(bytes).find(item => [1, 3, 4].includes(item.field));
-    return value?.bytes ? value.bytes.toString('utf8') : value?.value;
-  };
-  for (const resource of children(buffer, 1)) {
-    for (const scope of children(resource.bytes, 2)) {
-      for (const record of children(scope.bytes, 2)) {
-        const body = children(record.bytes, 5)[0];
-        if (!body) continue;
+  for (const resource of data.resourceLogs ?? []) {
+    for (const scope of resource.scopeLogs ?? []) {
+      if (scope.scope?.name !== REPLAY_SCOPE) continue;
+      for (const record of scope.logRecords ?? []) {
         const attributes = {};
-        for (const attribute of children(record.bytes, 6)) {
-          const key = children(attribute.bytes, 1)[0]?.bytes.toString('utf8');
-          const value = children(attribute.bytes, 2)[0];
-          if (key && value) attributes[key] = anyValue(value.bytes);
-        }
-        records.push({ body: anyValue(body.bytes), attributes });
+        for (const attribute of record.attributes ?? [])
+          attributes[attribute.key] = anyValue(attribute.value);
+        records.push({ body: anyValue(record.body), attributes });
       }
     }
   }
@@ -70,8 +35,6 @@ export function createExportCounter(probeName) {
     fullSnapshots: 0,
     probeMutations: 0,
     networkSpans: 0,
-    requestBodies: 0,
-    responseBodies: 0,
     decodeFailures: 0,
   };
   const chunks = new Map();
@@ -127,15 +90,8 @@ export function createExportCounter(probeName) {
         keys.some(key =>
           ['http.url', 'http.method', 'http.request.method'].includes(key),
         )
-      ) {
+      )
         counts.networkSpans++;
-        counts.requestBodies += keys.filter(
-          key => key === 'http.request.body',
-        ).length;
-        counts.responseBodies += keys.filter(
-          key => key === 'http.response.body',
-        ).length;
-      }
     }
     for (const child of Object.values(value))
       if (typeof child === 'object') traceSpans(child);
@@ -150,8 +106,9 @@ export function createExportCounter(probeName) {
           buffer[0] === 31 && buffer[1] === 139
             ? gunzipSync(buffer, { maxOutputLength: MAX_BYTES })
             : buffer;
-        if (bytes[0] === 123) traceSpans(JSON.parse(bytes.toString('utf8')));
-        else acceptRecords(protobufRecords(bytes));
+        const data = JSON.parse(bytes.toString('utf8'));
+        traceSpans(data.resourceSpans);
+        acceptRecords(replayRecords(data));
       } catch {
         counts.decodeFailures++;
       }
@@ -162,9 +119,7 @@ export function createExportCounter(probeName) {
 
 export function assertSdkContract(result) {
   assert.ok(
-    ['init', 'resume', 'advancedCapture'].every(
-      key => result.api?.[key] === true,
-    ),
+    ['init', 'resume'].every(key => result.api?.[key] === true),
     'SDK public wrapper must initialize',
   );
   assert.ok(result.exports.requests > 0, 'SDK must export');
@@ -173,10 +128,6 @@ export function assertSdkContract(result) {
     'SDK must record replay snapshots',
   );
   assert.ok(result.exports.networkSpans > 0, 'SDK must export network spans');
-  assert.ok(
-    result.exports.requestBodies + result.exports.responseBodies > 0,
-    'SDK advanced capture must remain active',
-  );
   assert.equal(
     result.exports.decodeFailures,
     0,

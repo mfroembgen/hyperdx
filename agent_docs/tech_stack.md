@@ -23,7 +23,8 @@ Mantine primitives → Custom SCSS modules as last resort
 - **Authentication**: WorkOS AuthKit for browser and MCP authentication when
   configured; Passport.js local authentication otherwise
 - **Validation**: Zod schemas
-- **Telemetry**: Self-instrumented with `@clickhouse/clickstack-node` (API and Next.js server) and `@clickhouse/clickstack-browser` (frontend)
+- **Telemetry**: Self-instrumented with `@clickhouse/clickstack-node` (API and
+  Next.js server) and `@clickhouse/clickstack-browser` (frontend)
 
 ## Common Utilities (`packages/common-utils`)
 
@@ -36,8 +37,8 @@ Mantine primitives → Custom SCSS modules as last resort
 The maintainer chose to retain Vinext and Vitest as project-specific exceptions
 to the preferred TanStack Start framework and Bun test runner. Vinext keeps the
 31-file Pages application and its Next.js APIs close to upstream. Vitest owns
-application unit and integration testing: it reuses Vite transforms and preserves
-the existing branch and statement coverage floors, which
+application unit and integration testing: it reuses Vite transforms and
+preserves the existing branch and statement coverage floors, which
 [Bun's built-in coverage does not enforce](https://bun.com/docs/test/code-coverage).
 
 `mise.toml` pins Bun and Go; `bun.lock` pins dependencies. tsrs checks every
@@ -67,22 +68,23 @@ normalization hook compatible with Mongoose 9's promise-based middleware. It
 removes only the obsolete callback; lowercasing and authentication behavior stay
 the same. Remove the patch when the plugin ships this compatibility fix.
 
-The API's tracing preload disables Pino instrumentation's automatic log sending
-because its explicit HyperDX transport already exports each record. Trace
-correlation and the other instrumentations remain enabled.
+The API's telemetry preload (`src/telemetry.ts`) runs the ClickStack Node SDK
+under Bun. It gives Bun's HTTPS server its own `emit` before init, because
+instrumenting HTTPS after HTTP would otherwise unwrap the HTTP server spans, and
+it scrubs OAuth credentials from HTTP span URLs. The SDK warns once at startup
+that its ESM loader hook is unavailable on Bun; the compiled API is CommonJS.
+
+Webhook delivery imports `undici/index.js` rather than `undici`: Bun maps the
+bare specifier to a built-in fetch that ignores `dispatcher`, which would skip
+the webhook DNS check.
 
 Bun implicit dotenv loading is disabled for the workspace and server packages so
-frontend development settings cannot leak into API or test processes. Development
-commands select their env files explicitly; Vite selects build-mode env files.
-The production start command reads the usual production dotenv files. API
-integration tests overload inherited values with their explicit test env file,
-preserving isolation of the disposable test database.
+frontend development settings cannot leak into API or test processes.
+Development commands select their env files explicitly; Vite selects build-mode
+env files. The production start command reads the usual production dotenv files.
+API integration tests overload inherited values with their explicit test env
+file, preserving isolation of the disposable test database.
 
-The browser SDK's npm release embeds its recorder dependencies. The
-`@hyperdx/browser@0.26.0` Bun patch adds an ESM entry generated from the exact
-upstream release source, leaving its UMD entry and public types intact. The ESM
-entry imports the installed RUM and session-recorder packages so `bun.lock`'s
-rrweb 2.2.0 observer and mutation-buffer cleanup fixes reach the browser. It keeps
-the published SDK's OpenTelemetry API 1.9.1 bundled to avoid adding an undeclared
-dependency. The patch records its source revision and license. Remove it when an
-upstream SDK release provides a modular entry or includes the recorder fixes.
+The ClickStack browser SDK's ESM entry imports the installed `@rrweb/record`
+package, so `bun.lock`'s rrweb 2.2 observer and mutation-buffer cleanup fixes
+reach the browser. `scripts/ci/browser-sdk-memory.mjs` proves this in CI.

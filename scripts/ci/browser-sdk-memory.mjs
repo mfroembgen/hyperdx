@@ -16,6 +16,8 @@ import {
 
 export { assertSdkContract, createExportCounter };
 
+const EXPORT_INTERVAL = 5000;
+
 async function until(predicate, timeout = 10000) {
   const deadline = Date.now() + timeout;
   while (!predicate()) {
@@ -131,12 +133,7 @@ export async function verifyBrowserSdkMemory(options = {}) {
     result.api = await fixture.initialize(origin);
     await until(() => counter.summary().fullSnapshots > 0);
     await fixture.requestContractProbe();
-    await until(() => {
-      const value = counter.summary();
-      return (
-        value.networkSpans > 0 && value.requestBodies + value.responseBodies > 0
-      );
-    });
+    await until(() => counter.summary().networkSpans > 0);
     result.before = await fixture.observerCounts();
     await fixture.exercise(probeName);
     await until(
@@ -144,6 +141,7 @@ export async function verifyBrowserSdkMemory(options = {}) {
         counter.summary().probeMutations > 0 &&
         counter.summary().fullSnapshots >= 4,
     );
+    // The SDK exports every 5 s, so a duplicate could arrive one export later.
     let lastCount = -1;
     let stableAt = Date.now();
     await until(() => {
@@ -152,8 +150,8 @@ export async function verifyBrowserSdkMemory(options = {}) {
         lastCount = count;
         stableAt = Date.now();
       }
-      return Date.now() - stableAt >= 200;
-    }, 3000);
+      return Date.now() - stableAt >= EXPORT_INTERVAL + 500;
+    }, 2 * EXPORT_INTERVAL);
     result.after = await fixture.observerCounts();
     result.exports = counter.summary();
     assertSdkContract(result);
@@ -215,7 +213,7 @@ if (import.meta.main) {
   try {
     const result = await verifyBrowserSdkMemory({
       output,
-      publishedControl: process.argv.includes('--published-umd'),
+      publishedControl: process.argv.includes('--published-iife'),
     });
     console.log(
       JSON.stringify({

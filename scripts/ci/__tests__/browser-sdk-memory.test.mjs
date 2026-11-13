@@ -51,14 +51,8 @@ test('a quiet or disabled SDK cannot pass the recorder regression', () => {
   assert.throws(
     () =>
       assertSdkContract({
-        api: { init: true, resume: true, advancedCapture: true },
-        exports: {
-          requests: 0,
-          fullSnapshots: 0,
-          networkSpans: 0,
-          requestBodies: 0,
-          responseBodies: 0,
-        },
+        api: { init: true, resume: true },
+        exports: { requests: 0, fullSnapshots: 0, networkSpans: 0 },
         after: { detachedShadowTargets: 0 },
       }),
     /SDK must export/,
