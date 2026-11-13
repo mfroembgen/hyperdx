@@ -42,8 +42,8 @@
         "src/serverless.ts",
         "scripts/*.ts",
         "src/fixtures.ts",
-        "src/__tests__/fixtures/tracing.ts",
-        "src/tracing.ts"
+        "src/__tests__/fixtures/telemetry.ts",
+        "src/telemetry.ts"
       ],
       "project": ["src/**/*.ts"],
       "ignoreDependencies": ["pino-pretty", "aws4", "tslib"],

@@ -7,7 +7,7 @@ const appDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const output = join(appDir, '.vercel/output');
 await materializeRuntimeDependencies(
   join(output, 'functions/__server.func'),
-  ['@hyperdx/api', 'react', 'react-dom', '@hyperdx/node-opentelemetry'],
+  ['@hyperdx/api', 'react', 'react-dom', '@clickhouse/clickstack-node'],
   appDir,
   { excludeSourceMaps: true },
 );

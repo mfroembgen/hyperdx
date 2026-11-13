@@ -3,24 +3,42 @@ import { once } from 'node:events';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 
-import { shutdown } from '@hyperdx/node-opentelemetry';
+import { shutdown } from '@clickhouse/clickstack-node';
 import { SpanKind } from '@opentelemetry/api';
-import {
-  DataPointType,
-  type ResourceMetrics,
-} from '@opentelemetry/sdk-metrics';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 
 // Capture the SDK's own exporters without adding test-only dependency pins.
 const sdkRequire = createRequire(
-  require.resolve('@hyperdx/node-opentelemetry'),
+  createRequire(require.resolve('@clickhouse/clickstack-node')).resolve(
+    '@opentelemetry/sdk-node',
+  ),
 );
-const spans: ReadableSpan[] = [];
-const metrics: ResourceMetrics[] = [];
+const { DataPointType } = sdkRequire('@opentelemetry/sdk-metrics');
+type ExportedSpan = {
+  attributes: Record<string, unknown>;
+  kind: SpanKind;
+  name: string;
+  instrumentationScope: { name: string };
+  parentSpanContext?: { spanId: string };
+  spanContext: () => { traceId: string };
+};
+type ExportedMetrics = {
+  scopeMetrics: {
+    metrics: {
+      descriptor: { name: string };
+      dataPointType: number;
+      dataPoints: {
+        attributes: Record<string, unknown>;
+        value: { count?: number };
+      }[];
+    }[];
+  }[];
+};
+const spans: ExportedSpan[] = [];
+const metrics: ExportedMetrics[] = [];
 sdkRequire(
   '@opentelemetry/exporter-trace-otlp-proto',
 ).OTLPTraceExporter.prototype.export = (
-  batch: ReadableSpan[],
+  batch: ExportedSpan[],
   done: (result: { code: number }) => void,
 ) => {
   spans.push(...batch);
@@ -29,7 +47,7 @@ sdkRequire(
 sdkRequire(
   '@opentelemetry/exporter-metrics-otlp-proto',
 ).OTLPMetricExporter.prototype.export = (
-  batch: ResourceMetrics,
+  batch: ExportedMetrics,
   done: (result: { code: number }) => void,
 ) => {
   metrics.push(batch);
@@ -53,11 +71,15 @@ async function verifyHttpTracing() {
     await once(server, 'listening');
     const address = server.address();
     assert(address && typeof address !== 'string');
-    const response = await fetch(`http://127.0.0.1:${address.port}/health`, {
-      headers: {
-        traceparent: '00-11111111111111111111111111111111-2222222222222222-01',
+    const response = await fetch(
+      `http://127.0.0.1:${address.port}/health?code=oauth-secret&state=kept`,
+      {
+        headers: {
+          traceparent:
+            '00-11111111111111111111111111111111-2222222222222222-01',
+        },
       },
-    });
+    );
     assert.equal(await response.text(), 'OK');
   } finally {
     server.closeAllConnections();
@@ -74,6 +96,10 @@ async function verifyHttpTracing() {
   );
   assert.equal(requests[0].parentSpanContext?.spanId, '2222222222222222');
   assert(
+    !JSON.stringify(requests[0].attributes).includes('oauth-secret'),
+    'OAuth credentials in the URL must not reach span attributes',
+  );
+  assert(
     spans.some(
       span =>
         span.instrumentationScope.name ===
@@ -87,7 +113,7 @@ async function verifyHttpTracing() {
       batch.scopeMetrics.some(scope =>
         scope.metrics.some(
           metric =>
-            metric.descriptor.name === 'http.server.duration' &&
+            metric.descriptor.name === 'http.server.request.duration' &&
             metric.dataPointType === DataPointType.HISTOGRAM &&
             metric.dataPoints.some(
               point =>
