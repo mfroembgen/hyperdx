@@ -32,11 +32,6 @@ jobs:
         uses: ./.github/actions/e2e-setup
 
       - name: Run Playwright tests (full-stack mode)
-        env:
-          # Unset falls back to the default in playwright.config.ts.
-          E2E_WORKERS:
-            ${{ github.event.pull_request.head.repo.fork && '2' ||
-            vars.E2E_WORKERS }}
         run: |
           cd packages/app
           bun --no-env-file scripts/run-e2e.js --shard=${{ matrix.shard }}/4
