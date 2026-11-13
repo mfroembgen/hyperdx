@@ -98,6 +98,9 @@ export const INTERESTING_FILTER_KEYS_ROWS = [
     serviceName: 'service1',
     resourceAttrValue: 'value1',
     jsonValue: 'value1',
+    jsonInteger: 42,
+    jsonMixed: 42,
+    jsonBoolean: true,
     // Top-level JSON key that is NOT a bare identifier (`@` prefix). Selecting
     // it (`ResourceAttributesJSON.`@request_id``) and opening the row must keep
     // the key backtick-quoted in the detail WHERE clause (HDX-5867).
@@ -112,6 +115,9 @@ export const INTERESTING_FILTER_KEYS_ROWS = [
     serviceName: 'service2',
     resourceAttrValue: 'value2',
     jsonValue: 'value2',
+    jsonInteger: 43,
+    jsonMixed: '43',
+    jsonBoolean: false,
     jsonAtKeyValue: 'request-B',
     clusterName: 'cluster2',
     serviceNameHyphen: 'svc-two',
@@ -123,6 +129,9 @@ export const INTERESTING_FILTER_KEYS_ROWS = [
     serviceName: 'service3',
     resourceAttrValue: 'value3',
     jsonValue: 'value3',
+    jsonInteger: 44,
+    jsonMixed: '44',
+    jsonBoolean: false,
     jsonAtKeyValue: 'request-C',
     clusterName: 'cluster3',
     serviceNameHyphen: 'svc-three',
@@ -803,7 +812,13 @@ function generateK8sEventLogs(
 function generateInterestingFilterKeyLogData(seedRef: number): string {
   return INTERESTING_FILTER_KEYS_ROWS.map((row, i) => {
     const timestampNs = (seedRef - (i + 1) * 1000) * 1000000;
-    const json = `{"key": {"subKey": {"subSubKey": "${row.jsonValue}"}}, "${INTERESTING_FILTER_KEYS_JSON_AT_KEY}": "${row.jsonAtKeyValue}"}`;
+    const json = JSON.stringify({
+      key: { subKey: { subSubKey: row.jsonValue } },
+      integer: row.jsonInteger,
+      mixed: row.jsonMixed,
+      boolean: row.jsonBoolean,
+      [INTERESTING_FILTER_KEYS_JSON_AT_KEY]: row.jsonAtKeyValue,
+    });
     // JSON column with a hyphenated name AND hyphenated nested keys.
     const jsonHyphen = `{"key-1": {"key-2": "${row.jsonHyphenValue}"}}`;
     return (
