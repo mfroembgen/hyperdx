@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { Implementation } from '@modelcontextprotocol/sdk/types.js';
 
-import { CODE_VERSION, FRONTEND_URL } from '@/config';
+import { CODE_VERSION, DISABLE_MCP_INSTRUCTIONS, FRONTEND_URL } from '@/config';
 
 import dashboardPrompts from './prompts/dashboards/index';
 import alertsTools from './tools/alerts/index';
@@ -42,8 +42,12 @@ const PROMQL_INSTRUCTIONS =
   'clickstack_promql. The builder tools do not read them; clickstack_sql only\n' +
   'inspects the raw tags and samples of a ClickHouse TimeSeries table.';
 
-/** The instructions a client sees. PromQL is mentioned only while it is enabled. */
-function serverInstructions(context: McpContext): string {
+/**
+ * The instructions a client sees: none with DISABLE_MCP_INSTRUCTIONS, and
+ * PromQL only while it is enabled.
+ */
+function serverInstructions(context: McpContext): string | undefined {
+  if (DISABLE_MCP_INSTRUCTIONS) return undefined;
   return isPromqlEnabled(context)
     ? `${SERVER_INSTRUCTIONS}\n\n${PROMQL_INSTRUCTIONS}`
     : SERVER_INSTRUCTIONS;
