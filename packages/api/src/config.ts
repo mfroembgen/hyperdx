@@ -80,6 +80,7 @@ export const DEFAULT_CONNECTIONS = env.DEFAULT_CONNECTIONS;
 export const DEFAULT_SOURCES = env.DEFAULT_SOURCES;
 
 export const IS_PROMQL_ENABLED = env.ENABLE_PROMQL === 'true';
+export const DISABLE_MCP_INSTRUCTIONS = env.DISABLE_MCP_INSTRUCTIONS === 'true';
 
 export const EXTERNAL_API_RATE_LIMIT_MAX = (() => {
   const parsed = Number(env.EXTERNAL_API_RATE_LIMIT_MAX);

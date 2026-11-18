@@ -33,6 +33,9 @@ the defaults.
 > also reach the MCP server directly at `<backend_url>/mcp`, but not all
 > deployments expose the backend, so these docs use frontend paths.
 
+Set `DISABLE_MCP_INSTRUCTIONS=true` on the API to send no server instructions,
+for example on all but one of several instances that the same agent connects.
+
 ## Connecting with Google login
 
 When your administrator has enabled [WorkOS AuthKit](DEPLOY.md#workos-authkit),
