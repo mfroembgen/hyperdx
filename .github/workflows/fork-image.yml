@@ -1,0 +1,242 @@
+name: Publish fork production image
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, 'ai/release-*']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish a new immutable version tag
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fork-production-image-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/mfroembgen/hyperdx
+  SOURCE_SHA: ${{ github.sha }}
+  PUBLISH: ${{ github.event_name == 'workflow_dispatch' && inputs.publish }}
+
+jobs:
+  version:
+    if: github.repository == 'mfroembgen/hyperdx'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - name: Read the upstream release version
+        id: release
+        run: |
+          version=$(jq -r .version packages/app/package.json)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          test "$(jq -r .version packages/api/package.json)" = "$version"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        if: env.PUBLISH == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build the native production image
+        id: image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/hyperdx/Dockerfile
+          target: prod
+          platforms: linux/${{ matrix.arch }}
+          build-contexts: |
+            hyperdx=./docker/hyperdx
+            api=./packages/api
+            app=./packages/app
+          # One build ID for both architectures, so replicas serve one build.
+          build-args: |
+            CODE_VERSION=${{ env.VERSION }}
+            NEXT_BUILD_ID=${{ env.SOURCE_SHA }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/mfroembgen/hyperdx
+            org.opencontainers.image.revision=${{ env.SOURCE_SHA }}
+            org.opencontainers.image.version=${{ env.VERSION }}
+          outputs:
+            ${{ env.PUBLISH == 'true' && format('type=image,name={0},push-by-digest=true,name-canonical=true,push=true',
+            env.IMAGE) || 'type=docker,name=hyperdx-fork:check' }}
+          sbom: ${{ env.PUBLISH == 'true' }}
+          provenance: ${{ env.PUBLISH == 'true' }}
+          cache-from: type=gha,scope=fork-prod-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=fork-prod-${{ matrix.arch }}
+      - name: Select the built image
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          if [ "$PUBLISH" = true ]; then
+            echo "REF=$IMAGE@$DIGEST" >> "$GITHUB_ENV"
+          else
+            echo "REF=hyperdx-fork:check" >> "$GITHUB_ENV"
+          fi
+      - name: Record the frontend build
+        run: |
+          mkdir -p "$RUNNER_TEMP/frontend"
+          docker run --rm --entrypoint sh "$REF" -c \
+            'cd /app/packages/app/packages/app/.next && cat BUILD_ID && echo && find static -type f | sort | xargs sha256sum' \
+            > "$RUNNER_TEMP/frontend/${{ matrix.arch }}.txt"
+          test "$(head -1 "$RUNNER_TEMP/frontend/${{ matrix.arch }}.txt")" = "$SOURCE_SHA"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: frontend-${{ matrix.arch }}
+          path: ${{ runner.temp }}/frontend/${{ matrix.arch }}.txt
+          if-no-files-found: error
+          retention-days: 7
+      - name: Start the production services
+        run: |
+          docker network create fork-smoke
+          docker run -d --name fork-mongo --network fork-smoke mongo:5.0.32-focal
+          docker run -d --name fork-app --network fork-smoke -p 8000:8000 -p 8080:8080 \
+            -e MONGO_URI=mongodb://fork-mongo:27017/hyperdx-smoke \
+            -e EXPRESS_SESSION_SECRET=fork-ci-session-secret-only-for-smoke \
+            -e FRONTEND_URL=https://hyperdx.example.test \
+            -e WORKOS_ENABLED=true \
+            -e WORKOS_API_KEY=sk_test_fork_ci_smoke \
+            -e WORKOS_CLIENT_ID=client_forkcismoke \
+            -e WORKOS_AUTHKIT_DOMAIN=https://auth.example.test \
+            -e WORKOS_TEAM_ID=0123456789abcdef01234567 \
+            -e USAGE_STATS_ENABLED=false "$REF"
+      - name: Verify the API, the proxy and the frontend respond
+        run: |
+          # Through the frontend's API proxy; 503 until MongoDB is connected.
+          for _ in $(seq 60); do
+            curl -fsS http://localhost:8080/api/ready && break
+            sleep 2
+          done
+          curl -fsS http://localhost:8080/api/ready
+          # The public MCP OAuth discovery URLs the auth challenge advertises.
+          for path in oauth-protected-resource/api/mcp oauth-protected-resource; do
+            curl -fsS "http://localhost:8080/.well-known/$path" |
+              jq -e '.resource == "https://hyperdx.example.test/api/mcp"'
+          done
+          chunk=$(awk '$2 ~ /^static\/chunks\/.*\.js$/ { print $2; exit }' "$RUNNER_TEMP/frontend/${{ matrix.arch }}.txt")
+          for _ in $(seq 30); do
+            curl -fsS -o /dev/null "http://localhost:8080/_next/$chunk" && break
+            sleep 2
+          done
+          curl -fsS -o /dev/null "http://localhost:8080/_next/$chunk"
+          curl -fsS -o /dev/null -w '%{http_code}\n' http://localhost:8080/
+      - name: Service logs
+        if: failure()
+        run: docker logs fork-app
+      - name: Stop the production services
+        if: always()
+        run: |
+          docker rm -f fork-app fork-mongo 2>/dev/null || true
+          docker network rm fork-smoke 2>/dev/null || true
+      - name: Export digest
+        if: env.PUBLISH == 'true'
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: env.PUBLISH == 'true'
+        with:
+          name: digest-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # A replica on either architecture must serve every asset the page asks for.
+  same-frontend:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: ${{ runner.temp }}/frontend
+          pattern: frontend-*
+          merge-multiple: true
+      - name: Compare the architectures' frontend builds
+        working-directory: ${{ runner.temp }}/frontend
+        run: diff amd64.txt arm64.txt
+
+  publish:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    needs: [version, build, same-frontend]
+    # Dispatches from different refs must not race on one version tag.
+    concurrency:
+      group: fork-image-publish-${{ needs.version.outputs.version }}
+      cancel-in-progress: false
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digest-*
+          merge-multiple: true
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish version manifest
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          if docker buildx imagetools inspect "$IMAGE:$VERSION" >"$RUNNER_TEMP/tag-check.log" 2>&1; then
+            echo "Refusing to overwrite existing $IMAGE:$VERSION" >&2
+            exit 1
+          fi
+          error=$(cat "$RUNNER_TEMP/tag-check.log")
+          case "$error" in
+            *'manifest unknown'*|*'not found'*|*'404 Not Found'*) ;;
+            *) printf '%s\n' "$error" >&2; exit 1 ;;
+          esac
+          refs=()
+          for digest in *; do
+            [[ "$digest" =~ ^[a-f0-9]{64}$ ]]
+            refs+=("$IMAGE@sha256:$digest")
+          done
+          test "${#refs[@]}" -eq 2
+          docker buildx imagetools create --tag "$IMAGE:$VERSION" "${refs[@]}"
+          docker buildx imagetools inspect "$IMAGE:$VERSION"

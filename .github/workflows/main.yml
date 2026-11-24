@@ -1,7 +1,7 @@
 name: Main
 on:
   push:
-    branches: [main, v1]
+    branches: [main, v1, 'ai/release-*']
   pull_request:
     branches: [main, v1]
 concurrency:

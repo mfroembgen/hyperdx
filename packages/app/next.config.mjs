@@ -94,6 +94,9 @@ const nextConfig = {
   // when running dev and E2E simultaneously (e.g. NEXT_DIST_DIR=.next-e2e)
   ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   reactCompiler: true,
+  // Images built separately per architecture pass the same ID, so replicas on
+  // either architecture serve the same build. Unset keeps Next's random ID.
+  generateBuildId: async () => process.env.NEXT_BUILD_ID || null,
   // click-ui ships per-component CSS imports from node_modules, which Next
   // rejects as global CSS unless the package is transpiled.
   transpilePackages: ['@clickhouse/click-ui'],

@@ -17,7 +17,10 @@ jobs:
       ${{ github.event.pull_request.head.repo.fork && 'ubuntu-24.04' ||
       startsWith(vars.RUNNER_E2E, '[') && fromJSON(vars.RUNNER_E2E) ||
       vars.RUNNER_E2E || '8-core-playwright' }}
-    timeout-minutes: ${{ github.event.pull_request.head.repo.fork && 25 || 15 }}
+    # E2E_TIMEOUT_MINUTES sets the budget for a smaller runner.
+    timeout-minutes:
+      ${{ fromJSON(vars.E2E_TIMEOUT_MINUTES || (github.event.pull_request.head.repo.fork
+      && '25' || '15')) }}
     permissions:
       contents: read
     strategy:

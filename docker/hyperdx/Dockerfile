@@ -100,6 +100,7 @@ COPY --from=app ./scripts ./packages/app/scripts
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_OUTPUT_STANDALONE=true
 ENV NEXT_PUBLIC_IS_LOCAL_MODE=false
+ARG NEXT_BUILD_ID
 RUN yarn workspace @hyperdx/api run build && \
     yarn workspace @hyperdx/app run build
 RUN --mount=type=cache,target=/root/.yarn/berry/cache,id=yarn-cache \
